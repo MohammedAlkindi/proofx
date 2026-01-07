@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0a14" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
+  <meta name="description" content="ProofX" />
+  <link rel="canonical" href="https://www.proofx.org/" />
+
+  <title>ProofX</title>
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Preload critical resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </noscript>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ProofX | Deterministic ML/Python Verification Stack"/>
+  <meta property="og:description" content="Deterministic solvers, entropy-driven search, and operator-grade observability — the fastest path from conjecture to verifiable evidence, built for FAANG-tier research output." />
+  <meta property="og:url" content="https://www.proofx.org/" />
+  <meta property="og:site_name" content="ProofX" />
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ProofX — proof-grade ML/Python engines" />
+  <meta name="twitter:description" content="Deterministic portfolios, entropy-guided search, audit-grade observability, and FAANG-tier research output." />
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "ProofX",
+    "url": "https://www.proofx.org/",
+    "logo": "https://www.proofx.org/assets/favicon-32x32.png",
+    "sameAs": [
+      "https://vision.proofx.org",
+      "https://engine.proofx.org",
+      "https://docs.proofx.org",
+    ]
+  }
+  </script>
+
+  <!-- Inline enhancements specific to this rev (keeps styles.css untouched) -->
+  <style>
+    .hidden { display: none !important; }
+
+    /* Engines */
+    #engines .engine h3 { font-weight: 700; letter-spacing: -0.01em; }
+    #engines .engine p { margin-top: .25rem; }
+    #engines .engine .engine__link { font-weight: 600; }
+
+    /* FAQ — ensure only one visible "+" icon (native marker hidden) */
+    #faq-list details.faq__item { border: 1px solid var(--border, rgba(128,128,128,.25)); border-radius: 14px; padding: .25rem .75rem; transition: transform .15s ease, border-color .2s ease; }
+    #faq-list details.faq__item:hover { transform: translateY(-1px); border-color: var(--accent, rgba(99,102,241,.5)); }
+    #faq-list summary.faq__q { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .75rem; padding: .75rem .25rem; font-weight: 600; font-size: 1.05rem; }
+    #faq-list summary.faq__q::-webkit-details-marker { display: none; }
+    .faq__icon { width: 22px; height: 22px; flex: none; transition: transform .2s ease; opacity: .9; }
+    details[open] .faq__icon { transform: rotate(45deg); } /* plus → minus */
+
+    /* Buttons */
+    .btn.btn--white { background: #fff; color: #111; border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 4px 14px rgba(0,0,0,.06); }
+    .btn.btn--white:hover { filter: brightness(.98); }
+    .btn.btn--blue  { background: #0A66FF; color: #fff; }
+    .btn-row { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
+
+    /* Contact */
+    .contact__actions .btn { margin-right: .5rem; margin-bottom: .5rem; }
+
+    /* Findings */
+    .findings__img { max-width: 100%; border-radius: 12px; display: block; }
+    .findings__grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:12px; }
+    .finding { overflow:hidden; border-radius:12px; }
+    .finding img { width:100%; height:auto; display:block; }
+    
+    /* Quantum Computing Section */
+    .quantum-conjecture { 
+      background: var(--surface-2); 
+      border-radius: 12px; 
+      padding: 1.5rem; 
+      margin-bottom: 1.5rem; 
+      border-left: 4px solid var(--accent);
+    }
+    .test-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .test-case {
+      background: var(--surface-1);
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .test-case h4 {
+      margin-top: 0;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .coming-soon {
+      opacity: 0.7;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- ============================== HEADER =============================== -->
+  <header class="nav" role="banner">
+    <div class="container nav__inner">
+      <a class="brand" href="#top" aria-label="ProofX home">
+        <span class="brand__mark" aria-hidden="true">PX</span>
+        <span class="brand__text">ProofX</span>
+      </a>
+
+      <button class="nav__toggle" aria-expanded="false" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav__links" role="navigation" aria-label="Primary">
+        <a href="#vision">Vision</a>
+        <a href="#engines">Engines</a>
+        <a href="#founder">Founder</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- =============================== HERO =============================== -->
+    <section id="top" class="section hero" aria-labelledby="hero-title">
+      <div class="container hero__wrap">
+        <h1 id="hero-title" class="hero__h1" data-no-wrap>Computational engines for discrete mathematics.</h1>
+        <p class="hero__sub">
+          ProofX builds small, open-source Python engines to study sequence behavior, test ideas, and share reproducible results. Early work includes CollatzX and GoldbachX, focused on large-scale experimentation and pattern analysis.
+        </p>
+
+        <div class="hero__actions" role="group" aria-label="Primary actions">
+          <a class="btn btn--white btn--lg btn--pill" href="mailto:alkindi.proofx@gmail.com?subject=ProofX%20%E2%80%94%20Inquire">Inquire</a>
+          <a class="btn btn--white btn--lg btn--pill" href="mailto:alkindi.proofx@gmail.com?subject=ProofX%20%E2%80%94%20Invest">Invest</a>
+          <a class="btn btn--white btn--lg btn--pill" href="https://github.com/ProofX-core" target="_blank" rel="noopener">Codebase</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================ VISION ============================= -->
+    <section id="vision" class="section" aria-labelledby="vision-title">
+      <div class="container card">
+        <h2 id="vision-title">Vision</h2>
+        <p>
+          ProofX is an early research effort exploring computational engines for discrete mathematics. 
+          Our long-term ambition is to enable faster, more reliable paths from conjecture to reproducible evidence. 
+          By combining structured experimentation, deterministic execution, and transparent replay, 
+          ProofX aims to establish a foundation for proof-centric computation at research-lab scale.
+        </p>
+        <ul class="bullets bullets--tight">
+          <li><strong>Impact:</strong> shorten the cycle from idea to evidence through reproducible experimentation.</li>
+          <li><strong>Trust:</strong> configuration, inputs, and outputs are tracked for replay and comparison.</li>
+          <li><strong>Reach:</strong> designed for researchers, students, and public-interest investigations.</li>
+        </ul>
+        <p class="muted" style="margin-top: 1rem;">
+          <em>Note: Many components are experimental and evolving.</em>
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================= RESEARCH & ENGINE DEVELOPMENT ========================== -->
+    <section id="research" class="section" aria-labelledby="research-title">
+      <div class="container card">
+        <h2 id="research-title">Research &amp; Engine Development</h2>
+    
+        <p class="muted">
+          Continuous refinement of our verification engines through algorithmic optimization,
+          benchmarking, and research collaboration — enabling reproducible insight at
+          operator-grade scale.
+        </p>
+    
+        <ul class="bullets bullets--tight">
+          <li>Algorithm optimization &amp; parallelization</li>
+          <li>New conjecture-engine development</li>
+          <li>Performance benchmarking improvements</li>
+          <li>Research partnerships &amp; academic collaboration</li>
+        </ul>
+    
+        <div class="btn-row" role="group" aria-label="Research actions">
+          <a class="btn btn--primary btn--pill" href="/research.html">Explore Research</a>
+          <a class="btn btn--pill" href="/assets/proofx-overview.pdf" download>Download Whitepaper</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================= ENGINES =========================== -->
+    <section id="engines" class="section" aria-labelledby="engines-title">
+      <div class="container">
+        <h2 id="engines-title">Engines</h2>
+
+        <div id="engines-grid" class="grid grid--3">
+          <!-- 20 conjecture engines; only first 3 visible, rest progressively revealed in 3s -->
+
+          <!-- 1 -->
+          <article class="card engine">
+            <h3>CollatzX</h3>
+            <p>Track sequence convergence with parity analysis, trajectory forecasting, and statistical verification across billions of iterations.</p>
+            <a class="engine__link" href="/collatzx">Analyze sequences →</a>
+          </article>
+          
+          <!-- 2 -->
+          <article class="card engine">
+            <h3>RiemannX</h3>
+            <p>Verify zero distributions, analyze prime counting accuracy, and test hypotheses against computational evidence.</p>
+            <a class="engine__link" href="/riemannx">Explore zeros →</a>
+          </article>
+          
+          <!-- 3 -->
+          <article class="card engine">
+            <h3>GoldbachX</h3>
+            <p>Decompose even numbers into primes, verify conjectured bounds, and search for decomposition patterns.</p>
+            <a class="engine__link" href="/goldbachx">Test decompositions →</a>
+          </article>
+          
+    </section>
+
+  <!-- =================================== FAQ ============================ -->
+  <section id="faq" class="section" aria-labelledby="faq-title">
+    <div class="container">
+      <h2 id="faq-title">Frequently Asked Questions</h2>
+  
+      <div id="faq-list">
+        <!-- First 3 questions always visible -->
+        <details class="card faq__item">
+          <summary class="faq__q">
+            How does ProofX ensure determinism and traceability?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>ProofX portfolios are seeded, versioned, and replayable with byte-for-byte manifests. Every computation is fully reproducible across environments with guaranteed identical results.</p>
+        </details>
+  
+        <details class="card faq__item">
+          <summary class="faq__q">
+            What is ProofX's business model and revenue strategy?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p><strong>Current Status:</strong> ProofX operates as an open-source non-profit research organization. <strong>Future Plans:</strong> We're exploring patent licensing for novel verification algorithms and enterprise support contracts for research institutions.</p>
+        </details>
+  
+        <details class="card faq__item">
+          <summary class="faq__q">
+            When will the source code be publicly available?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p><strong>Immediate Access:</strong> Basic verification frameworks are available now. <strong>Advanced Engines:</strong> Core conjecture engines are undergoing patent review and will be released under open-source licenses once intellectual property protection is secured.</p>
+        </details>
+  
+        <!-- Hidden questions (4-6) -->
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            What is ProofX's approach to patents and intellectual property?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>We're pursuing patents only for novel verification algorithms, not mathematical concepts. All patented technologies will be available under fair-use research licenses, with commercial licensing for enterprise applications.</p>
+        </details>
+  
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            What is ProofX's competitive advantage and reliability moat?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>ProofX builds compounding corpora of runs and counterexamples that improve priors and are hard to replicate. Our deterministic verification architecture creates reliability through extensive validation datasets and performance-optimized algorithms.</p>
+        </details>
+  
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            Is ProofX a SaaS company or traditional startup?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>No. ProofX is structured as an open-source non-profit research organization, focused on research partnerships and operator deployments rather than traditional SaaS revenue.</p>
+        </details>
+  
+        <!-- Hidden questions (7-9) -->
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            What is ProofX's deployment and security posture?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>We use containers, pinned builds, and strict retention modes to ensure security and reproducibility. Our deployment architecture supports private cloud, on-prem, and air-gapped environments.</p>
+        </details>
+  
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            How does ProofX minimize time-to-evidence in verification?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>Through entropy-aware scheduling and replay manifests, ProofX optimizes verification workflows to deliver statistical evidence faster.</p>
+        </details>
+  
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            What guarantees does ProofX provide for verification results?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>Manifested seeds, routes, and configs guarantee byte-identical runs across environments. We provide statistical confidence intervals and formal verification certificates.</p>
+        </details>
+  
+        <!-- Hidden questions (10-12) -->
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            How are ProofX's verification results validated by the research community?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p>All verification engines undergo peer review through academic collaborations. We publish verification methodologies and datasets to enable independent validation.</p>
+        </details>
+  
+        <details class="card faq__item faq-hidden">
+          <summary class="faq__q">
+            How is ProofX funded and what is the long-term sustainability plan?
+            <svg class="faq__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="h" d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path class="v" d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p><strong>Current Funding:</strong> Bootstrapped development with research grants. <strong>Sustainability Model:</strong> Long-term sustainability through patent licensing and enterprise support contracts while maintaining open-source commitment.</p>
+        </details>
+      </div>
+  
+      <div class="btn-row" role="group" aria-label="FAQ controls">
+        <button id="faq-show-more" class="btn btn--white btn--pill" aria-controls="faq-list" aria-expanded="false">Show 3 more questions</button>
+        <button id="faq-show-less" class="btn btn--blue btn--pill hidden" aria-controls="faq-list" aria-expanded="true">Show 3 fewer questions</button>
+      </div>
+      <div id="faq-live" class="sr-only" aria-live="polite"></div>
+    </div>
+  </section>
+  
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const faqList = document.getElementById('faq-list');
+    const showMoreBtn = document.getElementById('faq-show-more');
+    const showLessBtn = document.getElementById('faq-show-less');
+    const faqLive = document.getElementById('faq-live');
+    
+    const hiddenItems = Array.from(document.querySelectorAll('.faq-hidden'));
+    const itemsPerStep = 3;
+    let currentVisibleCount = 3; // First 3 are always visible
+    
+    function updateFAQVisibility() {
+      // Show items up to currentVisibleCount, hide the rest
+      hiddenItems.forEach((item, index) => {
+        if (index < currentVisibleCount - 3) {
+          item.classList.remove('faq-hidden');
+        } else {
+          item.classList.add('faq-hidden');
+        }
+      });
+      
+      // Update button states
+      const totalHidden = hiddenItems.length;
+      const remainingHidden = totalHidden - (currentVisibleCount - 3);
+      
+      if (currentVisibleCount >= totalHidden + 3) {
+        showMoreBtn.classList.add('hidden');
+        showLessBtn.classList.remove('hidden');
+        showLessBtn.textContent = `Show ${Math.min(itemsPerStep, currentVisibleCount - 3)} fewer questions`;
+      } else if (currentVisibleCount > 3) {
+        showMoreBtn.classList.remove('hidden');
+        showLessBtn.classList.remove('hidden');
+        showMoreBtn.textContent = `Show ${Math.min(itemsPerStep, remainingHidden)} more questions`;
+        showLessBtn.textContent = `Show ${Math.min(itemsPerStep, currentVisibleCount - 3)} fewer questions`;
+      } else {
+        showMoreBtn.classList.remove('hidden');
+        showLessBtn.classList.add('hidden');
+        showMoreBtn.textContent = `Show ${Math.min(itemsPerStep, remainingHidden)} more questions`;
+      }
+      
+      // Update ARIA live region for screen readers
+      const visibleCount = Math.min(currentVisibleCount, totalHidden + 3);
+      faqLive.textContent = `Now showing ${visibleCount} of ${totalHidden + 3} questions`;
+    }
+    
+    showMoreBtn.addEventListener('click', function() {
+      currentVisibleCount += itemsPerStep;
+      updateFAQVisibility();
+    });
+    
+    showLessBtn.addEventListener('click', function() {
+      currentVisibleCount = Math.max(3, currentVisibleCount - itemsPerStep);
+      updateFAQVisibility();
+    });
+    
+    // Initialize visibility
+    updateFAQVisibility();
+  });
+  </script>
+  
+  <!-- FAQ icon/marker fixes (scoped) -->
+  <style>
+    /* --- Nuke ALL native and theme-injected markers/icons --- */
+    #faq details > summary::-webkit-details-marker { display: none !important; }
+    #faq details > summary::marker { content: "" !important; }
+    #faq details > summary { list-style: none !important; }
+    #faq .faq__q::before,
+    #faq .faq__q::after { content: none !important; }
+  
+    /* --- Layout: text left, single SVG icon top-right --- */
+    #faq .faq__q {
+      position: relative;
+      display: block;
+      padding-right: 36px;           /* space for icon */
+      cursor: pointer;
+      font-weight: 600;
+    }
+    #faq .faq__icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px; height: 24px;
+      pointer-events: none;          /* keep whole summary clickable */
+    }
+  
+    /* --- Animation: plus → minus by hiding vertical stroke --- */
+    #faq .faq__icon .h,
+    #faq .faq__icon .v { transition: opacity .15s ease; }
+    #faq details[open] .faq__icon .v { opacity: 0; }
+  
+    /* Enhanced FAQ styling */
+    #faq .faq__item {
+      margin-bottom: 1rem;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      transition: border-color 0.2s ease;
+    }
+    
+    #faq .faq__item:hover {
+      border-color: #007acc;
+    }
+    
+    #faq .faq__item[open] {
+      border-color: #007acc;
+      box-shadow: 0 2px 8px rgba(0, 122, 204, 0.1);
+    }
+    
+    /* Text color updated to white */
+    #faq .faq__q {
+      padding: 1.25rem;
+      font-size: 1.1rem;
+      color: #ffffff; /* white for questions */
+    }
+    
+    #faq .faq__item p {
+      padding: 0 1.25rem 1.25rem;
+      margin: 0;
+      line-height: 1.6;
+      color: #ffffff; /* white for answers */
+    }
+    
+    #faq .faq__item strong {
+      color: #ffffff; /* white for bold text */
+    }
+    
+    /* Hidden FAQ items */
+    .faq-hidden {
+      display: none !important;
+    }
+    
+    /* Hidden utility class */
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Screen reader only */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+
+
+  <!-- ================================ FOUNDER =========================== -->
+  <section id="founder" class="section" aria-labelledby="founder-title">
+    <div class="container card card--row founder">
+      <div class="founder__bio">
+        <p class="kicker">Founder</p>
+        <h2 id="founder-title">Mohammed Alkindi — Founder</h2>
+        <p class="muted">
+          Founder of ProofX, building computational systems that help mathematicians test unsolved problems with verifiable evidence. Developed specialized engines that analyze number patterns, verify conjectures, and provide reproducible results for mathematical research.
+        </p>
+        <ul class="bullets">
+          <li>Created ProofX verification engines that systematically test famous mathematical conjectures</li>
+          <li>Built computational architecture spanning logic systems, pattern analysis, and verification methods</li>
+          <li>Focused on reproducible research, reliable evidence, and trustworthy computational results</li>
+        </ul>
+        <div class="founder__cta" role="group" aria-label="Founder contact">
+          <a class="btn btn--primary btn--pill" href="mailto:alkindi.proofx@gmail.com?subject=ProofX%20%E2%80%94%20Founder%20Contact">Email</a>
+          <a class="btn btn--pill" href="https://www.linkedin.com/in/alkindi-network" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <!-- ================================= CONTACT ========================== -->
+    <section id="contact" class="section" aria-labelledby="contact-title">
+      <div class="container card card--row">
+        <div>
+          <h2 id="contact-title">Contact</h2>
+          <p class="muted">Partners, investors, and research labs: ProofX operates with evidence, not theatre.</p>
+        </div>
+        <div class="contact__actions" role="group" aria-label="Contact actions">
+          <a class="btn btn--primary btn--pill" href="mailto:alkindi.proofx@gmail.com?subject=ProofX%20%E2%80%94%20Inquiry">Email</a>
+          <a class="btn btn--pill" href="https://instagram.com/proofx_org" target="_blank" rel="noopener" aria-label="Instagram @proofx_org">Instagram</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================================= FOOTER ============================ -->
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__inner">
+      <span class="muted">© 2025 ProofX</span>
+      <nav class="footer__links" aria-label="Footer">
+        <a href="#about">About</a>
+        <a href="#founder">Founder</a>
+        <a href="#contact">Contact</a>
+        <a href="#partner">Partner</a>
+        <a href="#support">Support</a>
+        <a href="#privacy">Privacy</a>
+
+      </nav>
+      <a class="to-top" href="#top" aria-label="Back to top">↑</a>
+    </div>
+  </footer>
+
+  <!-- Progressive enhancement: tiny, accessible helpers -->
+  <script>
+    (function () {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Smooth scroll for in-page anchors
+      document.querySelectorAll('a[href^="#"]').forEach(a => {
+        const id = a.getAttribute('href').slice(1);
+        const el = document.getElementById(id);
+        if (!el) return;
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          el.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+          el.setAttribute('tabindex', '-1');
+          el.focus({ preventScroll: true });
+          history.replaceState(null, '', '#' + id);
+        });
+      });
+
+      // Sticky header state
+      const header = document.querySelector('.nav');
+      let ticking = false;
+      function updateHeader() {
+        const y = window.scrollY || document.documentElement.scrollTop;
+        header.classList.toggle('nav--scrolled', y > 12);
+        ticking = false;
+      }
+      window.addEventListener('scroll', () => {
+        if (!ticking) { requestAnimationFrame(updateHeader); ticking = true; }
+      });
+
+      // Mobile navigation toggle
+      const navToggle = document.querySelector('.nav__toggle');
+      const navLinks = document.querySelector('.nav__links');
+      if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+          const expanded = navToggle.getAttribute('aria-expanded') === 'true';
+          navToggle.setAttribute('aria-expanded', String(!expanded));
+          navLinks.classList.toggle('nav__links--visible');
+        });
+        navLinks.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            navToggle.setAttribute('aria-expanded', 'false');
+            navLinks.classList.remove('nav__links--visible');
+          });
+        });
+      }
+
+      // ---------- Generic show more/less wiring ----------
+      function setupShowMoreLess(opts) {
+        const { containerSelector, itemSelector, showMoreId, showLessId, liveId, batch = Infinity } = opts;
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+
+        const btnMore = document.getElementById(showMoreId);
+        const btnLess = document.getElementById(showLessId);
+        const live = liveId ? document.getElementById(liveId) : null;
+
+        const all = () => Array.from(container.querySelectorAll(itemSelector));
+        const hidden = () => all().filter(n => n.classList.contains('hidden'));
+
+        function announce(msg){ if (live) live.textContent = msg; }
+
+        if (btnMore) {
+          btnMore.addEventListener('click', () => {
+            const toReveal = hidden().slice(0, batch);
+            toReveal.forEach(n => n.classList.remove('hidden'));
+            const remain = hidden().length;
+            btnMore.classList.toggle('hidden', remain === 0);
+            btnLess.classList.remove('hidden');
+            btnMore.setAttribute('aria-expanded', String(remain === 0));
+            announce(remain === 0 ? 'All items shown.' : `${remain} remaining.`);
+          });
+        }
+
+        if (btnLess) {
+          btnLess.addEventListener('click', () => {
+            // Collapse back to the initial visible set = total minus newly revealed
+            all().forEach((n, i) => { if (n.dataset.initial !== '1') n.classList.add('hidden'); });
+            btnLess.classList.add('hidden');
+            btnMore.classList.remove('hidden');
+            btnMore.setAttribute('aria-expanded', 'false');
+            announce('Items collapsed.');
+            // Move focus for accessibility
+            btnMore.focus();
+          });
+        }
+
+        // Mark initially visible items
+        all().forEach(n => { if (!n.classList.contains('hidden')) n.dataset.initial = '1'; });
+      }
+
+      // ENGINES: reveal 3 at a time
+      setupShowMoreLess({
+        containerSelector: '#engines-grid',
+        itemSelector: '.engine',
+        showMoreId: 'engines-show-more',
+        showLessId: 'engines-show-less',
+        liveId: 'engines-live',
+        batch: 3
+      });
+
+      // FAQ: reveal 5 at a time
+      setupShowMoreLess({
+        containerSelector: '#faq-list',
+        itemSelector: '.faq__item',
+        showMoreId: 'faq-show-more',
+        showLessId: 'faq-show-less',
+        liveId: 'faq-live',
+        batch: 5
+      });
+
+      // FINDINGS: reveal all remaining visuals at once
+      setupShowMoreLess({
+        containerSelector: '#findings-grid',
+        itemSelector: '.finding',
+        showMoreId: 'findings-show-more',
+        showLessId: 'findings-show-less',
+        liveId: 'findings-live',
+        batch: Infinity
+      });
+    })();
+  </script>
+
+  <noscript>
+    <p class="muted container">JavaScript is disabled. Site remains fully navigable; enhancements are optional.</p>
+  </noscript>
+</body>
+</html>

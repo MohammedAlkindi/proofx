@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RiemannX Engine | ProofX</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    /* Minimal overrides if needed */
+    .quantum-conjecture { 
+      background: var(--surface-2); 
+      border-radius: 12px; 
+      padding: 1.5rem; 
+      margin-bottom: 1.5rem; 
+      border-left: 4px solid var(--accent);
+    }
+    .test-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .test-case {
+      background: var(--surface-1);
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .test-case h4 { margin-top:0; color: var(--accent); font-size:1rem; }
+    .btn-row { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>RiemannX Engine</h1>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/collatzx.html">CollatzX</a>
+      <a href="/goldbachx.html">GoldbachX</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="quantum-conjecture">
+      <p>Verify the Riemann Hypothesis numerically by testing zero distributions, prime-counting approximations, and functional symmetries across extensive computational ranges.</p>
+
+      <div class="test-cases-grid">
+        <div class="test-case">
+          <h4>Core Verification Tests</h4>
+          <ul>
+            <li>Non-trivial zero identification</li>
+            <li>Critical line validation</li>
+            <li>Zero spacing statistics</li>
+            <li>Dirichlet L-function testing</li>
+            <li>High-precision floating-point validation</li>
+          </ul>
+        </div>
+
+        <div class="test-case">
+          <h4>Performance Metrics</h4>
+          <ul>
+            <li>Zeros computed per second: 50M+</li>
+            <li>Maximum tested imaginary parts: 10^12+</li>
+            <li>Parallelized zero detection</li>
+            <li>Memory-efficient caching</li>
+            <li>Distributed computation supported</li>
+          </ul>
+        </div>
+
+        <div class="test-case">
+          <h4>Research Applications</h4>
+          <ul>
+            <li>Prime-counting approximation verification</li>
+            <li>Zero spacing statistical analysis</li>
+            <li>Analytic number theory support</li>
+            <li>Educational visualizations</li>
+            <li>Cross-conjecture correlation studies</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <a class="btn btn--primary btn--pill" href="/riemannx/verify">Verify Zeros</a>
+        <a class="btn btn--pill" href="/riemannx/benchmarks">View Benchmarks</a>
+        <a class="btn btn--pill" href="/riemannx/research">Research Data</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 ProofX. All rights reserved.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Findings | ProofX</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Representative outputs and core diagnostics from ProofX engines." />
+  <meta property="og:title" content="Findings | ProofX" />
+  <meta property="og:description" content="Explore representative outputs and diagnostics from ProofX anomaly detection engines." />
+  <meta property="og:url" content="https://proofx.org/findings" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://proofx.org/assets/collatz_plot.png" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="navbar">
+    <div class="container">
+      <a href="/" class="logo">ProofX</a>
+      <nav>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/findings" class="active">Findings</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================================ FINDINGS ============================ -->
+  <main>
+    <section id="findings" class="section" aria-labelledby="findings-title">
+      <div class="container card">
+        <h2 id="findings-title">Findings</h2>
+        <p class="muted">Representative outputs and core diagnostics from ProofX engines.</p>
+
+        <!-- Findings Grid -->
+        <div id="findings-grid" class="findings__grid" aria-label="Findings gallery">
+          
+          <!-- Primary Finding -->
+          <div class="finding finding-row primary">
+            <div class="finding-text">
+              <h3 class="h4">CollatzX Trajectory</h3>
+              <p class="muted small">
+                Most starting values collapse quickly, but rare outliers stretch sequence lengths.
+                The red point marks the maximum observed length; reproducibility demonstrates the
+                engine's anomaly-detection rigor.
+              </p>
+              <a class="btn btn--pill btn--white small" 
+                 href="/assets/collatz_plot.png" download>
+                Download figure (PNG)
+              </a>
+            </div>
+
+            <figure class="finding-visual">
+              <picture>
+                <!-- <source srcset="/assets/collatz_plot.webp" type="image/webp"> -->
+                <img
+                  class="findings__img"
+                  src="/assets/collatz_plot.png"
+                  alt="CollatzX trajectory: sequence length vs. starting value (log scale); red point marks the maximum."
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              </picture>
+              <figcaption class="muted xsmall">
+                <span class="sr-only">Caption: </span>
+                Fig. 1 — CollatzX trajectory visualization (log-scaled x-axis). Reproducible output with labeled outlier.
+              </figcaption>
+            </figure>
+          </div>
+
+          <!-- Secondary Findings -->
+          <div class="finding finding-row">
+            <div class="finding-text">
+              <h3 class="h5">Finding 2</h3>
+              <p class="muted small">Brief note about what this visual demonstrates.</p>
+            </div>
+            <figure class="finding-visual">
+              <img src="/assets/finding2.png" alt="Finding 2 visualization"
+                  loading="lazy" decoding="async" />
+              <figcaption class="muted xsmall">Fig. 2 — Short caption.</figcaption>
+            </figure>
+          </div>
+
+          <div class="finding finding-row hidden">
+            <div class="finding-text">
+              <h3 class="h5">Finding 3</h3>
+              <p class="muted small">One-sentence takeaway for the reader.</p>
+            </div>
+            <figure class="finding-visual">
+              <img src="/assets/finding3.png" alt="Finding 3 visualization"
+                  loading="lazy" decoding="async" />
+              <figcaption class="muted xsmall">Fig. 3 — Short caption.</figcaption>
+            </figure>
+          </div>
+
+          <div class="finding finding-row hidden">
+            <div class="finding-text">
+              <h3 class="h5">Finding 4</h3>
+              <p class="muted small">Key diagnostic or anomaly captured here.</p>
+            </div>
+            <figure class="finding-visual">
+              <img src="/assets/finding4.png" alt="Finding 4 visualization"
+                  loading="lazy" decoding="async" />
+              <figcaption class="muted xsmall">Fig. 4 — Short caption.</figcaption>
+            </figure>
+          </div>
+
+          <div class="finding finding-row hidden">
+            <div class="finding-text">
+              <h3 class="h5">Finding 5</h3>
+              <p class="muted small">Short description to anchor the plot.</p>
+            </div>
+            <figure class="finding-visual">
+              <img src="/assets/finding5.png" alt="Finding 5 visualization"
+                  loading="lazy" decoding="async" />
+              <figcaption class="muted xsmall">Fig. 5 — Short caption.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2025 ProofX. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

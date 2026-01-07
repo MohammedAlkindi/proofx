@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoldbachX Engine | ProofX</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .quantum-conjecture { 
+      background: var(--surface-2); 
+      border-radius: 12px; 
+      padding: 1.5rem; 
+      margin-bottom: 1.5rem; 
+      border-left: 4px solid var(--accent);
+    }
+    .test-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .test-case {
+      background: var(--surface-1);
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .test-case h4 { margin-top:0; color: var(--accent); font-size:1rem; }
+    .btn-row { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GoldbachX Engine</h1>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/collatzx.html">CollatzX</a>
+      <a href="/riemannx.html">RiemannX</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="quantum-conjecture">
+      <p>Test Goldbach’s conjecture by decomposing even numbers into primes, analyzing sum distributions, and searching for counterexamples across extremely large ranges.</p>
+
+      <div class="test-cases-grid">
+        <div class="test-case">
+          <h4>Core Verification Tests</h4>
+          <ul>
+            <li>Even number prime decomposition</li>
+            <li>Verification of known bounds</li>
+            <li>Pattern analysis for prime sums</li>
+            <li>Distribution uniformity checks</li>
+            <li>Algorithmic counterexample search</li>
+          </ul>
+        </div>
+
+        <div class="test-case">
+          <h4>Performance Metrics</h4>
+          <ul>
+            <li>Numbers analyzed per second: 200M+</li>
+            <li>Maximum tested range: 10^18+</li>
+            <li>Memory-efficient prime storage</li>
+            <li>Parallel decomposition computation</li>
+            <li>Distributed verification architecture</li>
+          </ul>
+        </div>
+
+        <div class="test-case">
+          <h4>Research Applications</h4>
+          <ul>
+            <li>Prime sum frequency analysis</li>
+            <li>Gap and density studies</li>
+            <li>Conjecture variant exploration</li>
+            <li>Educational number theory visualization</li>
+            <li>Cross-conjecture correlation studies</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <a class="btn btn--primary btn--pill" href="/goldbachx/verify">Test Decompositions</a>
+        <a class="btn btn--pill" href="/goldbachx/benchmarks">View Benchmarks</a>
+        <a class="btn btn--pill" href="/goldbachx/research">Research Data</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 ProofX. All rights reserved.</p>
+  </footer>
+</body>
+</html>
