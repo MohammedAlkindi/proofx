@@ -1,0 +1,228 @@
+2025-08-04 20:49:34,090 - RHVT.MPMathCPUBackend - INFO - Initialized CPU backend with 50 digits precision
+2025-08-04 20:49:34,090 - RHVT - WARNING - Failed to initialize symbolic engine: name 'SYMPY_AVAILABLE' is not defined
+2025-08-04 20:49:34,091 - RHVT - INFO - Starting RHVT+ analysis
+2025-08-04 20:49:34,091 - RHVT - INFO - Computing first 10 non-trivial zeros
+2025-08-04 20:49:34,358 - RHVT - INFO - Computed 10 zeros in 0.27s (0.027s per zero)
+2025-08-04 20:49:36,036 - RHVT - ERROR - Analysis failed: 
+    Invalid value of type 'builtins.str' received for the 'template' property of layout
+        Received value: 'dark_background'
+
+    The 'template' property is an instance of Template
+    that may be specified as:
+      - An instance of :class:`plotly.graph_objs.layout.Template`
+      - A dict of string/value properties that will be passed
+        to the Template constructor
+      - The name of a registered template where current registered templates
+        are stored in the plotly.io.templates configuration object. The names
+        of all registered templates can be retrieved with:
+            >>> import plotly.io as pio
+            >>> list(pio.templates)  # doctest: +ELLIPSIS
+            ['ggplot2', 'seaborn', 'simple_white', 'plotly', 'plotly_white', ...]
+
+      - A string containing multiple registered template names, joined on '+'
+        characters (e.g. 'template1+template2'). In this case the resulting
+        template is computed by merging together the collection of registered
+        templates
+Traceback (most recent call last):
+  File "/workspaces/175210364/ReimannLab/ZeroProperties/ZeroProperties.py", line 1783, in run
+    self._generate_visualizations()
+  File "/workspaces/175210364/ReimannLab/ZeroProperties/ZeroProperties.py", line 1904, in _generate_visualizations
+    viz_method(
+  File "/workspaces/175210364/ReimannLab/ZeroProperties/ZeroProperties.py", line 997, in plot_interactive
+    fig.update_layout(
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/graph_objs/_figure.py", line 218, in update_layout
+    return super().update_layout(dict1, overwrite, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 1415, in update_layout
+    self.layout.update(dict1, overwrite=overwrite, **kwargs)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5195, in update
+    BaseFigure._perform_update(self, kwargs, overwrite=overwrite)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 3992, in _perform_update
+    plotly_obj[key] = val
+    ~~~~~~~~~~^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5967, in __setitem__
+    super(BaseLayoutHierarchyType, self).__setitem__(prop, value)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 4924, in __setitem__
+    self._set_compound_prop(prop, value)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5335, in _set_compound_prop
+    val = validator.validate_coerce(val, skip_invalid=self._skip_invalid)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 2709, in validate_coerce
+    return super(BaseTemplateValidator, self).validate_coerce(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 2434, in validate_coerce
+    self.raise_invalid_val(v)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 298, in raise_invalid_val
+    raise ValueError(
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'template' property of layout
+        Received value: 'dark_background'
+
+    The 'template' property is an instance of Template
+    that may be specified as:
+      - An instance of :class:`plotly.graph_objs.layout.Template`
+      - A dict of string/value properties that will be passed
+        to the Template constructor
+      - The name of a registered template where current registered templates
+        are stored in the plotly.io.templates configuration object. The names
+        of all registered templates can be retrieved with:
+            >>> import plotly.io as pio
+            >>> list(pio.templates)  # doctest: +ELLIPSIS
+            ['ggplot2', 'seaborn', 'simple_white', 'plotly', 'plotly_white', ...]
+
+      - A string containing multiple registered template names, joined on '+'
+        characters (e.g. 'template1+template2'). In this case the resulting
+        template is computed by merging together the collection of registered
+        templates
+2025-08-04 20:50:57,433 - RHVT.MPMathCPUBackend - INFO - Initialized CPU backend with 50 digits precision
+2025-08-04 20:50:57,433 - RHVT - WARNING - Failed to initialize symbolic engine: name 'SYMPY_AVAILABLE' is not defined
+2025-08-04 20:50:57,433 - RHVT - INFO - Starting RHVT+ analysis
+2025-08-04 20:50:57,433 - RHVT - INFO - Computing first 10 non-trivial zeros
+2025-08-04 20:50:57,693 - RHVT - INFO - Computed 10 zeros in 0.26s (0.026s per zero)
+2025-08-04 20:50:57,798 - RHVT - ERROR - Analysis failed: 
+    Invalid value of type 'builtins.str' received for the 'template' property of layout
+        Received value: 'dark_background'
+
+    The 'template' property is an instance of Template
+    that may be specified as:
+      - An instance of :class:`plotly.graph_objs.layout.Template`
+      - A dict of string/value properties that will be passed
+        to the Template constructor
+      - The name of a registered template where current registered templates
+        are stored in the plotly.io.templates configuration object. The names
+        of all registered templates can be retrieved with:
+            >>> import plotly.io as pio
+            >>> list(pio.templates)  # doctest: +ELLIPSIS
+            ['ggplot2', 'seaborn', 'simple_white', 'plotly', 'plotly_white', ...]
+
+      - A string containing multiple registered template names, joined on '+'
+        characters (e.g. 'template1+template2'). In this case the resulting
+        template is computed by merging together the collection of registered
+        templates
+Traceback (most recent call last):
+  File "/workspaces/175210364/ReimannLab/ZeroProperties/ZeroProperties.py", line 1783, in run
+    self._generate_visualizations()
+  File "/workspaces/175210364/ReimannLab/ZeroProperties/ZeroProperties.py", line 1904, in _generate_visualizations
+    viz_method(
+  File "/workspaces/175210364/ReimannLab/ZeroProperties/ZeroProperties.py", line 997, in plot_interactive
+    fig.update_layout(
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/graph_objs/_figure.py", line 218, in update_layout
+    return super().update_layout(dict1, overwrite, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 1415, in update_layout
+    self.layout.update(dict1, overwrite=overwrite, **kwargs)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5195, in update
+    BaseFigure._perform_update(self, kwargs, overwrite=overwrite)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 3992, in _perform_update
+    plotly_obj[key] = val
+    ~~~~~~~~~~^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5967, in __setitem__
+    super(BaseLayoutHierarchyType, self).__setitem__(prop, value)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 4924, in __setitem__
+    self._set_compound_prop(prop, value)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5335, in _set_compound_prop
+    val = validator.validate_coerce(val, skip_invalid=self._skip_invalid)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 2709, in validate_coerce
+    return super(BaseTemplateValidator, self).validate_coerce(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 2434, in validate_coerce
+    self.raise_invalid_val(v)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 298, in raise_invalid_val
+    raise ValueError(
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'template' property of layout
+        Received value: 'dark_background'
+
+    The 'template' property is an instance of Template
+    that may be specified as:
+      - An instance of :class:`plotly.graph_objs.layout.Template`
+      - A dict of string/value properties that will be passed
+        to the Template constructor
+      - The name of a registered template where current registered templates
+        are stored in the plotly.io.templates configuration object. The names
+        of all registered templates can be retrieved with:
+            >>> import plotly.io as pio
+            >>> list(pio.templates)  # doctest: +ELLIPSIS
+            ['ggplot2', 'seaborn', 'simple_white', 'plotly', 'plotly_white', ...]
+
+      - A string containing multiple registered template names, joined on '+'
+        characters (e.g. 'template1+template2'). In this case the resulting
+        template is computed by merging together the collection of registered
+        templates
+2025-08-14 11:56:35,955 - RHVT.MPMathCPUBackend - INFO - Initialized CPU backend with 50 digits precision
+2025-08-14 11:56:35,995 - RHVT - WARNING - Failed to initialize symbolic engine: name 'SYMPY_AVAILABLE' is not defined
+2025-08-14 11:56:35,995 - RHVT - INFO - Starting RHVT+ analysis
+2025-08-14 11:56:35,995 - RHVT - INFO - Computing first 10 non-trivial zeros
+2025-08-14 11:56:36,265 - RHVT - INFO - Computed 10 zeros in 0.27s (0.027s per zero)
+2025-08-14 11:56:37,144 - RHVT - ERROR - Analysis failed: 
+    Invalid value of type 'builtins.str' received for the 'template' property of layout
+        Received value: 'dark_background'
+
+    The 'template' property is an instance of Template
+    that may be specified as:
+      - An instance of :class:`plotly.graph_objs.layout.Template`
+      - A dict of string/value properties that will be passed
+        to the Template constructor
+      - The name of a registered template where current registered templates
+        are stored in the plotly.io.templates configuration object. The names
+        of all registered templates can be retrieved with:
+            >>> import plotly.io as pio
+            >>> list(pio.templates)  # doctest: +ELLIPSIS
+            ['ggplot2', 'seaborn', 'simple_white', 'plotly', 'plotly_white', ...]
+
+      - A string containing multiple registered template names, joined on '+'
+        characters (e.g. 'template1+template2'). In this case the resulting
+        template is computed by merging together the collection of registered
+        templates
+Traceback (most recent call last):
+  File "/workspaces/175210364/ProofX/ReimannX/ZeroProperties/ZeroProperties.py", line 1783, in run
+    self._generate_visualizations()
+  File "/workspaces/175210364/ProofX/ReimannX/ZeroProperties/ZeroProperties.py", line 1904, in _generate_visualizations
+    viz_method(
+  File "/workspaces/175210364/ProofX/ReimannX/ZeroProperties/ZeroProperties.py", line 997, in plot_interactive
+    fig.update_layout(
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/graph_objs/_figure.py", line 218, in update_layout
+    return super().update_layout(dict1, overwrite, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 1415, in update_layout
+    self.layout.update(dict1, overwrite=overwrite, **kwargs)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5195, in update
+    BaseFigure._perform_update(self, kwargs, overwrite=overwrite)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 3992, in _perform_update
+    plotly_obj[key] = val
+    ~~~~~~~~~~^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5967, in __setitem__
+    super(BaseLayoutHierarchyType, self).__setitem__(prop, value)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 4924, in __setitem__
+    self._set_compound_prop(prop, value)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/plotly/basedatatypes.py", line 5335, in _set_compound_prop
+    val = validator.validate_coerce(val, skip_invalid=self._skip_invalid)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 2709, in validate_coerce
+    return super(BaseTemplateValidator, self).validate_coerce(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 2434, in validate_coerce
+    self.raise_invalid_val(v)
+  File "/home/ubuntu/.local/lib/python3.12/site-packages/_plotly_utils/basevalidators.py", line 298, in raise_invalid_val
+    raise ValueError(
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'template' property of layout
+        Received value: 'dark_background'
+
+    The 'template' property is an instance of Template
+    that may be specified as:
+      - An instance of :class:`plotly.graph_objs.layout.Template`
+      - A dict of string/value properties that will be passed
+        to the Template constructor
+      - The name of a registered template where current registered templates
+        are stored in the plotly.io.templates configuration object. The names
+        of all registered templates can be retrieved with:
+            >>> import plotly.io as pio
+            >>> list(pio.templates)  # doctest: +ELLIPSIS
+            ['ggplot2', 'seaborn', 'simple_white', 'plotly', 'plotly_white', ...]
+
+      - A string containing multiple registered template names, joined on '+'
+        characters (e.g. 'template1+template2'). In this case the resulting
+        template is computed by merging together the collection of registered
+        templates
