@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CollatzX Engine | ProofX</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="brand" href="/index.html">
+        <span class="brand__mark">PX</span>
+        <span class="brand__text">ProofX</span>
+      </a>
+      <nav class="nav__links">
+        <a href="/index.html">Home</a>
+        <a href="/riemannx.html">RiemannX</a>
+        <a href="/goldbachx.html">GoldbachX</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section hero">
+      <div class="container hero__wrap">
+        <h1 class="hero__h1">CollatzX Engine</h1>
+        <p class="hero__sub">Operator-grade verification engine for Collatz sequences — convergence testing, cycle detection, and statistical analysis across billions of iterations.</p>
+        <div class="hero__actions btn-row">
+          <a class="btn btn--primary btn--pill" href="https://github.com/ProofX-core/CollatzX">Verify Sequences</a>
+        </div>
+      </div>
+    </section>
+
+  <!-- ================================ FINDINGS ============================ -->
+  <section id="findings-collatz" class="section" aria-labelledby="findings-title-collatz">
+    <div class="container card">
+      <h2 id="findings-title-collatz">Findings — CollatzX</h2>
+      <p class="muted">Representative outputs and diagnostics from CollatzX engine.</p>
+  
+      <div id="findings-grid-collatz" class="findings__grid" aria-label="Findings gallery">
+        <article class="finding finding-row">
+          <div class="finding-text">
+            <h3 class="h5">Finding 1</h3>
+            <p class="muted small">Most starting values collapse quickly, rare outliers stretch sequence lengths.</p>
+          </div>
+          <figure class="finding-visual">
+            <img src="assets/collatz1.png" alt="Collatz sequence visualization" loading="lazy" decoding="async"/>
+            <figcaption class="muted xsmall">Fig. 1 — Collatz sequence visualization.</figcaption>
+          </figure>
+        </article>
+        <article class="finding finding-row hidden">
+          <div class="finding-text">
+            <h3 class="h5">Finding 2</h3>
+            <p class="muted small">Distribution of step counts reveals rare long sequences.</p>
+          </div>
+          <figure class="finding-visual">
+            <img src="assets/collatz2.png" alt="Step counts visualization" loading="lazy" decoding="async"/>
+            <figcaption class="muted xsmall">Fig. 2 — Step counts distribution.</figcaption>
+          </figure>
+        </article>
+        <!-- Add more CollatzX findings as needed -->
+      </div>
+  
+      <div class="btn-row" role="group" aria-label="Findings controls">
+        <button id="findings-show-more-collatz" class="btn btn--white btn--pill" aria-controls="findings-grid-collatz" aria-expanded="false">Show more</button>
+        <button id="findings-show-less-collatz" class="btn btn--blue btn--pill hidden" aria-controls="findings-grid-collatz" aria-expanded="false">Show less</button>
+      </div>
+      <div id="findings-live-collatz" class="sr-only" aria-live="polite"></div>
+    </div>
+  </section>
+  
+  <style>
+  #findings-collatz .findings__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  #findings-collatz .finding-row {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-3, #fafafa);
+    border-radius: 1rem;
+    padding: 1rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #findings-collatz .finding-row:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #findings-collatz .finding-text { margin-bottom: 0.5rem; }
+  #findings-collatz .finding-visual { width: 100%; aspect-ratio: 16/9; overflow: hidden; border-radius: 0.75rem; }
+  #findings-collatz .finding-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #findings-collatz figcaption { margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8; }
+  #findings-collatz .btn-row { margin-top: 1rem; display: flex; gap: 0.75rem; }
+  #findings-collatz .btn:hover,#findings-collatz .btn:focus-visible{filter: brightness(1.1);transform: translateY(-1px);transition: all 0.2s ease;}
+  </style>
+  
+  <script>
+  (function(){
+    const items = Array.from(document.querySelectorAll('#findings-grid-collatz .finding'));
+    const btnMore = document.getElementById('findings-show-more-collatz');
+    const btnLess = document.getElementById('findings-show-less-collatz');
+    const live = document.getElementById('findings-live-collatz');
+    const INITIAL_VISIBLE = 1;
+    const STEP = 1;
+  
+    items.forEach((el,i)=>el.classList.toggle('hidden',i>=INITIAL_VISIBLE));
+  
+    const getVisibleItems = ()=>items.filter(i=>!i.classList.contains('hidden'));
+  
+    function updateUI(){
+      const visibleCount=getVisibleItems().length;
+      btnMore.classList.toggle('hidden',visibleCount>=items.length);
+      btnLess.classList.toggle('hidden',visibleCount<=INITIAL_VISIBLE);
+      live.textContent=`Showing ${visibleCount} ${visibleCount===1?'finding':'findings'} in the gallery.`;
+    }
+  
+    btnMore.addEventListener('click',()=>{
+      const hiddenItems=items.filter(i=>i.classList.contains('hidden'));
+      hiddenItems.slice(0,STEP).forEach(item=>item.classList.remove('hidden'));
+      updateUI();
+      if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        hiddenItems[0]?.scrollIntoView({behavior:'smooth',block:'nearest'});
+      }
+    });
+  
+    btnLess.addEventListener('click',()=>{
+      const visibles=getVisibleItems();
+      const toHide=visibles.slice(-STEP).filter((_,idx)=>visibles.length-idx-1>=INITIAL_VISIBLE);
+      toHide.forEach(item=>item.classList.add('hidden'));
+      updateUI();
+      const focusTarget=getVisibleItems().slice(-1)[0];
+      if(focusTarget && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        focusTarget.scrollIntoView({behavior:'smooth',block:'nearest'});
+      }
+    });
+  
+    updateUI();
+  })();
+  </script>
+
+
+    <!-- ================================ CAPABILITIES ============================= -->
+    <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+      <div class="container card">
+        <h2 id="capabilities-title">Core Engine Capabilities</h2>
+
+        <!-- Verification Tests Card -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
+          <h3>Verification Tests</h3>
+          <p>Ensures sequences behave as expected and identifies anomalies.</p>
+          <ul class="bullets bullets--tight">
+            <li>Convergence to 1</li>
+            <li>Cycle detection (up to 2^64)</li>
+            <li>Stopping time distribution</li>
+            <li>Parity pattern recognition</li>
+            <li>Statistical convergence proofs</li>
+          </ul>
+        </div>
+
+        <!-- Performance Metrics Card -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
+          <h3>Performance Metrics</h3>
+          <p>Optimized for speed, memory efficiency, and scalability.</p>
+          <ul class="bullets bullets--tight">
+            <li>100M+ numbers verified per second</li>
+            <li>Maximum tested: 2^64+</li>
+            <li>Sequence length analysis</li>
+            <li>Memory-efficient trajectory storage</li>
+            <li>Distributed verification</li>
+          </ul>
+        </div>
+
+        <!-- Research Applications Card -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
+          <h3>Research Applications</h3>
+          <p>Enables exploration of Collatz sequences and number theory research.</p>
+          <ul class="bullets bullets--tight">
+            <li>Stopping time prediction models</li>
+            <li>Sequence pattern classification</li>
+            <li>Generalized Collatz analysis</li>
+            <li>Educational visualization tools</li>
+            <li>Computational number theory studies</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© 2025 ProofX</span>
+      <nav class="footer__links">
+        <a href="/index.html">Home</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
