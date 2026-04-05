@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoldbachX Engine | ProofX</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="brand" href="/index.html">
+        <span class="brand__mark">PX</span>
+        <span class="brand__text">ProofX</span>
+      </a>
+      <nav class="nav__links">
+        <a href="/index.html">Home</a>
+        <a href="/collatzx.html">CollatzX</a>
+        <a href="/riemannx.html">RiemannX</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section hero">
+      <div class="container hero__wrap">
+        <h1 class="hero__h1">GoldbachX Engine</h1>
+        <p class="hero__sub">Operator-grade verification engine for Goldbach’s Conjecture — even-number decomposition, prime-sum analysis, and counterexample searching across extremely large ranges.</p>
+        <div class="hero__actions btn-row">
+          <a class="btn btn--primary btn--pill" href="https://github.com/ProofX-core/GoldbachX">Test Decompositions</a>
+        </div>
+      </div>
+    </section>
+    
+  <script>
+  (function(){
+    const items = Array.from(document.querySelectorAll('#findings-grid-riemann .finding'));
+    const btnMore = document.getElementById('findings-show-more-riemann');
+    const btnLess = document.getElementById('findings-show-less-riemann');
+    const live = document.getElementById('findings-live-riemann');
+    const INITIAL_VISIBLE = 1;
+    const STEP = 1;
+    items.forEach((el,i)=>el.classList.toggle('hidden',i>=INITIAL_VISIBLE));
+    const getVisibleItems = ()=>items.filter(i=>!i.classList.contains('hidden'));
+    function updateUI(){
+      const visibleCount=getVisibleItems().length;
+      btnMore.classList.toggle('hidden',visibleCount>=items.length);
+      btnLess.classList.toggle('hidden',visibleCount<=INITIAL_VISIBLE);
+      live.textContent=`Showing ${visibleCount} ${visibleCount===1?'finding':'findings'} in the gallery.`;
+    }
+    btnMore.addEventListener('click',()=>{items.filter(i=>i.classList.contains('hidden')).slice(0,STEP).forEach(i=>i.classList.remove('hidden'));updateUI();items.find(i=>!i.classList.contains('hidden'))?.scrollIntoView({behavior:'smooth',block:'nearest'});});
+    btnLess.addEventListener('click',()=>{const visibles=getVisibleItems();visibles.slice(-STEP).filter((_,idx)=>visibles.length-idx-1>=INITIAL_VISIBLE).forEach(i=>i.classList.add('hidden'));updateUI();getVisibleItems().slice(-1)[0]?.scrollIntoView({behavior:'smooth',block:'nearest'});});
+    updateUI();
+  })();
+  </script>
+
+
+    <!-- ================================ CAPABILITIES ============================= -->
+    <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+      <div class="container card">
+        <h2 id="capabilities-title">Core Engine Capabilities</h2>
+
+        <!-- Verification Tests Card -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
+          <h3>Verification Tests</h3>
+          <p>Tests even numbers for prime decomposition and identifies patterns across large ranges.</p>
+          <ul class="bullets bullets--tight">
+            <li>Even number prime decomposition</li>
+            <li>Verification of known bounds</li>
+            <li>Pattern analysis for prime sums</li>
+            <li>Distribution uniformity checks</li>
+            <li>Algorithmic counterexample search</li>
+          </ul>
+        </div>
+
+        <!-- Performance Metrics Card -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
+          <h3>Performance Metrics</h3>
+          <p>Optimized for high-speed, memory-efficient, and distributed computation.</p>
+          <ul class="bullets bullets--tight">
+            <li>200M+ numbers analyzed per second</li>
+            <li>Maximum tested range: 10^18+</li>
+            <li>Memory-efficient prime storage</li>
+            <li>Parallel decomposition computation</li>
+            <li>Distributed verification architecture</li>
+          </ul>
+        </div>
+
+        <!-- Research Applications Card -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
+          <h3>Research Applications</h3>
+          <p>Supports exploration of prime sums, gaps, and conjecture variants.</p>
+          <ul class="bullets bullets--tight">
+            <li>Prime sum frequency analysis</li>
+            <li>Gap and density studies</li>
+            <li>Conjecture variant exploration</li>
+            <li>Educational number theory visualizations</li>
+            <li>Cross-conjecture correlation studies</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© 2025 ProofX</span>
+      <nav class="footer__links">
+        <a href="/index.html">Home</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
