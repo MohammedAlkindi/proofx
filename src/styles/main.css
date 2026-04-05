@@ -213,11 +213,10 @@ a:hover { color: var(--accent-2); }
 
 .brand { display: flex; align-items: center; gap: var(--space-sm); color: var(--fg-1); font-weight: var(--fw-bold); font-size: 1.25rem; }
 .brand__mark {
-  display: grid; place-items: center;
+  display: block;
   width: 36px; height: 36px; border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-  color: #001018; font-weight: var(--fw-bold);
-  box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 8px 20px var(--accent-glow);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 /* Mobile toggle */
