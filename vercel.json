@@ -2,16 +2,35 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/((?!public/).*)", "destination": "/public/$1" }
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
+    {
+      "source": "/auth/error",
+      "destination": "/public/auth-error.html"
+    },
+    {
+      "source": "/((?!public/).*)",
+      "destination": "/public/$1"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ]

@@ -18,7 +18,7 @@ ProofX/
 
 - `public/`: deploy-ready pages, assets, PDF, and sitemap.
 - `src/`: source styles/scripts/components/content.
-- `docs/`: architecture, content strategy, and deployment notes.
+- `docs/`: consolidated markdown documentation (all `.md` files except this root `README.md`).
 - `scripts/`: helper scripts for build, link validation, and cleanup.
 
 ## Local Checks
