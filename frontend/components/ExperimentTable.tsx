@@ -1,5 +1,4 @@
-import { useState } from "react";
-import clsx from "clsx";
+import { useState, CSSProperties } from "react";
 import Link from "next/link";
 
 export interface ExperimentSummary {
@@ -15,12 +14,12 @@ export interface ExperimentSummary {
 
 type SortKey = keyof Pick<ExperimentSummary, "timestamp" | "domain" | "duration_ms" | "proved">;
 
-function formatDuration(ms: number): string {
+function fmtDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function formatTimestamp(iso: string): string {
+function fmtTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString(undefined, {
       month: "short",
@@ -32,6 +31,61 @@ function formatTimestamp(iso: string): string {
     return iso;
   }
 }
+
+function StatusBadge({ proved, isValid }: { proved: boolean; isValid: boolean }) {
+  const label  = proved ? "proved" : isValid ? "sorry" : "error";
+  const colors: Record<string, CSSProperties> = {
+    proved: { background: "rgba(16,185,129,0.1)",  color: "var(--success)", border: "1px solid rgba(16,185,129,0.2)" },
+    sorry:  { background: "rgba(245,158,11,0.1)",  color: "var(--warning)", border: "1px solid rgba(245,158,11,0.2)" },
+    error:  { background: "rgba(239,68,68,0.1)",   color: "var(--danger)",  border: "1px solid rgba(239,68,68,0.2)" },
+  };
+  return (
+    <span
+      style={{
+        ...colors[label],
+        fontFamily: "JetBrains Mono, monospace",
+        fontSize: 10,
+        fontWeight: 600,
+        padding: "2px 7px",
+        borderRadius: 4,
+        letterSpacing: "0.05em",
+        textTransform: "uppercase",
+        display: "inline-block",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function SortArrow({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
+  if (!active) return <span style={{ color: "var(--t-tertiary)", marginLeft: 4, opacity: 0.4 }}>↕</span>;
+  return (
+    <span style={{ color: "var(--accent)", marginLeft: 4 }}>
+      {dir === "asc" ? "↑" : "↓"}
+    </span>
+  );
+}
+
+const thStyle: CSSProperties = {
+  padding: "8px 12px",
+  textAlign: "left",
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: "0.07em",
+  textTransform: "uppercase",
+  color: "var(--t-tertiary)",
+  whiteSpace: "nowrap",
+  userSelect: "none",
+  cursor: "pointer",
+  borderBottom: "1px solid var(--border-s)",
+  background: "var(--bg-input)",
+};
+
+const thStaticStyle: CSSProperties = {
+  ...thStyle,
+  cursor: "default",
+};
 
 export default function ExperimentTable({
   experiments,
@@ -45,12 +99,8 @@ export default function ExperimentTable({
   const [filter, setFilter] = useState("");
 
   const handleSort = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
+    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("desc"); }
   };
 
   const sorted = [...experiments]
@@ -60,116 +110,201 @@ export default function ExperimentTable({
       return e.domain.toLowerCase().includes(q) || e.conjecture.toLowerCase().includes(q);
     })
     .sort((a, b) => {
-      const mul = sortDir === "asc" ? 1 : -1;
-      if (sortKey === "timestamp") return mul * a.timestamp.localeCompare(b.timestamp);
-      if (sortKey === "domain") return mul * a.domain.localeCompare(b.domain);
-      if (sortKey === "duration_ms") return mul * (a.duration_ms - b.duration_ms);
-      if (sortKey === "proved") return mul * (Number(a.proved) - Number(b.proved));
+      const m = sortDir === "asc" ? 1 : -1;
+      if (sortKey === "timestamp")   return m * a.timestamp.localeCompare(b.timestamp);
+      if (sortKey === "domain")      return m * a.domain.localeCompare(b.domain);
+      if (sortKey === "duration_ms") return m * (a.duration_ms - b.duration_ms);
+      if (sortKey === "proved")      return m * (Number(a.proved) - Number(b.proved));
       return 0;
     });
 
-  const SortTh = ({ label, k }: { label: string; k: SortKey }) => (
-    <th
-      className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide cursor-pointer select-none hover:text-brand-500 whitespace-nowrap"
-      onClick={() => handleSort(k)}
-    >
-      {label}
-      {sortKey === k && (
-        <span className="ml-1 text-brand-500">{sortDir === "asc" ? "↑" : "↓"}</span>
-      )}
-    </th>
-  );
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-          Experiments
-          <span className="ml-2 text-sm font-normal text-slate-400 dark:text-slate-500">
-            ({experiments.length})
+    <div>
+      {/* Header row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: "var(--t-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Experiments
           </span>
-        </h2>
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--t-tertiary)",
+              fontFamily: "JetBrains Mono, monospace",
+            }}
+          >
+            {experiments.length}
+          </span>
+        </div>
         <input
           type="search"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter by domain or conjecture…"
-          className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 w-72"
+          placeholder="Filter…"
+          style={{
+            padding: "5px 10px",
+            fontSize: 12,
+            borderRadius: 6,
+            border: "1px solid var(--border-s)",
+            background: "var(--bg-input)",
+            color: "var(--t-primary)",
+            outline: "none",
+            width: 200,
+            transition: "border-color 150ms",
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+          onBlur={(e)  => (e.currentTarget.style.borderColor = "var(--border-s)")}
         />
       </div>
 
+      {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: "2px solid var(--accent)",
+              borderTopColor: "transparent",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : sorted.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-          {filter ? "No experiments match your filter." : "No experiments yet. Run the pipeline above."}
+        <div
+          style={{
+            textAlign: "center",
+            padding: "64px 0",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 13, color: "var(--t-tertiary)" }}>
+            {filter ? "No experiments match your filter." : "No experiments yet."}
+          </span>
+          {!filter && (
+            <span style={{ fontSize: 12, color: "var(--border-a)" }}>
+              Run your first pipeline above.
+            </span>
+          )}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div
+          style={{
+            border: "1px solid var(--border-s)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
               <tr>
-                <SortTh label="Time" k="timestamp" />
-                <SortTh label="Domain" k="domain" />
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                  Conjecture
+                <th style={thStyle} onClick={() => handleSort("timestamp")}>
+                  Time <SortArrow active={sortKey === "timestamp"} dir={sortDir} />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                  Lean
+                <th style={thStyle} onClick={() => handleSort("domain")}>
+                  Domain <SortArrow active={sortKey === "domain"} dir={sortDir} />
                 </th>
-                <SortTh label="Proved" k="proved" />
-                <SortTh label="Duration" k="duration_ms" />
-                <th className="px-4 py-3" />
+                <th style={thStaticStyle}>Conjecture</th>
+                <th style={thStyle} onClick={() => handleSort("proved")}>
+                  Status <SortArrow active={sortKey === "proved"} dir={sortDir} />
+                </th>
+                <th style={thStyle} onClick={() => handleSort("duration_ms")}>
+                  Duration <SortArrow active={sortKey === "duration_ms"} dir={sortDir} />
+                </th>
+                <th style={{ ...thStaticStyle, width: 60 }} />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {sorted.map((exp) => (
+            <tbody>
+              {sorted.map((exp, rowIdx) => (
                 <tr
                   key={exp.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  style={{
+                    borderTop: rowIdx === 0 ? "none" : "1px solid var(--border-s)",
+                    transition: "background 100ms",
+                  }}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background = "var(--bg-input)")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background = "transparent")
+                  }
                 >
-                  <td className="px-4 py-3 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    {formatTimestamp(exp.timestamp)}
+                  <td
+                    style={{
+                      padding: "9px 12px",
+                      fontFamily: "JetBrains Mono, monospace",
+                      fontSize: 11,
+                      color: "var(--t-tertiary)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {fmtTime(exp.timestamp)}
                   </td>
-                  <td className="px-4 py-3 text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  <td
+                    style={{
+                      padding: "9px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "var(--t-primary)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {exp.domain}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate">
+                  <td
+                    style={{
+                      padding: "9px 12px",
+                      fontSize: 12,
+                      color: "var(--t-secondary)",
+                      maxWidth: 260,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {exp.conjecture}
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={clsx(
-                        "px-1.5 py-0.5 rounded text-xs font-mono",
-                        exp.is_valid
-                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300"
-                          : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300"
-                      )}
-                    >
-                      {exp.is_valid ? "✓" : "✗"}
-                    </span>
+                  <td style={{ padding: "9px 12px" }}>
+                    <StatusBadge proved={exp.proved} isValid={exp.is_valid} />
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={clsx(
-                        "px-1.5 py-0.5 rounded text-xs font-mono",
-                        exp.proved
-                          ? "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300"
-                          : "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300"
-                      )}
-                    >
-                      {exp.proved ? "proved" : "open"}
-                    </span>
+                  <td
+                    style={{
+                      padding: "9px 12px",
+                      fontFamily: "JetBrains Mono, monospace",
+                      fontSize: 11,
+                      color: "var(--t-tertiary)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {fmtDuration(exp.duration_ms)}
                   </td>
-                  <td className="px-4 py-3 text-xs font-mono text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                    {formatDuration(exp.duration_ms)}
-                  </td>
-                  <td className="px-4 py-3">
+                  <td style={{ padding: "9px 12px" }}>
                     <Link
                       href={`/experiments/${exp.id}`}
-                      className="text-xs text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 font-medium"
+                      style={{
+                        fontSize: 11,
+                        color: "var(--accent)",
+                        textDecoration: "none",
+                        fontWeight: 500,
+                      }}
                     >
                       View →
                     </Link>

@@ -1,11 +1,10 @@
-import { useState } from "react";
-import clsx from "clsx";
+import React, { useState } from "react";
+import Link from "next/link";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+/* ─── Types ─────────────────────────────────────────────────────────────── */
+export type Stage = "idle" | "generating" | "formalizing" | "verifying" | "done" | "error";
 
-type Stage = "idle" | "generating" | "formalizing" | "verifying" | "done" | "error";
-
-interface PipelineResult {
+export interface PipelineResult {
   experiment_id: string;
   conjecture: string;
   is_valid: boolean;
@@ -15,239 +14,526 @@ interface PipelineResult {
   snapshot_error?: string;
 }
 
-interface PipelineResponse {
+export interface PipelineResponse {
   domain: string;
   total_duration_ms: number;
   results: PipelineResult[];
 }
 
-const SUGGESTED_DOMAINS = [
-  "number theory",
-  "graph theory",
-  "algebraic topology",
-  "combinatorics",
-  "analytic number theory",
-  "group theory",
-  "Ramsey theory",
-  "additive combinatorics",
-  "knot theory",
-  "elliptic curves",
-];
+/* ─── Stepped pipeline indicator ────────────────────────────────────────── */
+const STEPS = [
+  { key: "generating",  label: "generate"  },
+  { key: "formalizing", label: "formalize" },
+  { key: "verifying",   label: "verify"    },
+  { key: "done",        label: "complete"  },
+] as const;
 
-const STAGE_LABELS: Record<Stage, string> = {
-  idle: "Ready",
-  generating: "Generating conjectures…",
-  formalizing: "Formalizing in Lean 4…",
-  verifying: "Attempting proofs…",
-  done: "Pipeline complete",
-  error: "Pipeline failed",
+const STAGE_IDX: Record<Stage, number> = {
+  idle: -1, generating: 0, formalizing: 1, verifying: 2, done: 3, error: -1,
 };
 
-function StageBar({ stage }: { stage: Stage }) {
-  const stages: Stage[] = ["generating", "formalizing", "verifying", "done"];
-  const activeIdx = stages.indexOf(stage);
+function PipelineSteps({ stage }: { stage: Stage }) {
+  const activeIdx = STAGE_IDX[stage];
 
   return (
-    <div className="flex items-center gap-2 my-4">
-      {stages.map((s, i) => (
-        <div key={s} className="flex items-center gap-2">
-          <div
-            className={clsx(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-              i < activeIdx && "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300",
-              i === activeIdx && "bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 animate-pulse",
-              i > activeIdx && "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        padding: "20px 0 4px",
+        gap: 0,
+      }}
+    >
+      {STEPS.map((step, i) => {
+        const isDone    = stage === "done" || (activeIdx > i && activeIdx !== -1);
+        const isActive  = activeIdx === i && stage !== "done";
+        const isPending = !isDone && !isActive;
+
+        return (
+          <React.Fragment key={step.key}>
+            <div
+              className="anim-step-in"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                animationDelay: `${i * 80}ms`,
+              }}
+            >
+              {/* Circle */}
+              <div
+                className={isActive ? "anim-pipeline-pulse" : undefined}
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: isDone
+                    ? "var(--success)"
+                    : isActive
+                    ? "var(--accent)"
+                    : "transparent",
+                  border: isPending ? "1.5px solid var(--border-a)" : "none",
+                  transition: "background 300ms, border-color 300ms",
+                }}
+              >
+                {isDone && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path
+                      d="M2 5l2.5 2.5L8 3"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+                {isActive && (
+                  <div
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "#fff",
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Label */}
+              <span
+                style={{
+                  fontFamily: "JetBrains Mono, Fira Code, monospace",
+                  fontSize: 10,
+                  marginTop: 6,
+                  color: isDone
+                    ? "var(--success)"
+                    : isActive
+                    ? "var(--accent)"
+                    : "var(--t-tertiary)",
+                  transition: "color 300ms",
+                }}
+              >
+                {step.label}
+              </span>
+            </div>
+
+            {/* Connector */}
+            {i < STEPS.length - 1 && (
+              <div
+                style={{
+                  height: 1.5,
+                  flex: 1,
+                  marginTop: 9,
+                  minWidth: 20,
+                  maxWidth: 80,
+                  background: isDone ? "var(--success)" : "var(--border-s)",
+                  transition: "background 400ms ease",
+                }}
+              />
             )}
-          >
-            {i < activeIdx && <span>✓</span>}
-            {i === activeIdx && <span className="w-2 h-2 rounded-full bg-brand-500 inline-block animate-ping" />}
-            {STAGE_LABELS[s]}
-          </div>
-          {i < stages.length - 1 && (
-            <div className={clsx("h-px w-6", i < activeIdx ? "bg-green-400" : "bg-slate-200 dark:bg-slate-700")} />
-          )}
-        </div>
-      ))}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }
 
-function ResultCard({ result }: { result: PipelineResult }) {
-  const [expanded, setExpanded] = useState(false);
+/* ─── Lean 4 syntax highlighting ─────────────────────────────────────────── */
+const LEAN_KW = new Set([
+  "theorem", "lemma", "def", "by", "have", "exact", "omega", "simp", "rw",
+  "intro", "apply", "cases", "induction", "where", "fun", "import", "open",
+  "namespace", "end", "noncomputable", "variable", "instance", "class",
+  "structure", "sorry", "return", "if", "then", "else", "match", "with",
+  "let", "in", "do", "example", "calc", "show", "from", "tauto", "ring",
+  "linarith", "norm_num", "decide", "constructor", "use", "obtain", "refine",
+]);
 
-  return (
-    <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-2">
-      <div className="flex items-start justify-between gap-4">
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-200 flex-1">
-          {result.conjecture}
-        </p>
-        <div className="flex gap-2 shrink-0">
-          <span
-            className={clsx(
-              "px-2 py-0.5 rounded text-xs font-mono",
-              result.is_valid
-                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
-                : "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300"
-            )}
-          >
-            {result.is_valid ? "Lean ✓" : "Lean ✗"}
-          </span>
-          <span
-            className={clsx(
-              "px-2 py-0.5 rounded text-xs font-mono",
-              result.proved
-                ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300"
-                : "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300"
-            )}
-          >
-            {result.proved ? "Proved ✓" : "Unproved"}
-          </span>
-        </div>
-      </div>
-      <div className="text-xs text-slate-400 dark:text-slate-500 font-mono">
-        {result.duration_ms}ms
-        {result.git_sha && (
-          <span className="ml-3">
-            sha: <span className="text-brand-500">{result.git_sha.slice(0, 8)}</span>
-          </span>
-        )}
-      </div>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="text-xs text-brand-500 hover:text-brand-600 dark:hover:text-brand-400"
-      >
-        {expanded ? "▲ Hide ID" : "▼ Show experiment ID"}
-      </button>
-      {expanded && (
-        <p className="font-mono text-xs text-slate-500 dark:text-slate-400 break-all">
-          {result.experiment_id}
-        </p>
-      )}
-    </div>
-  );
+function HighlightLine({ line }: { line: string }) {
+  const commentIdx = line.indexOf("--");
+
+  const renderTokens = (text: string) =>
+    text.split(/(\b[A-Za-z_]\w*\b)/).map((tok, i) =>
+      LEAN_KW.has(tok) ? (
+        <span key={i} style={{ color: "var(--accent)" }}>{tok}</span>
+      ) : (
+        <span key={i}>{tok}</span>
+      )
+    );
+
+  if (commentIdx === 0) {
+    return <span style={{ color: "#555" }}>{line}</span>;
+  }
+  if (commentIdx > 0) {
+    return (
+      <>
+        {renderTokens(line.slice(0, commentIdx))}
+        <span style={{ color: "#555" }}>{line.slice(commentIdx)}</span>
+      </>
+    );
+  }
+  return <>{renderTokens(line)}</>;
 }
 
-export default function Pipeline({ onRunComplete }: { onRunComplete?: () => void }) {
-  const [domain, setDomain] = useState("");
-  const [n, setN] = useState(1);
-  const [stage, setStage] = useState<Stage>("idle");
-  const [response, setResponse] = useState<PipelineResponse | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
+function CodeBlock({
+  code,
+  badge,
+}: {
+  code: string;
+  badge: "proved" | "sorry" | "error" | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const lines = code.split("\n");
 
-  const handleRun = async () => {
-    if (!domain.trim()) return;
-    setStage("generating");
-    setResponse(null);
-    setErrorMsg("");
-
-    try {
-      setStage("generating");
-      await new Promise((r) => setTimeout(r, 200));
-      setStage("formalizing");
-      await new Promise((r) => setTimeout(r, 200));
-      setStage("verifying");
-
-      const res = await fetch(`${API}/api/v1/pipeline`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domain.trim(), n }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(err.detail ?? res.statusText);
-      }
-
-      const data: PipelineResponse = await res.json();
-      setResponse(data);
-      setStage("done");
-      onRunComplete?.();
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : String(err));
-      setStage("error");
-    }
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const running = stage === "generating" || stage === "formalizing" || stage === "verifying";
+  const badgeStyle = (): React.CSSProperties => {
+    if (badge === "proved")
+      return {
+        background: "rgba(16,185,129,0.12)",
+        color: "var(--success)",
+        border: "1px solid rgba(16,185,129,0.25)",
+      };
+    if (badge === "sorry")
+      return {
+        background: "rgba(245,158,11,0.12)",
+        color: "var(--warning)",
+        border: "1px solid rgba(245,158,11,0.25)",
+      };
+    if (badge === "error")
+      return {
+        background: "rgba(239,68,68,0.12)",
+        color: "var(--danger)",
+        border: "1px solid rgba(239,68,68,0.25)",
+      };
+    return {};
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
-            Mathematical domain
-          </label>
-          <input
-            type="text"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            placeholder="e.g. number theory"
-            disabled={running}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
-          />
-          <div className="flex flex-wrap gap-2 mt-2">
-            {SUGGESTED_DOMAINS.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDomain(d)}
-                disabled={running}
-                className="px-2.5 py-1 text-xs rounded-full border border-slate-300 dark:border-slate-600 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors disabled:opacity-40"
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Conjectures:</label>
-          {[1, 2, 3].map((v) => (
-            <button
-              key={v}
-              onClick={() => setN(v)}
-              disabled={running}
-              className={clsx(
-                "w-8 h-8 rounded-full text-sm font-mono font-bold transition-colors disabled:opacity-40",
-                n === v
-                  ? "bg-brand-500 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-              )}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-
+    <div
+      style={{
+        background: "#0d0d0d",
+        border: "1px solid #222",
+        borderRadius: 8,
+        overflow: "hidden",
+      }}
+    >
+      {/* Toolbar */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "7px 12px",
+          borderBottom: "1px solid #1a1a1a",
+        }}
+      >
+        {badge ? (
+          <span
+            style={{
+              ...badgeStyle(),
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              padding: "2px 8px",
+              borderRadius: 4,
+              textTransform: "uppercase",
+            }}
+          >
+            {badge}
+          </span>
+        ) : (
+          <span style={{ fontSize: 10, color: "#444", fontFamily: "monospace" }}>
+            lean 4
+          </span>
+        )}
         <button
-          onClick={handleRun}
-          disabled={running || !domain.trim()}
-          className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={handleCopy}
+          style={{
+            fontSize: 11,
+            color: copied ? "var(--success)" : "#555",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "JetBrains Mono, monospace",
+            transition: "color 150ms",
+          }}
         >
-          {running ? "Running…" : "Run Pipeline"}
+          {copied ? "copied" : "copy"}
         </button>
       </div>
 
-      {stage !== "idle" && <StageBar stage={stage} />}
+      {/* Code */}
+      <pre
+        style={{
+          margin: 0,
+          padding: "12px 0",
+          fontSize: 12,
+          lineHeight: 1.65,
+          fontFamily: "JetBrains Mono, Fira Code, monospace",
+          color: "#d4d4d4",
+          overflowX: "auto",
+        }}
+      >
+        {lines.map((line, idx) => (
+          <div key={idx} style={{ display: "flex" }}>
+            <span
+              style={{
+                color: "#333",
+                userSelect: "none",
+                minWidth: 40,
+                paddingRight: 16,
+                paddingLeft: 12,
+                textAlign: "right",
+                fontSize: 11,
+              }}
+            >
+              {idx + 1}
+            </span>
+            <span style={{ paddingRight: 16, flex: 1 }}>
+              <HighlightLine line={line} />
+            </span>
+          </div>
+        ))}
+      </pre>
+    </div>
+  );
+}
 
-      {stage === "error" && (
-        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+/* ─── Result card ────────────────────────────────────────────────────────── */
+function ResultCard({ result }: { result: PipelineResult }) {
+  const badge: "proved" | "sorry" | "error" = result.proved
+    ? "proved"
+    : result.is_valid
+    ? "sorry"
+    : "error";
+
+  const badgeColors = {
+    proved: { bg: "rgba(16,185,129,0.1)", color: "var(--success)", border: "rgba(16,185,129,0.2)" },
+    sorry:  { bg: "rgba(245,158,11,0.1)",  color: "var(--warning)", border: "rgba(245,158,11,0.2)" },
+    error:  { bg: "rgba(239,68,68,0.1)",   color: "var(--danger)",  border: "rgba(239,68,68,0.2)" },
+  }[badge];
+
+  return (
+    <div
+      className="anim-slide-up"
+      style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-s)",
+        borderRadius: 8,
+        overflow: "hidden",
+      }}
+    >
+      {/* Content row */}
+      <div
+        style={{
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 12,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--t-primary)",
+              lineHeight: 1.55,
+              margin: 0,
+            }}
+          >
+            {result.conjecture}
+          </p>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginTop: 7,
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "JetBrains Mono, monospace",
+                fontSize: 10,
+                color: "var(--t-tertiary)",
+              }}
+            >
+              {result.duration_ms.toLocaleString()}ms
+            </span>
+            {result.git_sha && (
+              <span
+                style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: 10,
+                  color: "var(--t-tertiary)",
+                }}
+              >
+                sha:{" "}
+                <span style={{ color: "var(--accent)" }}>
+                  {result.git_sha.slice(0, 8)}
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Badges */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            alignItems: "flex-end",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              background: badgeColors.bg,
+              color: badgeColors.color,
+              border: `1px solid ${badgeColors.border}`,
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 10,
+              fontWeight: 600,
+              padding: "2px 8px",
+              borderRadius: 4,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            {badge}
+          </span>
+          <span
+            style={{
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: 10,
+              color: result.is_valid ? "var(--success)" : "var(--danger)",
+            }}
+          >
+            lean {result.is_valid ? "✓" : "✗"}
+          </span>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          padding: "7px 16px",
+          borderTop: "1px solid var(--border-s)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "var(--bg-input)",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "JetBrains Mono, monospace",
+            fontSize: 10,
+            color: "var(--t-tertiary)",
+          }}
+        >
+          {result.experiment_id.slice(0, 16)}…
+        </span>
+        <Link
+          href={`/experiments/${result.experiment_id}`}
+          style={{
+            fontSize: 11,
+            color: "var(--accent)",
+            textDecoration: "none",
+            fontWeight: 500,
+          }}
+        >
+          View detail →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Pipeline display component ───────────────────────────────────── */
+interface PipelineProps {
+  stage: Stage;
+  response: PipelineResponse | null;
+  errorMsg: string;
+}
+
+export default function Pipeline({ stage, response, errorMsg }: PipelineProps) {
+  if (stage === "idle") return null;
+
+  return (
+    <div>
+      <PipelineSteps stage={stage} />
+
+      {/* Error */}
+      {stage === "error" && errorMsg && (
+        <div
+          className="anim-error-in"
+          style={{
+            marginTop: 16,
+            padding: "12px 16px",
+            borderRadius: 8,
+            background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.2)",
+            color: "var(--danger)",
+            fontSize: 13,
+          }}
+        >
           {errorMsg}
         </div>
       )}
 
+      {/* Results */}
       {response && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-700 dark:text-slate-300">Results</h3>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">
-              total: {response.total_duration_ms}ms
+        <div style={{ marginTop: 24 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 12,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "var(--t-tertiary)",
+              }}
+            >
+              Results — {response.domain}
+            </span>
+            <span
+              style={{
+                fontFamily: "JetBrains Mono, monospace",
+                fontSize: 10,
+                color: "var(--t-tertiary)",
+              }}
+            >
+              {response.total_duration_ms.toLocaleString()}ms total
             </span>
           </div>
-          {response.results.map((r) => (
-            <ResultCard key={r.experiment_id} result={r} />
-          ))}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {response.results.map((r) => (
+              <ResultCard key={r.experiment_id} result={r} />
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+/* Re-export CodeBlock for use in detail page */
+export { CodeBlock };
