@@ -7,11 +7,14 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 
-class GenerateRequest(BaseModel):
-    """Request body for POST /generate."""
+# ---------------------------------------------------------------------------
+# Generate
+# ---------------------------------------------------------------------------
 
-    domain: str = Field(..., min_length=1, max_length=200, description="Mathematical domain to explore")
-    n: int = Field(5, ge=1, le=20, description="Number of conjectures to generate")
+
+class GenerateRequest(BaseModel):
+    domain: str = Field(..., min_length=1, max_length=200)
+    n: int = Field(5, ge=1, le=20)
 
     @field_validator("domain")
     @classmethod
@@ -20,8 +23,6 @@ class GenerateRequest(BaseModel):
 
 
 class ConjectureItem(BaseModel):
-    """A single generated conjecture."""
-
     id: str
     domain: str
     statement: str
@@ -32,15 +33,17 @@ class ConjectureItem(BaseModel):
 
 
 class GenerateResponse(BaseModel):
-    """Response body for POST /generate."""
-
     conjectures: list[ConjectureItem]
 
 
-class FormalizeRequest(BaseModel):
-    """Request body for POST /formalize."""
+# ---------------------------------------------------------------------------
+# Formalize
+# ---------------------------------------------------------------------------
 
-    conjecture: str = Field(..., min_length=1, max_length=5000, description="Natural-language conjecture")
+
+class FormalizeRequest(BaseModel):
+    conjecture: str = Field(..., min_length=1, max_length=5000)
+    subfield: str = Field("", max_length=200)
 
     @field_validator("conjecture")
     @classmethod
@@ -49,17 +52,19 @@ class FormalizeRequest(BaseModel):
 
 
 class FormalizeResponse(BaseModel):
-    """Response body for POST /formalize."""
-
     lean_code: str
     is_valid: bool
     error_log: str
 
 
-class VerifyRequest(BaseModel):
-    """Request body for POST /verify."""
+# ---------------------------------------------------------------------------
+# Verify
+# ---------------------------------------------------------------------------
 
-    lean_code: str = Field(..., min_length=1, max_length=20000, description="Lean 4 source code to prove")
+
+class VerifyRequest(BaseModel):
+    lean_code: str = Field(..., min_length=1, max_length=20000)
+    strategy: str = Field("claude_standard")
 
     @field_validator("lean_code")
     @classmethod
@@ -68,28 +73,27 @@ class VerifyRequest(BaseModel):
 
 
 class ProofAttempt(BaseModel):
-    """A single proof attempt record."""
-
-    attempt: int
+    attempt: Any  # int or str (e.g. "auto:decide")
     lean_code: str
     error: str
     success: bool
 
 
 class VerifyResponse(BaseModel):
-    """Response body for POST /verify."""
-
     proved: bool
     attempts: list[ProofAttempt]
     final_proof: str | None
     failure_reason: str | None
 
 
-class PipelineRequest(BaseModel):
-    """Request body for POST /pipeline — runs the full generate→formalize→verify flow."""
+# ---------------------------------------------------------------------------
+# Pipeline (async job)
+# ---------------------------------------------------------------------------
 
+
+class PipelineRequest(BaseModel):
     domain: str = Field(..., min_length=1, max_length=200)
-    n: int = Field(1, ge=1, le=5, description="Number of conjectures to run through full pipeline")
+    n: int = Field(1, ge=1, le=5)
 
     @field_validator("domain")
     @classmethod
@@ -97,9 +101,26 @@ class PipelineRequest(BaseModel):
         return v.strip()
 
 
-class ExperimentSummary(BaseModel):
-    """Summary row returned by GET /experiments."""
+class JobResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str
 
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    total_duration_ms: int | None = None
+
+
+# ---------------------------------------------------------------------------
+# Experiments
+# ---------------------------------------------------------------------------
+
+
+class ExperimentSummary(BaseModel):
     id: str
     timestamp: str
     domain: str
@@ -108,11 +129,11 @@ class ExperimentSummary(BaseModel):
     proved: bool
     model_used: str
     duration_ms: int
+    novelty_score: float = 1.0
+    proof_strategy: str = "claude_standard"
 
 
 class ExperimentDetail(BaseModel):
-    """Full experiment record returned by GET /experiments/{id}."""
-
     id: str
     timestamp: str
     domain: str
@@ -124,3 +145,33 @@ class ExperimentDetail(BaseModel):
     model_used: str
     duration_ms: int
     extra: dict[str, Any] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Annotation
+# ---------------------------------------------------------------------------
+
+
+class AnnotateRequest(BaseModel):
+    interesting: bool = False
+    notes: str = Field("", max_length=5000)
+    correct_proof: str | None = None
+    annotator: str = Field("human", max_length=100)
+
+
+class AnnotateResponse(BaseModel):
+    annotation_id: str
+    experiment_id: str
+    message: str
+
+
+# ---------------------------------------------------------------------------
+# Stats
+# ---------------------------------------------------------------------------
+
+
+class StatsResponse(BaseModel):
+    total_experiments: int
+    proved_count: int
+    valid_count: int
+    failure_registry: dict[str, Any]

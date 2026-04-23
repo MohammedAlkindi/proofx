@@ -10,6 +10,8 @@ export interface ExperimentSummary {
   proved: boolean;
   model_used: string;
   duration_ms: number;
+  novelty_score?: number;
+  proof_strategy?: string;
 }
 
 type SortKey = keyof Pick<ExperimentSummary, "timestamp" | "domain" | "duration_ms" | "proved">;

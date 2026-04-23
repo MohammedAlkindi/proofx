@@ -12,6 +12,9 @@ export interface PipelineResult {
   duration_ms: number;
   git_sha: string | null;
   snapshot_error?: string;
+  proof_strategy?: string;
+  novelty_score?: number;
+  complexity?: { formalizability?: number; proof_difficulty?: number; recommended_strategy?: string };
 }
 
 export interface PipelineResponse {
@@ -351,34 +354,24 @@ function ResultCard({ result }: { result: PipelineResult }) {
           >
             {result.conjecture}
           </p>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              marginTop: 7,
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: 10,
-                color: "var(--t-tertiary)",
-              }}
-            >
+          <div style={{ display: "flex", gap: 12, marginTop: 7, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
               {result.duration_ms.toLocaleString()}ms
             </span>
             {result.git_sha && (
-              <span
-                style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: 10,
-                  color: "var(--t-tertiary)",
-                }}
-              >
-                sha:{" "}
-                <span style={{ color: "var(--accent)" }}>
-                  {result.git_sha.slice(0, 8)}
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
+                sha: <span style={{ color: "var(--accent)" }}>{result.git_sha.slice(0, 8)}</span>
+              </span>
+            )}
+            {result.proof_strategy && (
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
+                strategy: <span style={{ color: "var(--accent)" }}>{result.proof_strategy}</span>
+              </span>
+            )}
+            {typeof result.novelty_score === "number" && (
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
+                novelty: <span style={{ color: result.novelty_score > 0.7 ? "var(--success)" : "var(--warning)" }}>
+                  {(result.novelty_score * 100).toFixed(0)}%
                 </span>
               </span>
             )}

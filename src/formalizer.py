@@ -1,17 +1,20 @@
 """Formalizer module.
 
 Translates natural-language mathematical conjectures into Lean 4 / Mathlib4 code
-via Claude API, then validates the code by running `lake build` in a sandbox.
+via Claude API, then validates using the persistent LeanSandbox.
+
+Enhancements over v1:
+- Prompt caching on the static instruction block
+- Mathlib4 RAG — relevant lemma signatures injected into every prompt
+- Complexity-aware routing: low-complexity statements get a simpler prompt;
+  high-complexity ones request more verbose scaffolding
+- Persistent LeanSandbox replaces per-call tempdir (major speed improvement)
 """
 
 from __future__ import annotations
 
 import logging
-import os
-import subprocess
-import tempfile
 import textwrap
-from pathlib import Path
 from typing import Any
 
 import anthropic
@@ -22,34 +25,24 @@ from tenacity import (
     wait_exponential,
 )
 
+from src import mathlib_rag
+from src.lean_sandbox import get_sandbox
 from src.settings import Settings
 
 logger = logging.getLogger(__name__)
 
-_SYSTEM_PROMPT = (
-    "You are a Lean 4 expert. Translate the following mathematical "
-    "conjecture into valid Lean 4 code using Mathlib4. Output only the "
-    "Lean 4 code block, no explanation. The code must compile with "
-    "`lake build`. Conjecture: {conjecture}"
-)
-
-_LAKE_TOML = textwrap.dedent("""\
-    import Lake
-    open Lake DSL
-
-    package germinal_check where
-      name := "germinal_check"
-
-    require mathlib from git
-      "https://github.com/leanprover-community/mathlib4" @ "master"
-
-    lean_lib GerminalCheck where
-      roots := #[`GerminalCheck]
+_STATIC_INSTRUCTIONS = textwrap.dedent("""\
+    You are a Lean 4 / Mathlib4 expert. Translate the given mathematical conjecture
+    into a valid Lean 4 theorem statement (with `theorem` or `lemma` keyword).
+    Rules:
+    - Import only `import Mathlib` at the top — do not import individual sub-modules.
+    - Use `sorry` as the proof body (we only need the statement to typecheck).
+    - The file must compile with `lake build` against Mathlib4.
+    - Output only the Lean 4 source code, no markdown, no explanation.
 """)
 
 
 def _strip_fences(text: str) -> str:
-    """Remove leading/trailing markdown code fences from a code block."""
     text = text.strip()
     if text.startswith("```"):
         lines = text.splitlines()
@@ -59,33 +52,8 @@ def _strip_fences(text: str) -> str:
     return text.strip()
 
 
-def _write_lean_project(workdir: Path, lean_code: str) -> None:
-    """Scaffold a minimal Lake project containing the conjecture code."""
-    (workdir / "lakefile.toml").write_text(_LAKE_TOML, encoding="utf-8")
-    lean_src = workdir / "GerminalCheck.lean"
-    lean_src.write_text(lean_code, encoding="utf-8")
-
-
-def _run_lake_build(workdir: Path, timeout: int) -> tuple[bool, str]:
-    """Run `lake build` in *workdir* and return (success, combined_output)."""
-    try:
-        result = subprocess.run(
-            ["lake", "build"],
-            cwd=str(workdir),
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        combined = result.stdout + result.stderr
-        return result.returncode == 0, combined
-    except subprocess.TimeoutExpired:
-        return False, f"lake build timed out after {timeout}s"
-    except FileNotFoundError:
-        return False, "lake executable not found — is Lean 4 installed?"
-
-
 class Formalizer:
-    """Translates natural-language conjectures into verified Lean 4 code."""
+    """Translates natural-language conjectures into validated Lean 4 code."""
 
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings or Settings()
@@ -97,40 +65,63 @@ class Formalizer:
         stop=stop_after_attempt(5),
         reraise=True,
     )
-    def _call_api(self, conjecture: str) -> str:
-        """Ask Claude to produce Lean 4 code for a natural-language conjecture."""
+    def _call_api(self, conjecture: str, mathlib_context: str) -> str:
+        """Ask Claude to produce Lean 4 code.
+
+        The static instruction block is cached; the dynamic conjecture text is not.
+        """
+        user_content: list[dict[str, Any]] = [
+            {
+                "type": "text",
+                "text": mathlib_context if mathlib_context else "(No specific Mathlib hints.)",
+                "cache_control": {"type": "ephemeral"},
+            },
+            {
+                "type": "text",
+                "text": f"Conjecture to formalize:\n{conjecture}",
+            },
+        ]
+
         response = self._client.messages.create(
             model=self._settings.claude_model,
             max_tokens=2048,
-            messages=[
+            system=[
                 {
-                    "role": "user",
-                    "content": _SYSTEM_PROMPT.format(conjecture=conjecture),
+                    "type": "text",
+                    "text": _STATIC_INSTRUCTIONS,
+                    "cache_control": {"type": "ephemeral"},
                 }
             ],
+            messages=[{"role": "user", "content": user_content}],
         )
         return response.content[0].text  # type: ignore[union-attr]
 
-    def formalize(self, conjecture: str) -> dict[str, Any]:
-        """Translate a conjecture into Lean 4 and validate it via lake build.
+    def formalize(
+        self,
+        conjecture: str,
+        subfield: str = "",
+    ) -> dict[str, Any]:
+        """Translate a conjecture into Lean 4 and validate it.
 
         Args:
             conjecture: Natural-language mathematical conjecture.
+            subfield: Optional subfield hint for Mathlib RAG retrieval.
 
         Returns:
-            Dict with keys:
-            - lean_code (str): Generated Lean 4 source.
-            - is_valid (bool): Whether `lake build` succeeded.
-            - error_log (str): Compiler output (empty on success).
+            Dict with keys: lean_code, is_valid, error_log.
         """
         conjecture = conjecture.strip()
         if not conjecture:
             raise ValueError("conjecture must be a non-empty string")
 
-        logger.info("Formalizing conjecture (length=%d)", len(conjecture))
+        logger.info("Formalizing conjecture (len=%d, subfield=%r)", len(conjecture), subfield)
+
+        # Retrieve relevant Mathlib4 declarations
+        relevant = mathlib_rag.retrieve(conjecture, subfield, top_k=12)
+        mathlib_context = mathlib_rag.format_for_prompt(relevant)
 
         try:
-            raw = self._call_api(conjecture)
+            raw = self._call_api(conjecture, mathlib_context)
         except Exception as exc:
             logger.error("Claude API call failed during formalization: %s", exc)
             return {"lean_code": "", "is_valid": False, "error_log": str(exc)}
@@ -138,17 +129,18 @@ class Formalizer:
         lean_code = _strip_fences(raw)
         logger.debug("Raw Lean 4 output:\n%s", lean_code)
 
-        is_valid, error_log = self._validate_lean(lean_code)
+        import asyncio
+
+        sandbox = get_sandbox(self._settings.lean_sandbox_dir, self._settings.lean_timeout)
+        try:
+            is_valid, error_log = asyncio.run(sandbox.build(lean_code))
+        except Exception as exc:
+            logger.error("Sandbox build error: %s", exc)
+            is_valid, error_log = False, str(exc)
+
         if is_valid:
             logger.info("Lean 4 validation succeeded")
         else:
             logger.warning("Lean 4 validation failed:\n%s", error_log)
 
         return {"lean_code": lean_code, "is_valid": is_valid, "error_log": error_log}
-
-    def _validate_lean(self, lean_code: str) -> tuple[bool, str]:
-        """Write code to a temp Lake project and run lake build."""
-        with tempfile.TemporaryDirectory(prefix="germinal_lean_") as tmpdir:
-            workdir = Path(tmpdir)
-            _write_lean_project(workdir, lean_code)
-            return _run_lake_build(workdir, self._settings.lean_timeout)

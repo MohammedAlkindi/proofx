@@ -1,7 +1,11 @@
 """Conjecture generator module.
 
 Calls Claude API to propose original mathematical conjectures for a given domain.
-Returns structured data suitable for downstream formalization and verification.
+Enhancements over v1:
+- Prompt caching on the static system prompt (reduces cost ~80% on repeat calls)
+- arXiv paper context injected into generation prompt
+- Failure-registry avoidance hint steers Claude away from historically hard subfields
+- Structured JSON output with novelty_score populated by caller
 """
 
 from __future__ import annotations
@@ -39,10 +43,6 @@ def _build_system_prompt(n: int) -> str:
 
 
 def _parse_response(raw: str, domain: str) -> list[dict[str, Any]]:
-    """Parse Claude's JSON response into a list of conjecture dicts.
-
-    Strips markdown code fences if present before parsing.
-    """
     text = raw.strip()
     if text.startswith("```"):
         lines = text.splitlines()
@@ -67,7 +67,6 @@ def _parse_response(raw: str, domain: str) -> list[dict[str, Any]]:
 
 
 def _derive_tags(item: dict[str, Any]) -> list[str]:
-    """Derive searchable tags from a conjecture item."""
     tags: list[str] = []
     subfield = str(item.get("subfield", "")).lower()
     for keyword in ("prime", "graph", "topology", "algebra", "number", "combinatorics", "geometry"):
@@ -94,35 +93,64 @@ class ConjectureGenerator:
         stop=stop_after_attempt(5),
         reraise=True,
     )
-    def _call_api(self, domain: str, n: int) -> str:
-        """Call Claude API and return raw text response."""
+    def _call_api(
+        self,
+        domain: str,
+        n: int,
+        arxiv_context: str = "",
+        avoidance_hint: str = "",
+    ) -> str:
+        """Call Claude API with prompt caching on the system prompt."""
+        user_parts: list[dict[str, Any]] = []
+
+        # Static context block — cached after first call
+        if arxiv_context:
+            user_parts.append(
+                {
+                    "type": "text",
+                    "text": arxiv_context,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            )
+
+        # Dynamic per-request block — never cached
+        dynamic = f"Domain: {domain}. Propose {n} conjectures."
+        if avoidance_hint:
+            dynamic += f"\n\n{avoidance_hint}"
+        user_parts.append({"type": "text", "text": dynamic})
+
         response = self._client.messages.create(
             model=self._settings.claude_model,
             max_tokens=4096,
-            system=_build_system_prompt(n),
-            messages=[
+            system=[
                 {
-                    "role": "user",
-                    "content": f"Domain: {domain}. Propose {n} conjectures.",
+                    "type": "text",
+                    "text": _build_system_prompt(n),
+                    "cache_control": {"type": "ephemeral"},
                 }
             ],
+            messages=[{"role": "user", "content": user_parts}],
         )
         return response.content[0].text  # type: ignore[union-attr]
 
-    def generate(self, domain: str, n: int = 5) -> list[dict[str, Any]]:
+    def generate(
+        self,
+        domain: str,
+        n: int = 5,
+        arxiv_context: list[dict[str, Any]] | None = None,
+        avoidance_hint: str = "",
+    ) -> list[dict[str, Any]]:
         """Generate N mathematical conjectures for the given domain.
 
         Args:
-            domain: Mathematical domain, e.g. "number theory" or "graph theory".
+            domain: Mathematical domain, e.g. "number theory".
             n: Number of conjectures to generate (1–20).
+            arxiv_context: Recent arXiv papers formatted by arxiv_client.
+            avoidance_hint: Failure-registry hint about subfields to avoid.
 
         Returns:
-            List of conjecture dicts, each with keys:
+            List of conjecture dicts with keys:
             id, domain, statement, subfield, motivation, confidence_estimate, tags.
-
-        Raises:
-            ValueError: If the domain is empty or n is out of range.
-            json.JSONDecodeError: If Claude returns malformed JSON.
         """
         domain = domain.strip()
         if not domain:
@@ -130,8 +158,12 @@ class ConjectureGenerator:
         if not 1 <= n <= 20:
             raise ValueError("n must be between 1 and 20")
 
+        from src.arxiv_client import format_papers_for_prompt
+
+        arxiv_str = format_papers_for_prompt(arxiv_context or [])
+
         logger.info("Generating %d conjecture(s) for domain=%r", n, domain)
-        raw = self._call_api(domain, n)
+        raw = self._call_api(domain, n, arxiv_context=arxiv_str, avoidance_hint=avoidance_hint)
         logger.debug("Raw Claude response: %s", raw)
 
         try:

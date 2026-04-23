@@ -1,4 +1,4 @@
-import { useState, useCallback, CSSProperties } from "react";
+import { useState, useCallback, useEffect, useRef, CSSProperties } from "react";
 import useSWR from "swr";
 import Pipeline, { Stage, PipelineResponse } from "../components/Pipeline";
 import ExperimentTable, { ExperimentSummary } from "../components/ExperimentTable";
@@ -34,12 +34,14 @@ interface HomeProps {
 }
 
 export default function Home({ onSidebarBump }: HomeProps) {
-  const [domain, setDomain]   = useState("");
-  const [n, setN]             = useState(1);
-  const [stage, setStage]     = useState<Stage>("idle");
+  const [domain, setDomain]     = useState("");
+  const [n, setN]               = useState(1);
+  const [stage, setStage]       = useState<Stage>("idle");
   const [response, setResponse] = useState<PipelineResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [jobId, setJobId]       = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: experiments, isLoading } = useSWR<ExperimentSummary[]>(
     `${API}/api/v1/experiments?_r=${refreshKey}`,
@@ -47,20 +49,53 @@ export default function Home({ onSidebarBump }: HomeProps) {
     { refreshInterval: 0, revalidateOnFocus: false }
   );
 
-  const running =
-    stage === "generating" || stage === "formalizing" || stage === "verifying";
+  const running = stage === "generating" || stage === "formalizing" || stage === "verifying";
+
+  // ── Job polling ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!jobId) return;
+
+    const poll = async () => {
+      try {
+        const res  = await fetch(`${API}/api/v1/jobs/${jobId}`);
+        const data = await res.json();
+
+        if (data.status === "running") {
+          setStage("verifying");
+        } else if (data.status === "done") {
+          clearInterval(pollRef.current!);
+          pollRef.current = null;
+          setResponse(data.result);
+          setStage("done");
+          setRefreshKey((k) => k + 1);
+          onSidebarBump?.();
+        } else if (data.status === "error") {
+          clearInterval(pollRef.current!);
+          pollRef.current = null;
+          setErrorMsg(data.error ?? "Pipeline failed");
+          setStage("error");
+        }
+      } catch {
+        // transient network error — keep polling
+      }
+    };
+
+    pollRef.current = setInterval(poll, 2000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [jobId, onSidebarBump]);
 
   const handleRun = useCallback(async () => {
     if (!domain.trim() || running) return;
     setStage("generating");
     setResponse(null);
     setErrorMsg("");
+    setJobId(null);
 
     try {
-      await new Promise((r) => setTimeout(r, 300));
-      setStage("formalizing");
-      await new Promise((r) => setTimeout(r, 300));
-      setStage("verifying");
+      // Advance stages visually while the job is pending
+      setTimeout(() => setStage("formalizing"), 1500);
 
       const res = await fetch(`${API}/api/v1/pipeline`, {
         method: "POST",
@@ -73,21 +108,24 @@ export default function Home({ onSidebarBump }: HomeProps) {
         throw new Error(err.detail ?? res.statusText);
       }
 
-      const data: PipelineResponse = await res.json();
-      setResponse(data);
-      setStage("done");
-      setRefreshKey((k) => k + 1);
-      onSidebarBump?.();
+      const data = await res.json();
+      setJobId(data.job_id);
+      setStage("verifying");
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : String(err));
       setStage("error");
     }
-  }, [domain, n, running, onSidebarBump]);
+  }, [domain, n, running]);
 
   const handleReset = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
     setStage("idle");
     setResponse(null);
     setErrorMsg("");
+    setJobId(null);
   };
 
   return (
@@ -186,11 +224,7 @@ export default function Home({ onSidebarBump }: HomeProps) {
             {[1, 2, 3].map((v, i) => (
               <span key={v} style={{ display: "flex", alignItems: "center" }}>
                 {i > 0 && (
-                  <span
-                    style={{ fontSize: 13, color: "var(--t-tertiary)", margin: "0 1px" }}
-                  >
-                    |
-                  </span>
+                  <span style={{ fontSize: 13, color: "var(--t-tertiary)", margin: "0 1px" }}>|</span>
                 )}
                 <button
                   onClick={() => setN(v)}
@@ -212,10 +246,22 @@ export default function Home({ onSidebarBump }: HomeProps) {
                 </button>
               </span>
             ))}
-            <span style={{ fontSize: 13, color: "var(--t-secondary)" }}>
-              ] conjectures
-            </span>
+            <span style={{ fontSize: 13, color: "var(--t-secondary)" }}>] conjectures</span>
           </div>
+
+          {/* Job ID indicator */}
+          {jobId && (
+            <div
+              style={{
+                marginTop: 10,
+                fontFamily: "JetBrains Mono, monospace",
+                fontSize: 10,
+                color: "var(--t-tertiary)",
+              }}
+            >
+              job: <span style={{ color: "var(--accent)" }}>{jobId.slice(0, 16)}…</span>
+            </div>
+          )}
 
           {/* Action buttons */}
           <div style={{ marginTop: 18, display: "flex", gap: 8 }}>
@@ -225,8 +271,7 @@ export default function Home({ onSidebarBump }: HomeProps) {
               style={{
                 flex: 1,
                 height: 36,
-                background:
-                  running || !domain.trim() ? "var(--bg-hover)" : "var(--accent)",
+                background: running || !domain.trim() ? "var(--bg-hover)" : "var(--accent)",
                 color: running || !domain.trim() ? "var(--t-tertiary)" : "#fff",
                 border: "none",
                 borderRadius: 6,
@@ -284,12 +329,8 @@ export default function Home({ onSidebarBump }: HomeProps) {
                   fontFamily: "inherit",
                   transition: "border-color 150ms",
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.borderColor = "var(--border-a)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.borderColor = "var(--border-s)")
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-a)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-s)")}
               >
                 Reset
               </button>
@@ -298,7 +339,6 @@ export default function Home({ onSidebarBump }: HomeProps) {
 
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-          {/* Pipeline status + results */}
           {stage !== "idle" && (
             <Pipeline stage={stage} response={response} errorMsg={errorMsg} />
           )}
