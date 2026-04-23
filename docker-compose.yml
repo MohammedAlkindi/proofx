@@ -1,0 +1,94 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: germinal
+      POSTGRES_PASSWORD: germinal
+      POSTGRES_DB: germinal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U germinal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+      DATABASE_URL: postgresql+asyncpg://germinal:germinal@postgres:5432/germinal
+      REDIS_URL: redis://redis:6379/0
+      LEAN_TIMEOUT: ${LEAN_TIMEOUT:-30}
+      GIT_EXPERIMENTS_BRANCH: ${GIT_EXPERIMENTS_BRANCH:-experiments}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - experiments_data:/app/experiments
+      - lean_cache:/app/.lake
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    command: celery -A api.celery_app worker --loglevel=info
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+      DATABASE_URL: postgresql+asyncpg://germinal:germinal@postgres:5432/germinal
+      REDIS_URL: redis://redis:6379/0
+      LEAN_TIMEOUT: ${LEAN_TIMEOUT:-30}
+      GIT_EXPERIMENTS_BRANCH: ${GIT_EXPERIMENTS_BRANCH:-experiments}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - experiments_data:/app/experiments
+      - lean_cache:/app/.lake
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  experiments_data:
+  lean_cache:
