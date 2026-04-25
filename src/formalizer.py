@@ -65,10 +65,16 @@ class Formalizer:
         stop=stop_after_attempt(5),
         reraise=True,
     )
-    def _call_api(self, conjecture: str, mathlib_context: str) -> str:
+    def _call_api(
+        self,
+        conjecture: str,
+        mathlib_context: str,
+        previous_error: str = "",
+    ) -> str:
         """Ask Claude to produce Lean 4 code.
 
         The static instruction block is cached; the dynamic conjecture text is not.
+        When previous_error is supplied, Claude is asked to fix the prior attempt.
         """
         user_content: list[dict[str, Any]] = [
             {
@@ -82,6 +88,23 @@ class Formalizer:
             },
         ]
 
+        messages: list[dict[str, Any]] = [{"role": "user", "content": user_content}]
+
+        if previous_error:
+            messages.append({
+                "role": "assistant",
+                "content": "I'll try a corrected formalization.",
+            })
+            messages.append({
+                "role": "user",
+                "content": (
+                    f"The previous Lean 4 output failed to compile with this error:\n\n"
+                    f"```\n{previous_error}\n```\n\n"
+                    "Please produce a corrected Lean 4 theorem statement that fixes the error. "
+                    "Output only the Lean 4 source code."
+                ),
+            })
+
         response = self._client.messages.create(
             model=self._settings.claude_model,
             max_tokens=2048,
@@ -92,7 +115,7 @@ class Formalizer:
                     "cache_control": {"type": "ephemeral"},
                 }
             ],
-            messages=[{"role": "user", "content": user_content}],
+            messages=messages,
         )
         return response.content[0].text  # type: ignore[union-attr]
 
@@ -100,47 +123,57 @@ class Formalizer:
         self,
         conjecture: str,
         subfield: str = "",
+        max_attempts: int | None = None,
     ) -> dict[str, Any]:
-        """Translate a conjecture into Lean 4 and validate it.
+        """Translate a conjecture into Lean 4 and validate it, with repair loop.
 
-        Args:
-            conjecture: Natural-language mathematical conjecture.
-            subfield: Optional subfield hint for Mathlib RAG retrieval.
+        On validation failure the Lean error is fed back to Claude for up to
+        `max_attempts` total tries (default: settings.formalize_repair_attempts).
 
         Returns:
-            Dict with keys: lean_code, is_valid, error_log.
+            Dict with keys: lean_code, is_valid, error_log, repair_attempts.
         """
         conjecture = conjecture.strip()
         if not conjecture:
             raise ValueError("conjecture must be a non-empty string")
 
-        logger.info("Formalizing conjecture (len=%d, subfield=%r)", len(conjecture), subfield)
-
-        # Retrieve relevant Mathlib4 declarations
-        relevant = mathlib_rag.retrieve(conjecture, subfield, top_k=12)
-        mathlib_context = mathlib_rag.format_for_prompt(relevant)
-
-        try:
-            raw = self._call_api(conjecture, mathlib_context)
-        except Exception as exc:
-            logger.error("Claude API call failed during formalization: %s", exc)
-            return {"lean_code": "", "is_valid": False, "error_log": str(exc)}
-
-        lean_code = _strip_fences(raw)
-        logger.debug("Raw Lean 4 output:\n%s", lean_code)
+        max_attempts = max_attempts if max_attempts is not None else self._settings.formalize_repair_attempts
+        logger.info(
+            "Formalizing conjecture (len=%d, subfield=%r, max_attempts=%d)",
+            len(conjecture), subfield, max_attempts,
+        )
 
         import asyncio
 
+        relevant = mathlib_rag.retrieve(conjecture, subfield, top_k=12)
+        mathlib_context = mathlib_rag.format_for_prompt(relevant)
         sandbox = get_sandbox(self._settings.lean_sandbox_dir, self._settings.lean_timeout)
-        try:
-            is_valid, error_log = asyncio.run(sandbox.build(lean_code))
-        except Exception as exc:
-            logger.error("Sandbox build error: %s", exc)
-            is_valid, error_log = False, str(exc)
 
-        if is_valid:
-            logger.info("Lean 4 validation succeeded")
-        else:
-            logger.warning("Lean 4 validation failed:\n%s", error_log)
+        lean_code = ""
+        error_log = ""
+        previous_error = ""
 
-        return {"lean_code": lean_code, "is_valid": is_valid, "error_log": error_log}
+        for attempt in range(1, max_attempts + 1):
+            try:
+                raw = self._call_api(conjecture, mathlib_context, previous_error)
+            except Exception as exc:
+                logger.error("Claude API call failed on formalization attempt %d: %s", attempt, exc)
+                return {"lean_code": lean_code, "is_valid": False, "error_log": str(exc), "repair_attempts": attempt}
+
+            lean_code = _strip_fences(raw)
+            logger.debug("Formalization attempt %d Lean output:\n%s", attempt, lean_code)
+
+            try:
+                is_valid, error_log = asyncio.run(sandbox.build(lean_code))
+            except Exception as exc:
+                logger.error("Sandbox build error on attempt %d: %s", attempt, exc)
+                is_valid, error_log = False, str(exc)
+
+            if is_valid:
+                logger.info("Lean 4 validation succeeded on attempt %d/%d", attempt, max_attempts)
+                return {"lean_code": lean_code, "is_valid": True, "error_log": "", "repair_attempts": attempt}
+
+            logger.warning("Formalization attempt %d/%d failed:\n%s", attempt, max_attempts, error_log)
+            previous_error = error_log
+
+        return {"lean_code": lean_code, "is_valid": False, "error_log": error_log, "repair_attempts": max_attempts}

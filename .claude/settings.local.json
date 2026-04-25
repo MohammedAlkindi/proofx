@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "PowerShell(Get-Command py -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

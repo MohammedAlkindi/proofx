@@ -102,6 +102,10 @@ class ExperimentRow(Base):
     git_sha: Mapped[str | None] = mapped_column(String(40), nullable=True)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    # Lineage: points to the experiment this was derived from (null = original)
+    parent_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    # Counterexample search result stored as JSON: {found, counterexample, reasoning}
+    counterexample_result: Mapped[Any] = mapped_column(JSON, nullable=True)
 
 
 class AnnotationRow(Base):

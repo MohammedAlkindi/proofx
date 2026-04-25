@@ -175,3 +175,62 @@ class StatsResponse(BaseModel):
     proved_count: int
     valid_count: int
     failure_registry: dict[str, Any]
+
+
+# ---------------------------------------------------------------------------
+# Counterexample
+# ---------------------------------------------------------------------------
+
+
+class CounterexampleResponse(BaseModel):
+    experiment_id: str
+    found: bool
+    counterexample: str | None
+    reasoning: str
+
+
+# ---------------------------------------------------------------------------
+# Lineage
+# ---------------------------------------------------------------------------
+
+
+class LineageNode(BaseModel):
+    id: str
+    conjecture: str
+    domain: str
+    proved: bool
+    is_valid: bool
+
+
+class LineageResponse(BaseModel):
+    experiment_id: str
+    parent: LineageNode | None
+    children: list[LineageNode]
+
+
+# ---------------------------------------------------------------------------
+# Derive (generate conjectures derived from an existing one)
+# ---------------------------------------------------------------------------
+
+
+class DeriveRequest(BaseModel):
+    n: int = Field(3, ge=1, le=10)
+    relation: str = Field(
+        "generalization",
+        description="Relationship to explore: 'generalization', 'special_case', or 'analogue'",
+    )
+
+    @field_validator("relation")
+    @classmethod
+    def validate_relation(cls, v: str) -> str:
+        allowed = {"generalization", "special_case", "analogue"}
+        if v not in allowed:
+            raise ValueError(f"relation must be one of {allowed}")
+        return v
+
+
+class DeriveResponse(BaseModel):
+    parent_experiment_id: str
+    job_id: str
+    status: str
+    message: str

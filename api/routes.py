@@ -16,6 +16,9 @@ from sse_starlette.sse import EventSourceResponse
 from api.models import (
     AnnotateRequest,
     AnnotateResponse,
+    CounterexampleResponse,
+    DeriveRequest,
+    DeriveResponse,
     ExperimentDetail,
     ExperimentSummary,
     FormalizeRequest,
@@ -24,6 +27,8 @@ from api.models import (
     GenerateResponse,
     JobResponse,
     JobStatusResponse,
+    LineageNode,
+    LineageResponse,
     PipelineRequest,
     StatsResponse,
     VerifyRequest,
@@ -562,3 +567,360 @@ async def get_stats(
         valid_count=valid,
         failure_registry=failure_registry.all_stats(),
     )
+
+
+# ---------------------------------------------------------------------------
+# Counterexample search
+# ---------------------------------------------------------------------------
+
+
+@router.post("/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse)
+async def find_counterexample(
+    experiment_id: str,
+    snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> CounterexampleResponse:
+    """Search for a concrete counterexample for a given experiment's conjecture.
+
+    Useful for open (unproved) conjectures to distinguish false from hard-to-prove.
+    The result is persisted back to the experiment row in the database.
+    """
+    exp = snapshot.get_experiment(experiment_id)
+    if exp is None:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    from src.counterexample import CounterexampleFinder
+
+    finder = CounterexampleFinder(settings)
+    try:
+        result = await asyncio.to_thread(
+            finder.search,
+            exp.get("conjecture", ""),
+            str(exp.get("subfield", "")),
+        )
+    except Exception as exc:
+        logger.exception("Counterexample search failed for %s", experiment_id)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    # Persist result to DB
+    try:
+        from sqlalchemy import update as sa_update
+
+        from src.db import ExperimentRow, get_session
+
+        async with get_session() as session:
+            await session.execute(
+                sa_update(ExperimentRow)
+                .where(ExperimentRow.id == experiment_id)
+                .values(counterexample_result=result)
+            )
+            await session.commit()
+    except Exception as exc:
+        logger.warning("Could not persist counterexample result: %s", exc)
+
+    return CounterexampleResponse(
+        experiment_id=experiment_id,
+        found=result["found"],
+        counterexample=result.get("counterexample"),
+        reasoning=result.get("reasoning", ""),
+    )
+
+
+@router.get("/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse)
+async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
+    """Return the stored counterexample result for an experiment (if any)."""
+    try:
+        from sqlalchemy import select
+
+        from src.db import ExperimentRow, get_session
+
+        async with get_session() as session:
+            row = (
+                await session.execute(select(ExperimentRow).where(ExperimentRow.id == experiment_id))
+            ).scalar_one_or_none()
+
+        if row is None:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+
+        result = row.counterexample_result or {}
+        return CounterexampleResponse(
+            experiment_id=experiment_id,
+            found=bool(result.get("found", False)),
+            counterexample=result.get("counterexample"),
+            reasoning=str(result.get("reasoning", "")),
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Lineage
+# ---------------------------------------------------------------------------
+
+
+@router.get("/experiments/{experiment_id}/lineage", response_model=LineageResponse)
+async def get_lineage(
+    experiment_id: str,
+    snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
+) -> LineageResponse:
+    """Return the parent experiment and all direct children for the given experiment."""
+    exp = snapshot.get_experiment(experiment_id)
+    if exp is None:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    parent_node: LineageNode | None = None
+    children: list[LineageNode] = []
+
+    try:
+        from sqlalchemy import select
+
+        from src.db import ExperimentRow, get_session
+
+        async with get_session() as session:
+            # Fetch parent
+            parent_id = exp.get("parent_id") or None
+            if parent_id:
+                parent_row = (
+                    await session.execute(
+                        select(ExperimentRow).where(ExperimentRow.id == parent_id)
+                    )
+                ).scalar_one_or_none()
+                if parent_row:
+                    parent_node = LineageNode(
+                        id=parent_row.id,
+                        conjecture=parent_row.conjecture,
+                        domain=parent_row.domain,
+                        proved=parent_row.proved,
+                        is_valid=parent_row.is_valid,
+                    )
+
+            # Fetch children
+            child_rows = (
+                await session.execute(
+                    select(ExperimentRow).where(ExperimentRow.parent_id == experiment_id)
+                )
+            ).scalars().all()
+            children = [
+                LineageNode(
+                    id=r.id,
+                    conjecture=r.conjecture,
+                    domain=r.domain,
+                    proved=r.proved,
+                    is_valid=r.is_valid,
+                )
+                for r in child_rows
+            ]
+    except Exception as exc:
+        logger.warning("Lineage DB query failed: %s", exc)
+
+    return LineageResponse(
+        experiment_id=experiment_id,
+        parent=parent_node,
+        children=children,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Derive — generate conjectures lineally related to an existing one
+# ---------------------------------------------------------------------------
+
+_DERIVE_SYSTEM = (
+    "You are a mathematical research assistant. Given a base conjecture and a "
+    "relationship type ({relation}), propose {n} related conjectures. "
+    "Each must be a natural-language mathematical statement that is plausible and non-trivial. "
+    "Respond in valid JSON as a list: "
+    '[{{"statement": "...", "motivation": "...", "subfield": "...", "confidence": 0.0}}]'
+)
+
+
+@router.post("/experiments/{experiment_id}/derive", response_model=DeriveResponse)
+async def derive_conjectures(
+    experiment_id: str,
+    body: DeriveRequest,
+    snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> DeriveResponse:
+    """Generate derived conjectures from an existing experiment and run the full pipeline.
+
+    The generated conjectures will have `parent_id` pointing to this experiment,
+    forming a lineage graph. Returns a job_id to poll for results.
+    """
+    exp = snapshot.get_experiment(experiment_id)
+    if exp is None:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    job_id = str(uuid.uuid4())
+
+    try:
+        from src.db import JobRow, get_session
+
+        async with get_session() as session:
+            session.add(JobRow(
+                id=job_id,
+                domain=exp.get("domain", "derived"),
+                n=body.n,
+                status="pending",
+            ))
+            await session.commit()
+    except Exception as exc:
+        logger.warning("Could not persist derive job row: %s", exc)
+
+    asyncio.create_task(
+        _run_derive_pipeline(
+            job_id=job_id,
+            parent_experiment=exp,
+            n=body.n,
+            relation=body.relation,
+            settings=settings,
+        )
+    )
+
+    return DeriveResponse(
+        parent_experiment_id=experiment_id,
+        job_id=job_id,
+        status="pending",
+        message=f"Deriving {body.n} {body.relation} conjecture(s). Poll /api/v1/jobs/{job_id}.",
+    )
+
+
+async def _run_derive_pipeline(
+    job_id: str,
+    parent_experiment: dict,
+    n: int,
+    relation: str,
+    settings: Settings,
+) -> None:
+    """Background task: ask Claude for derived conjectures then run the pipeline on each."""
+    import json
+
+    from src.db import ExperimentRow, JobRow, get_session
+
+    async def _update_job(status: str, result: Any = None, error: str | None = None) -> None:
+        try:
+            from sqlalchemy import update as sa_update
+
+            async with get_session() as session:
+                await session.execute(
+                    sa_update(JobRow)
+                    .where(JobRow.id == job_id)
+                    .values(status=status, result=result, error=error)
+                )
+                await session.commit()
+        except Exception as exc:
+            logger.warning("Could not update derive job %s: %s", job_id, exc)
+
+    await _update_job("running")
+
+    try:
+        import anthropic as _anthropic
+
+        client = _anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        base_conjecture = parent_experiment.get("conjecture", "")
+        domain = parent_experiment.get("domain", "mathematics")
+
+        system_text = _DERIVE_SYSTEM.format(relation=relation, n=n)
+        user_text = (
+            f"Base conjecture (domain: {domain}):\n{base_conjecture}\n\n"
+            f"Propose {n} {relation}(s) of this conjecture."
+        )
+
+        response = await asyncio.to_thread(
+            lambda: client.messages.create(
+                model=settings.claude_model,
+                max_tokens=2048,
+                system=[{"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}],
+                messages=[{"role": "user", "content": user_text}],
+            )
+        )
+        raw = response.content[0].text  # type: ignore[union-attr]
+        text = raw.strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+        derived_items: list[dict[str, Any]] = json.loads(text)
+    except Exception as exc:
+        logger.error("Derive generation failed for job %s: %s", job_id, exc)
+        await _update_job("error", error=str(exc))
+        return
+
+    from src.formalizer import Formalizer
+    from src.snapshot import SnapshotManager
+    from src.verifier import Verifier
+
+    formalizer = Formalizer(settings)
+    verifier = Verifier(settings)
+    snapshot = SnapshotManager(settings=settings)
+    results = []
+
+    for item in derived_items[:n]:
+        exp_id = str(uuid.uuid4())
+        statement = str(item.get("statement", ""))
+        subfield = str(item.get("subfield", domain))
+        if not statement:
+            continue
+
+        try:
+            formalize_result = await asyncio.to_thread(
+                formalizer.formalize, statement, subfield
+            )
+            if formalize_result["is_valid"]:
+                verify_result = await verifier.verify_async(
+                    lean_code=formalize_result["lean_code"],
+                    strategy="claude_standard",
+                )
+            else:
+                verify_result = {"proved": False, "attempts": [], "final_proof": None, "failure_reason": "Formalization failed"}
+
+            sha = snapshot.commit_experiment(
+                experiment_id=exp_id,
+                domain=domain,
+                conjecture=statement,
+                lean_code=formalize_result.get("lean_code", ""),
+                is_valid=formalize_result.get("is_valid", False),
+                proved=verify_result.get("proved", False),
+                final_proof=verify_result.get("final_proof"),
+                model_used=settings.claude_model,
+                duration_ms=0,
+                extra={
+                    "subfield": subfield,
+                    "motivation": str(item.get("motivation", "")),
+                    "confidence_estimate": float(item.get("confidence", 0.5)),
+                    "parent_id": parent_experiment.get("id"),
+                    "derive_relation": relation,
+                    "job_id": job_id,
+                },
+            )
+
+            async with get_session() as session:
+                session.add(ExperimentRow(
+                    id=exp_id,
+                    domain=domain,
+                    subfield=subfield,
+                    conjecture=statement,
+                    lean_code=formalize_result.get("lean_code", ""),
+                    is_valid=formalize_result.get("is_valid", False),
+                    proved=verify_result.get("proved", False),
+                    final_proof=verify_result.get("final_proof"),
+                    model_used=settings.claude_model,
+                    duration_ms=0,
+                    confidence_estimate=float(item.get("confidence", 0.5)),
+                    parent_id=parent_experiment.get("id"),
+                    job_id=job_id,
+                    git_sha=sha,
+                ))
+                await session.commit()
+
+            results.append({
+                "experiment_id": exp_id,
+                "conjecture": statement,
+                "is_valid": formalize_result.get("is_valid", False),
+                "proved": verify_result.get("proved", False),
+                "relation": relation,
+            })
+        except Exception as exc:
+            logger.error("Derive pipeline step failed for %s: %s", exp_id, exc)
+
+    await _update_job("done", result={"parent_id": parent_experiment.get("id"), "results": results})

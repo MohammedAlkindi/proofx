@@ -15,6 +15,7 @@ from typing import Any
 from api.celery_app import celery_app
 from src.complexity import ComplexityEstimator
 from src.conjecture_generator import ConjectureGenerator
+from src.counterexample import CounterexampleFinder
 from src.failure_registry import FailureRegistry
 from src.formalizer import Formalizer
 from src.novelty import NoveltyChecker
@@ -81,6 +82,7 @@ def run_pipeline_task(
         novelty_checker = NoveltyChecker(threshold=settings.novelty_threshold)
         failure_registry = FailureRegistry(settings.redis_url)
         snapshot = SnapshotManager(settings=settings)
+        cx_finder = CounterexampleFinder(settings)
 
         # Fetch arXiv context asynchronously
         arxiv_papers = asyncio.run(_fetch_arxiv(domain, settings.arxiv_max_results))
@@ -127,11 +129,22 @@ def run_pipeline_task(
                     )
                     if verify_result["proved"]:
                         failure_registry.record_success(conjecture.get("subfield", ""), "verify")
+                        cx_result: dict[str, Any] = {"found": False, "counterexample": None, "reasoning": "Proof succeeded — no counterexample search needed"}
                     else:
                         failure_registry.record_failure(conjecture.get("subfield", ""), "verify")
+                        # Search for a counterexample to distinguish false from hard-to-prove
+                        try:
+                            cx_result = cx_finder.search(
+                                conjecture["statement"],
+                                conjecture.get("subfield", ""),
+                            )
+                        except Exception as cx_exc:
+                            logger.warning("Counterexample search failed: %s", cx_exc)
+                            cx_result = {"found": False, "counterexample": None, "reasoning": str(cx_exc)}
                 else:
                     failure_registry.record_failure(conjecture.get("subfield", ""), "formalize")
                     verify_result = {"proved": False, "attempts": [], "final_proof": None, "failure_reason": "Formalization failed"}
+                    cx_result = {"found": False, "counterexample": None, "reasoning": "Formalization failed — counterexample search skipped"}
 
             duration_ms = int((time.monotonic() - step_start) * 1000)
 
@@ -155,6 +168,7 @@ def run_pipeline_task(
                         "complexity": complexity,
                         "proof_strategy": strategy,
                         "verification_attempts": len(verify_result.get("attempts", [])),
+                        "counterexample_result": cx_result,
                         "git_sha": "",
                         "job_id": job_id,
                     },
@@ -182,6 +196,7 @@ def run_pipeline_task(
                 "git_sha": sha,
                 "tags": conjecture.get("tags", []),
                 "job_id": job_id,
+                "counterexample_result": cx_result,
             })
 
             results.append({

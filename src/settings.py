@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # arXiv papers to retrieve per generation request
     arxiv_max_results: int = Field(4, alias="ARXIV_MAX_RESULTS")
 
+    # Formalization repair: max attempts to fix Lean errors by feeding them back to Claude
+    formalize_repair_attempts: int = Field(3, alias="FORMALIZE_REPAIR_ATTEMPTS")
+
     # OpenTelemetry OTLP endpoint (empty = disabled)
     otel_endpoint: str = Field("", alias="OTEL_EXPORTER_OTLP_ENDPOINT")
     otel_service_name: str = Field("germinal", alias="OTEL_SERVICE_NAME")
