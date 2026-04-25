@@ -12,6 +12,7 @@ interface LayoutProps {
   toggleDark: () => void;
   sidebarRefreshKey: number;
   onSidebarBump: () => void;
+  onOpenPalette: () => void;
 }
 
 const S: Record<string, CSSProperties> = {
@@ -52,26 +53,7 @@ const S: Record<string, CSSProperties> = {
   headerRight: {
     display: "flex",
     alignItems: "center",
-    gap: 16,
-  },
-  kbHint: {
-    fontFamily: "JetBrains Mono, Fira Code, monospace",
-    fontSize: 11,
-    color: "var(--t-tertiary)",
-    letterSpacing: 0,
-  },
-  themeBtn: {
-    width: 30,
-    height: 30,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 6,
-    border: "1px solid var(--border-s)",
-    background: "var(--bg-input)",
-    cursor: "pointer",
-    fontSize: 13,
-    color: "var(--t-secondary)",
+    gap: 8,
   },
   body: {
     display: "flex",
@@ -89,12 +71,43 @@ const S: Record<string, CSSProperties> = {
   },
 };
 
+const kbBtnBase: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "4px 10px",
+  borderRadius: 6,
+  border: "1px solid var(--border-s)",
+  background: "var(--bg-input)",
+  cursor: "pointer",
+  fontSize: 11,
+  color: "var(--t-tertiary)",
+  fontFamily: "JetBrains Mono, Fira Code, monospace",
+  transition: "border-color 150ms, color 150ms",
+};
+
+const iconBtnBase: CSSProperties = {
+  width: 30,
+  height: 30,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 6,
+  border: "1px solid var(--border-s)",
+  background: "var(--bg-input)",
+  cursor: "pointer",
+  fontSize: 13,
+  color: "var(--t-secondary)",
+  transition: "border-color 150ms",
+};
+
 export default function Layout({
   children,
   dark,
   toggleDark,
   sidebarRefreshKey,
   onSidebarBump,
+  onOpenPalette,
 }: LayoutProps) {
   return (
     <SidebarBumpContext.Provider value={onSidebarBump}>
@@ -109,11 +122,32 @@ export default function Layout({
           </div>
 
           <div style={S.headerRight}>
-            <span style={S.kbHint}>⌘K</span>
+            {/* ⌘K search trigger */}
+            <button
+              onClick={onOpenPalette}
+              aria-label="Open command palette"
+              style={kbBtnBase}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--accent)";
+                e.currentTarget.style.color = "var(--accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-s)";
+                e.currentTarget.style.color = "var(--t-tertiary)";
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M9 9l2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              <span>⌘K</span>
+            </button>
+
+            {/* Theme toggle */}
             <button
               onClick={toggleDark}
               aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-              style={S.themeBtn}
+              style={iconBtnBase}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.borderColor = "var(--border-a)")
               }

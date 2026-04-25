@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, CSSProperties } from "react";
 import useSWR from "swr";
 import Pipeline, { Stage, PipelineResponse } from "../components/Pipeline";
 import ExperimentTable, { ExperimentSummary } from "../components/ExperimentTable";
+import StatsBar from "../components/StatsBar";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -41,7 +42,10 @@ export default function Home({ onSidebarBump }: HomeProps) {
   const [errorMsg, setErrorMsg] = useState("");
   const [jobId, setJobId]       = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [elapsed, setElapsed]   = useState(0);
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTime  = useRef<number>(0);
 
   const { data: experiments, isLoading } = useSWR<ExperimentSummary[]>(
     `${API}/api/v1/experiments?_r=${refreshKey}`,
@@ -51,7 +55,25 @@ export default function Home({ onSidebarBump }: HomeProps) {
 
   const running = stage === "generating" || stage === "formalizing" || stage === "verifying";
 
-  // ── Job polling ────────────────────────────────────────────────────────
+  // ── Elapsed timer ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (running) {
+      timerRef.current = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startTime.current) / 1000));
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setElapsed(0);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [running]);
+
+  // ── Job polling ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!jobId) return;
 
@@ -88,13 +110,13 @@ export default function Home({ onSidebarBump }: HomeProps) {
 
   const handleRun = useCallback(async () => {
     if (!domain.trim() || running) return;
+    startTime.current = Date.now();
     setStage("generating");
     setResponse(null);
     setErrorMsg("");
     setJobId(null);
 
     try {
-      // Advance stages visually while the job is pending
       setTimeout(() => setStage("formalizing"), 1500);
 
       const res = await fetch(`${API}/api/v1/pipeline`, {
@@ -129,7 +151,11 @@ export default function Home({ onSidebarBump }: HomeProps) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+
+      {/* ── Stats banner ── */}
+      <StatsBar />
+
       {/* ── Configuration panel ── */}
       <section>
         <div
@@ -249,19 +275,36 @@ export default function Home({ onSidebarBump }: HomeProps) {
             <span style={{ fontSize: 13, color: "var(--t-secondary)" }}>] conjectures</span>
           </div>
 
-          {/* Job ID indicator */}
-          {jobId && (
-            <div
-              style={{
-                marginTop: 10,
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: 10,
-                color: "var(--t-tertiary)",
-              }}
-            >
-              job: <span style={{ color: "var(--accent)" }}>{jobId.slice(0, 16)}…</span>
-            </div>
-          )}
+          {/* Job ID + elapsed indicator */}
+          <div style={{ marginTop: 10, display: "flex", gap: 16, alignItems: "center" }}>
+            {jobId && (
+              <div
+                style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: 10,
+                  color: "var(--t-tertiary)",
+                }}
+              >
+                job: <span style={{ color: "var(--accent)" }}>{jobId.slice(0, 16)}…</span>
+              </div>
+            )}
+            {running && elapsed > 0 && (
+              <div
+                style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: 10,
+                  color: "var(--t-tertiary)",
+                }}
+              >
+                elapsed:{" "}
+                <span style={{ color: elapsed > 60 ? "var(--warning)" : "var(--accent)" }}>
+                  {elapsed >= 60
+                    ? `${Math.floor(elapsed / 60)}m${elapsed % 60}s`
+                    : `${elapsed}s`}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Action buttons */}
           <div style={{ marginTop: 18, display: "flex", gap: 8 }}>

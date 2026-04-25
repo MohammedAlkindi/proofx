@@ -104,8 +104,32 @@ input:-webkit-autofill {
   to   { transform: translateY(0);   opacity: 1; }
 }
 
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes palette-in {
+  from { transform: translateX(-50%) translateY(-8px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 /* ─── Animation helpers ─── */
 .anim-pipeline-pulse { animation: pipeline-pulse 2s ease-in-out infinite; }
-.anim-slide-up       { animation: slide-up  200ms ease-out; }
-.anim-step-in        { animation: step-in   200ms ease-out both; }
-.anim-error-in       { animation: error-in  200ms ease-out; }
+.anim-slide-up       { animation: slide-up    200ms ease-out; }
+.anim-step-in        { animation: step-in     200ms ease-out both; }
+.anim-error-in       { animation: error-in    200ms ease-out; }
+.anim-fade-in        { animation: fade-in     150ms ease-out; }
+.anim-palette-in     { animation: palette-in  180ms cubic-bezier(0.16, 1, 0.3, 1); }
+.anim-row-in         { animation: row-in      180ms ease-out both; }
+
+/* ─── Command palette ─── */
+mark {
+  background: inherit;
+  color: inherit;
+}

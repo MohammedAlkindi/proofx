@@ -1,4 +1,4 @@
-import { useState, CSSProperties } from "react";
+import { useState, CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 
 export interface ExperimentSummary {
@@ -15,6 +15,7 @@ export interface ExperimentSummary {
 }
 
 type SortKey = keyof Pick<ExperimentSummary, "timestamp" | "domain" | "duration_ms" | "proved">;
+type StatusFilter = "all" | "proved" | "open" | "invalid";
 
 function fmtDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -34,12 +35,79 @@ function fmtTime(iso: string): string {
   }
 }
 
+function Highlight({ text, query }: { text: string; query: string }): ReactNode {
+  if (!query) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark
+        style={{
+          background: "rgba(124,58,237,0.2)",
+          color: "var(--accent)",
+          borderRadius: 2,
+          padding: "0 1px",
+        }}
+      >
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
+function NoveltyBar({ score }: { score: number }) {
+  const pct = Math.max(0, Math.min(1, score)) * 100;
+  const color =
+    score >= 0.7 ? "var(--success)" : score >= 0.4 ? "var(--warning)" : "var(--danger)";
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 3,
+          borderRadius: 2,
+          background: "var(--border-s)",
+          overflow: "hidden",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: color,
+            borderRadius: 2,
+            transition: "width 300ms ease",
+          }}
+        />
+      </div>
+      <span
+        style={{
+          fontFamily: "JetBrains Mono, monospace",
+          fontSize: 10,
+          color,
+        }}
+      >
+        {pct.toFixed(0)}%
+      </span>
+    </div>
+  );
+}
+
 function StatusBadge({ proved, isValid }: { proved: boolean; isValid: boolean }) {
-  const label  = proved ? "proved" : isValid ? "sorry" : "error";
+  const label = proved ? "proved" : isValid ? "sorry" : "error";
   const colors: Record<string, CSSProperties> = {
-    proved: { background: "rgba(16,185,129,0.1)",  color: "var(--success)", border: "1px solid rgba(16,185,129,0.2)" },
-    sorry:  { background: "rgba(245,158,11,0.1)",  color: "var(--warning)", border: "1px solid rgba(245,158,11,0.2)" },
-    error:  { background: "rgba(239,68,68,0.1)",   color: "var(--danger)",  border: "1px solid rgba(239,68,68,0.2)" },
+    proved: { background: "rgba(16,185,129,0.1)", color: "var(--success)", border: "1px solid rgba(16,185,129,0.2)" },
+    sorry:  { background: "rgba(245,158,11,0.1)", color: "var(--warning)", border: "1px solid rgba(245,158,11,0.2)" },
+    error:  { background: "rgba(239,68,68,0.1)",  color: "var(--danger)",  border: "1px solid rgba(239,68,68,0.2)" },
   };
   return (
     <span
@@ -61,7 +129,8 @@ function StatusBadge({ proved, isValid }: { proved: boolean; isValid: boolean })
 }
 
 function SortArrow({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active) return <span style={{ color: "var(--t-tertiary)", marginLeft: 4, opacity: 0.4 }}>↕</span>;
+  if (!active)
+    return <span style={{ color: "var(--t-tertiary)", marginLeft: 4, opacity: 0.4 }}>↕</span>;
   return (
     <span style={{ color: "var(--accent)", marginLeft: 4 }}>
       {dir === "asc" ? "↑" : "↓"}
@@ -84,10 +153,14 @@ const thStyle: CSSProperties = {
   background: "var(--bg-input)",
 };
 
-const thStaticStyle: CSSProperties = {
-  ...thStyle,
-  cursor: "default",
-};
+const thStaticStyle: CSSProperties = { ...thStyle, cursor: "default" };
+
+const STATUS_TABS: { key: StatusFilter; label: string }[] = [
+  { key: "all",     label: "All" },
+  { key: "proved",  label: "Proved" },
+  { key: "open",    label: "Open" },
+  { key: "invalid", label: "Invalid" },
+];
 
 export default function ExperimentTable({
   experiments,
@@ -99,13 +172,29 @@ export default function ExperimentTable({
   const [sortKey, setSortKey] = useState<SortKey>("timestamp");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [filter, setFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("desc"); }
   };
 
+  // Counts for tabs
+  const counts: Record<StatusFilter, number> = {
+    all:     experiments.length,
+    proved:  experiments.filter((e) => e.proved).length,
+    open:    experiments.filter((e) => !e.proved && e.is_valid).length,
+    invalid: experiments.filter((e) => !e.is_valid).length,
+  };
+
   const sorted = [...experiments]
+    .filter((e) => {
+      // Status filter
+      if (statusFilter === "proved")  return e.proved;
+      if (statusFilter === "open")    return !e.proved && e.is_valid;
+      if (statusFilter === "invalid") return !e.is_valid;
+      return true;
+    })
     .filter((e) => {
       if (!filter) return true;
       const q = filter.toLowerCase();
@@ -128,28 +217,17 @@ export default function ExperimentTable({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 16,
+          marginBottom: 12,
+          flexWrap: "wrap",
+          gap: 10,
         }}
       >
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: "var(--t-primary)",
-              letterSpacing: "-0.01em",
-            }}
-          >
+          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--t-primary)", letterSpacing: "-0.01em" }}>
             Experiments
           </span>
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--t-tertiary)",
-              fontFamily: "JetBrains Mono, monospace",
-            }}
-          >
-            {experiments.length}
+          <span style={{ fontSize: 12, color: "var(--t-tertiary)", fontFamily: "JetBrains Mono, monospace" }}>
+            {sorted.length}
           </span>
         </div>
         <input
@@ -171,6 +249,57 @@ export default function ExperimentTable({
           onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
           onBlur={(e)  => (e.currentTarget.style.borderColor = "var(--border-s)")}
         />
+      </div>
+
+      {/* Status filter tabs */}
+      <div
+        style={{
+          display: "flex",
+          gap: 2,
+          marginBottom: 14,
+          background: "var(--bg-input)",
+          borderRadius: 7,
+          padding: 3,
+          width: "fit-content",
+        }}
+      >
+        {STATUS_TABS.map(({ key, label }) => {
+          const active = statusFilter === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              style={{
+                padding: "4px 12px",
+                fontSize: 11,
+                fontWeight: active ? 600 : 400,
+                borderRadius: 5,
+                border: "none",
+                background: active ? "var(--bg-card)" : "transparent",
+                color: active ? "var(--t-primary)" : "var(--t-tertiary)",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                boxShadow: active ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
+                transition: "background 150ms, color 150ms",
+              }}
+            >
+              {label}
+              <span
+                style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: 10,
+                  color: active ? "var(--accent)" : "var(--t-tertiary)",
+                  opacity: 0.8,
+                }}
+              >
+                {counts[key]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
@@ -199,22 +328,18 @@ export default function ExperimentTable({
           }}
         >
           <span style={{ fontSize: 13, color: "var(--t-tertiary)" }}>
-            {filter ? "No experiments match your filter." : "No experiments yet."}
+            {filter || statusFilter !== "all"
+              ? "No experiments match your filter."
+              : "No experiments yet."}
           </span>
-          {!filter && (
+          {!filter && statusFilter === "all" && (
             <span style={{ fontSize: 12, color: "var(--border-a)" }}>
               Run your first pipeline above.
             </span>
           )}
         </div>
       ) : (
-        <div
-          style={{
-            border: "1px solid var(--border-s)",
-            borderRadius: 8,
-            overflow: "hidden",
-          }}
-        >
+        <div style={{ border: "1px solid var(--border-s)", borderRadius: 8, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -228,6 +353,7 @@ export default function ExperimentTable({
                 <th style={thStyle} onClick={() => handleSort("proved")}>
                   Status <SortArrow active={sortKey === "proved"} dir={sortDir} />
                 </th>
+                <th style={thStaticStyle}>Novelty</th>
                 <th style={thStyle} onClick={() => handleSort("duration_ms")}>
                   Duration <SortArrow active={sortKey === "duration_ms"} dir={sortDir} />
                 </th>
@@ -238,9 +364,11 @@ export default function ExperimentTable({
               {sorted.map((exp, rowIdx) => (
                 <tr
                   key={exp.id}
+                  className="anim-row-in"
                   style={{
                     borderTop: rowIdx === 0 ? "none" : "1px solid var(--border-s)",
                     transition: "background 100ms",
+                    animationDelay: `${Math.min(rowIdx * 30, 200)}ms`,
                   }}
                   onMouseEnter={(e) =>
                     ((e.currentTarget as HTMLElement).style.background = "var(--bg-input)")
@@ -269,7 +397,7 @@ export default function ExperimentTable({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {exp.domain}
+                    <Highlight text={exp.domain} query={filter} />
                   </td>
                   <td
                     style={{
@@ -282,10 +410,17 @@ export default function ExperimentTable({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {exp.conjecture}
+                    <Highlight text={exp.conjecture} query={filter} />
                   </td>
                   <td style={{ padding: "9px 12px" }}>
                     <StatusBadge proved={exp.proved} isValid={exp.is_valid} />
+                  </td>
+                  <td style={{ padding: "9px 12px" }}>
+                    {typeof exp.novelty_score === "number" ? (
+                      <NoveltyBar score={exp.novelty_score} />
+                    ) : (
+                      <span style={{ fontSize: 10, color: "var(--border-a)" }}>—</span>
+                    )}
                   </td>
                   <td
                     style={{

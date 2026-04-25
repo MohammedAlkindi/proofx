@@ -310,6 +310,38 @@ function CodeBlock({
   );
 }
 
+/* ─── Novelty bar ─────────────────────────────────────────────────────────── */
+function NoveltyBar({ score }: { score: number }) {
+  const pct = Math.max(0, Math.min(1, score)) * 100;
+  const color =
+    score >= 0.7 ? "var(--success)" : score >= 0.4 ? "var(--warning)" : "var(--danger)";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      <div
+        style={{
+          flex: 1,
+          height: 3,
+          borderRadius: 2,
+          background: "var(--border-s)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: color,
+            borderRadius: 2,
+          }}
+        />
+      </div>
+      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color, flexShrink: 0 }}>
+        {pct.toFixed(0)}%
+      </span>
+    </div>
+  );
+}
+
 /* ─── Result card ────────────────────────────────────────────────────────── */
 function ResultCard({ result }: { result: PipelineResult }) {
   const badge: "proved" | "sorry" | "error" = result.proved
@@ -354,7 +386,9 @@ function ResultCard({ result }: { result: PipelineResult }) {
           >
             {result.conjecture}
           </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 7, alignItems: "center", flexWrap: "wrap" }}>
+
+          {/* Meta chips */}
+          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
               {result.duration_ms.toLocaleString()}ms
             </span>
@@ -368,14 +402,58 @@ function ResultCard({ result }: { result: PipelineResult }) {
                 strategy: <span style={{ color: "var(--accent)" }}>{result.proof_strategy}</span>
               </span>
             )}
-            {typeof result.novelty_score === "number" && (
+            {result.complexity?.recommended_strategy && (
               <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
-                novelty: <span style={{ color: result.novelty_score > 0.7 ? "var(--success)" : "var(--warning)" }}>
-                  {(result.novelty_score * 100).toFixed(0)}%
-                </span>
+                rec: <span style={{ color: "var(--accent)" }}>{result.complexity.recommended_strategy}</span>
               </span>
             )}
           </div>
+
+          {/* Novelty bar */}
+          {typeof result.novelty_score === "number" && (
+            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 10, color: "var(--t-tertiary)", flexShrink: 0 }}>novelty</span>
+              <div style={{ flex: 1, maxWidth: 120 }}>
+                <NoveltyBar score={result.novelty_score} />
+              </div>
+            </div>
+          )}
+
+          {/* Complexity badges */}
+          {result.complexity && (
+            <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
+              {typeof result.complexity.formalizability === "number" && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontFamily: "JetBrains Mono, monospace",
+                    color: "var(--t-tertiary)",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border-s)",
+                    borderRadius: 4,
+                    padding: "1px 6px",
+                  }}
+                >
+                  form {result.complexity.formalizability}/5
+                </span>
+              )}
+              {typeof result.complexity.proof_difficulty === "number" && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontFamily: "JetBrains Mono, monospace",
+                    color: "var(--t-tertiary)",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border-s)",
+                    borderRadius: 4,
+                    padding: "1px 6px",
+                  }}
+                >
+                  diff {result.complexity.proof_difficulty}/5
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Badges */}
