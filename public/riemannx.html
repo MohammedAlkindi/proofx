@@ -36,40 +36,7 @@
       </div>
     </section>
 
-  <style>
-  #findings-riemann .findings__grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; }
-  #findings-riemann .finding-row { display:flex; flex-direction:column; background:var(--surface-3,#fafafa); border-radius:1rem; padding:1rem; opacity:0; transform:translateY(10px); transition:opacity 0.4s ease, transform 0.4s ease;}
-  #findings-riemann .finding-row:not(.hidden){opacity:1; transform:translateY(0);}
-  #findings-riemann .finding-text{margin-bottom:0.5rem;}
-  #findings-riemann .finding-visual{width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:0.75rem;}
-  #findings-riemann .finding-visual img{width:100%; height:100%; object-fit:cover; display:block;}
-  #findings-riemann figcaption{margin-top:0.5rem; font-size:0.85rem; opacity:0.8;}
-  #findings-riemann .btn-row{margin-top:1rem; display:flex; gap:0.75rem;}
-  #findings-riemann .btn:hover,#findings-riemann .btn:focus-visible{filter:brightness(1.1); transform:translateY(-1px); transition:all 0.2s ease;}
-  </style>
-  
-  <script>
-  (function(){
-    const items = Array.from(document.querySelectorAll('#findings-grid-riemann .finding'));
-    const btnMore = document.getElementById('findings-show-more-riemann');
-    const btnLess = document.getElementById('findings-show-less-riemann');
-    const live = document.getElementById('findings-live-riemann');
-    const INITIAL_VISIBLE = 1;
-    const STEP = 1;
-    items.forEach((el,i)=>el.classList.toggle('hidden',i>=INITIAL_VISIBLE));
-    const getVisibleItems = ()=>items.filter(i=>!i.classList.contains('hidden'));
-    function updateUI(){
-      const visibleCount=getVisibleItems().length;
-      btnMore.classList.toggle('hidden',visibleCount>=items.length);
-      btnLess.classList.toggle('hidden',visibleCount<=INITIAL_VISIBLE);
-      live.textContent=`Showing ${visibleCount} ${visibleCount===1?'finding':'findings'} in the gallery.`;
-    }
-    btnMore.addEventListener('click',()=>{items.filter(i=>i.classList.contains('hidden')).slice(0,STEP).forEach(i=>i.classList.remove('hidden'));updateUI();items.find(i=>!i.classList.contains('hidden'))?.scrollIntoView({behavior:'smooth',block:'nearest'});});
-    btnLess.addEventListener('click',()=>{const visibles=getVisibleItems();visibles.slice(-STEP).filter((_,idx)=>visibles.length-idx-1>=INITIAL_VISIBLE).forEach(i=>i.classList.add('hidden'));updateUI();getVisibleItems().slice(-1)[0]?.scrollIntoView({behavior:'smooth',block:'nearest'});});
-    updateUI();
-  })();
-  </script>
-    
+
     <!-- ================================ CAPABILITIES ============================= -->
     <section id="capabilities" class="section" aria-labelledby="capabilities-title">
       <div class="container card">

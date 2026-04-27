@@ -36,28 +36,6 @@
       </div>
     </section>
     
-  <script>
-  (function(){
-    const items = Array.from(document.querySelectorAll('#findings-grid-riemann .finding'));
-    const btnMore = document.getElementById('findings-show-more-riemann');
-    const btnLess = document.getElementById('findings-show-less-riemann');
-    const live = document.getElementById('findings-live-riemann');
-    const INITIAL_VISIBLE = 1;
-    const STEP = 1;
-    items.forEach((el,i)=>el.classList.toggle('hidden',i>=INITIAL_VISIBLE));
-    const getVisibleItems = ()=>items.filter(i=>!i.classList.contains('hidden'));
-    function updateUI(){
-      const visibleCount=getVisibleItems().length;
-      btnMore.classList.toggle('hidden',visibleCount>=items.length);
-      btnLess.classList.toggle('hidden',visibleCount<=INITIAL_VISIBLE);
-      live.textContent=`Showing ${visibleCount} ${visibleCount===1?'finding':'findings'} in the gallery.`;
-    }
-    btnMore.addEventListener('click',()=>{items.filter(i=>i.classList.contains('hidden')).slice(0,STEP).forEach(i=>i.classList.remove('hidden'));updateUI();items.find(i=>!i.classList.contains('hidden'))?.scrollIntoView({behavior:'smooth',block:'nearest'});});
-    btnLess.addEventListener('click',()=>{const visibles=getVisibleItems();visibles.slice(-STEP).filter((_,idx)=>visibles.length-idx-1>=INITIAL_VISIBLE).forEach(i=>i.classList.add('hidden'));updateUI();getVisibleItems().slice(-1)[0]?.scrollIntoView({behavior:'smooth',block:'nearest'});});
-    updateUI();
-  })();
-  </script>
-
 
     <!-- ================================ CAPABILITIES ============================= -->
     <section id="capabilities" class="section" aria-labelledby="capabilities-title">

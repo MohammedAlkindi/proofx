@@ -83,12 +83,6 @@
     /* Contact */
     .contact__actions .btn { margin-right: .5rem; margin-bottom: .5rem; }
 
-    /* Findings */
-    .findings__img { max-width: 100%; border-radius: 12px; display: block; }
-    .findings__grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:12px; }
-    .finding { overflow:hidden; border-radius:12px; }
-    .finding img { width:100%; height:auto; display:block; }
-    
     /* Quantum Computing Section */
     .quantum-conjecture { 
       background: var(--surface-2); 
@@ -204,7 +198,7 @@
     
         <div class="btn-row" role="group" aria-label="Research actions">
           <a class="btn btn--primary btn--pill" href="/research.html">Explore Research</a>
-          <a class="btn btn--pill" href="/assets/proofx-overview.pdf" download>Download Whitepaper</a>
+          <a class="btn btn--pill" href="/assets/pdf/ProofX_Overview.pdf" download>Download Whitepaper</a>
         </div>
       </div>
     </section>
@@ -697,15 +691,6 @@
         batch: 5
       });
 
-      // FINDINGS: reveal all remaining visuals at once
-      setupShowMoreLess({
-        containerSelector: '#findings-grid',
-        itemSelector: '.finding',
-        showMoreId: 'findings-show-more',
-        showLessId: 'findings-show-less',
-        liveId: 'findings-live',
-        batch: Infinity
-      });
     })();
   </script>
 
