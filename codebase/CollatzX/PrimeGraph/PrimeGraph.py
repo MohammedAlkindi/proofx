@@ -465,6 +465,7 @@ class PrimeAttractorGraph:
             font_size=8,
             font_weight='bold',
             bbox=dict(facecolor='white', alpha=0.8)
+        )
 
         # Add legend and title
         plt.title(
@@ -478,6 +479,7 @@ class PrimeAttractorGraph:
         sm = plt.cm.ScalarMappable(
             cmap=plt.cm.viridis,
             norm=plt.Normalize(vmin=min(node_sizes), vmax=max(node_sizes))
+        )
         sm.set_array([])
         cbar = plt.colorbar(sm, ax=plt.gca(), shrink=0.5)
         cbar.set_label('Log(Basin Size)')
@@ -661,7 +663,7 @@ class PrimeAttractorGraph:
                 },
                 'attractor_types': {
                     'fixed_points': sum(1 for a in self.basin_sizes
-                                      if isinstance(a, int) and self.is_prime(a))),
+                                      if isinstance(a, int) and self.is_prime(a)),
                     'cycles': sum(1 for a in self.basin_sizes
                                 if isinstance(a, tuple))
                 }

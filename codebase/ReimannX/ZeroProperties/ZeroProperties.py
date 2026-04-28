@@ -74,6 +74,13 @@ class VerificationMethod(Enum):
     SYMBOLIC = auto()
     HYBRID = auto()
 
+try:
+    import sympy as _sympy_probe
+    SYMPY_AVAILABLE = True
+    del _sympy_probe
+except ImportError:
+    SYMPY_AVAILABLE = False
+
 @dataclass
 class SystemInfo:
     platform: str

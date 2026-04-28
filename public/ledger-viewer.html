@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProofX — Ledger Viewer</title>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16181d;
+      --border: #2a2d36;
+      --accent: #7c6af7;
+      --accent-soft: rgba(124,106,247,0.12);
+      --text: #e2e4ea;
+      --muted: #6b7280;
+      --collatz: #5b9cf6;
+      --goldbach: #f97316;
+      --score-high: #ef4444;
+      --score-mid: #eab308;
+      --score-low: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 20px 32px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+
+    header h1 span { color: var(--accent); }
+
+    .toolbar {
+      padding: 14px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input[type="file"] { display: none; }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .btn:hover { opacity: 0.88; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    select, input[type="range"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .stats-bar {
+      padding: 10px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 28px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stats-bar span b { color: var(--text); }
+
+    .pill {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .pill-collatz { background: rgba(91,156,246,0.15); color: var(--collatz); }
+    .pill-goldbach { background: rgba(249,115,22,0.15); color: var(--goldbach); }
+
+    .drop-zone {
+      margin: 48px auto;
+      max-width: 480px;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 48px 32px;
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .drop-zone p { margin-top: 10px; font-size: 12px; }
+
+    .drop-zone .icon { font-size: 32px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    thead th:hover { color: var(--text); }
+    thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+    thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover { background: var(--surface); }
+    tbody tr.expanded { background: var(--surface); }
+
+    td {
+      padding: 8px 12px;
+      vertical-align: middle;
+    }
+
+    .score-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-track {
+      width: 80px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .score-num { font-weight: 600; min-width: 42px; }
+
+    .detail-row td {
+      padding: 0;
+    }
+
+    .detail-panel {
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.02);
+      border-top: 1px solid var(--border);
+    }
+
+    .detail-panel h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .feature-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+
+    .feature-item .key { color: var(--muted); font-size: 10px; margin-bottom: 3px; }
+    .feature-item .val { font-weight: 600; font-size: 13px; }
+
+    .details-kv {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 12px;
+    }
+
+    .details-kv span { color: var(--muted); }
+    .details-kv b { color: var(--text); }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .empty-msg {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+    }
+
+    #min-score-val { min-width: 30px; display: inline-block; text-align: right; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Proof<span>X</span> Ledger Viewer</h1>
+</header>
+
+<div class="toolbar">
+  <label>
+    <button class="btn" onclick="document.getElementById('file-input').click()">Load JSONL</button>
+    <input type="file" id="file-input" accept=".jsonl,.json">
+  </label>
+
+  <label>
+    Conjecture
+    <select id="filter-conjecture">
+      <option value="all">All</option>
+      <option value="collatz">Collatz</option>
+      <option value="goldbach">Goldbach</option>
+    </select>
+  </label>
+
+  <label>
+    Min score &ge; <span id="min-score-val">0.00</span>
+    <input type="range" id="min-score" min="0" max="1" step="0.01" value="0">
+  </label>
+
+  <label>
+    Show top
+    <select id="top-k">
+      <option value="50">50</option>
+      <option value="100" selected>100</option>
+      <option value="250">250</option>
+      <option value="0">All</option>
+    </select>
+  </label>
+
+  <button class="btn btn-ghost" id="export-btn" style="margin-left:auto" onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="stats-bar" id="stats-bar" style="display:none">
+  <span>Entries: <b id="stat-total">—</b></span>
+  <span>Showing: <b id="stat-showing">—</b></span>
+  <span>Collatz: <b id="stat-collatz">—</b></span>
+  <span>Goldbach: <b id="stat-goldbach">—</b></span>
+  <span>Max near-miss: <b id="stat-max">—</b></span>
+</div>
+
+<div id="drop-zone" class="drop-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" onclick="document.getElementById('file-input').click()">
+  <div class="icon">📂</div>
+  <p>Drop a <code>.jsonl</code> ledger file here, or click to browse</p>
+  <p style="margin-top:6px;font-size:11px">Generated by <code>python FalsificationEngine.py --save-ledger out.jsonl</code></p>
+</div>
+
+<div id="table-container" style="display:none">
+  <div class="table-wrap">
+    <table id="ledger-table">
+      <thead>
+        <tr>
+          <th data-col="rank">#</th>
+          <th data-col="candidate" class="sort-desc">Candidate</th>
+          <th data-col="conjecture">Conjecture</th>
+          <th data-col="near_miss_score" class="sort-desc">Near-miss score</th>
+          <th data-col="strategy">Strategy</th>
+          <th data-col="timestamp">Time</th>
+        </tr>
+      </thead>
+      <tbody id="ledger-body"></tbody>
+    </table>
+    <p class="empty-msg" id="empty-msg" style="display:none">No entries match the current filters.</p>
+  </div>
+</div>
+
+<script>
+  let allEntries = [];
+  let sortCol = 'near_miss_score';
+  let sortDir = -1; // -1 = desc
+  let expandedRow = null;
+
+  // ── File loading ────────────────────────────────────────────────────────────
+  document.getElementById('file-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) loadFile(file);
+  });
+
+  function onDragOver(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.add('drag-over');
+  }
+
+  function onDragLeave() {
+    document.getElementById('drop-zone').classList.remove('drag-over');
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    onDragLeave();
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  }
+
+  function loadFile(file) {
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const lines = evt.target.result.split('\n').filter(l => l.trim());
+      allEntries = [];
+      for (const line of lines) {
+        try { allEntries.push(JSON.parse(line)); } catch (_) {}
+      }
+      if (allEntries.length === 0) {
+        alert('No valid JSONL entries found in the file.');
+        return;
+      }
+      document.getElementById('drop-zone').style.display = 'none';
+      document.getElementById('table-container').style.display = 'block';
+      document.getElementById('stats-bar').style.display = 'flex';
+      render();
+    };
+    reader.readAsText(file);
+  }
+
+  // ── Filtering & sorting ─────────────────────────────────────────────────────
+  document.getElementById('filter-conjecture').addEventListener('change', render);
+  document.getElementById('top-k').addEventListener('change', render);
+  document.getElementById('min-score').addEventListener('input', function() {
+    document.getElementById('min-score-val').textContent = parseFloat(this.value).toFixed(2);
+    render();
+  });
+
+  document.querySelectorAll('thead th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (col === 'rank') return;
+      if (sortCol === col) { sortDir *= -1; }
+      else { sortCol = col; sortDir = -1; }
+      document.querySelectorAll('thead th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(sortDir === -1 ? 'sort-desc' : 'sort-asc');
+      render();
+    });
+  });
+
+  function getFiltered() {
+    const conj = document.getElementById('filter-conjecture').value;
+    const minScore = parseFloat(document.getElementById('min-score').value);
+    return allEntries.filter(e =>
+      (conj === 'all' || e.conjecture === conj) &&
+      e.near_miss_score >= minScore
+    );
+  }
+
+  function render() {
+    const filtered = getFiltered();
+    const topK = parseInt(document.getElementById('top-k').value) || Infinity;
+
+    const sorted = [...filtered].sort((a, b) => {
+      const av = a[sortCol] ?? 0, bv = b[sortCol] ?? 0;
+      if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+      return sortDir * (bv - av);
+    });
+
+    const slice = topK === Infinity ? sorted : sorted.slice(0, topK);
+
+    updateStats(filtered, slice);
+    renderRows(slice);
+  }
+
+  function updateStats(filtered, slice) {
+    const collatz = allEntries.filter(e => e.conjecture === 'collatz').length;
+    const goldbach = allEntries.filter(e => e.conjecture === 'goldbach').length;
+    const max = allEntries.reduce((m, e) => Math.max(m, e.near_miss_score), 0);
+    document.getElementById('stat-total').textContent = allEntries.length.toLocaleString();
+    document.getElementById('stat-showing').textContent = slice.length.toLocaleString();
+    document.getElementById('stat-collatz').textContent = collatz.toLocaleString();
+    document.getElementById('stat-goldbach').textContent = goldbach.toLocaleString();
+    document.getElementById('stat-max').textContent = max.toFixed(4);
+  }
+
+  function renderRows(entries) {
+    const tbody = document.getElementById('ledger-body');
+    tbody.innerHTML = '';
+    expandedRow = null;
+
+    if (entries.length === 0) {
+      document.getElementById('empty-msg').style.display = 'block';
+      return;
+    }
+    document.getElementById('empty-msg').style.display = 'none';
+
+    entries.forEach((e, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--muted);width:40px">${i + 1}</td>
+        <td><b>${e.candidate.toLocaleString()}</b></td>
+        <td>${conjPill(e.conjecture)}</td>
+        <td>${scoreBar(e.near_miss_score)}</td>
+        <td style="color:var(--muted);font-size:11px">${e.strategy}</td>
+        <td style="color:var(--muted);font-size:11px">${fmtTime(e.timestamp)}</td>
+      `;
+      tr.addEventListener('click', () => toggleDetail(tr, e));
+      tbody.appendChild(tr);
+    });
+  }
+
+  function toggleDetail(tr, entry) {
+    // collapse previous
+    if (expandedRow && expandedRow !== tr) {
+      expandedRow.classList.remove('expanded');
+      const old = expandedRow.nextSibling;
+      if (old && old.classList.contains('detail-row')) old.remove();
+    }
+
+    if (tr.classList.contains('expanded')) {
+      tr.classList.remove('expanded');
+      const next = tr.nextSibling;
+      if (next && next.classList.contains('detail-row')) next.remove();
+      expandedRow = null;
+      return;
+    }
+
+    tr.classList.add('expanded');
+    expandedRow = tr;
+
+    const detail = document.createElement('tr');
+    detail.classList.add('detail-row');
+    const td = document.createElement('td');
+    td.colSpan = 6;
+    td.innerHTML = buildDetail(entry);
+    detail.appendChild(td);
+    tr.insertAdjacentElement('afterend', detail);
+  }
+
+  function buildDetail(e) {
+    const features = e.features || {};
+    const details = e.details || {};
+
+    const featureItems = Object.entries(features).map(([k, v]) =>
+      `<div class="feature-item"><div class="key">${k.replace(/_/g,' ')}</div><div class="val">${typeof v === 'number' ? v.toFixed(5) : v}</div></div>`
+    ).join('');
+
+    const detailItems = Object.entries(details).map(([k, v]) =>
+      `<span><span>${k.replace(/_/g,' ')}</span> <b>${typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(4) : v}</b></span>`
+    ).join('');
+
+    return `
+      <div class="detail-panel">
+        <h3>Feature vector</h3>
+        <div class="feature-grid">${featureItems || '<span style="color:var(--muted)">none</span>'}</div>
+        <h3>Diagnostics</h3>
+        <div class="details-kv">${detailItems || '<span style="color:var(--muted)">none</span>'}</div>
+        <div style="margin-top:12px;color:var(--muted);font-size:11px">
+          RNG seed: <b style="color:var(--text)">${e.rng_seed}</b> &nbsp;|&nbsp;
+          Strategy: <b style="color:var(--text)">${e.strategy}</b>
+        </div>
+      </div>`;
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function conjPill(c) {
+    return `<span class="pill pill-${c}">${c}</span>`;
+  }
+
+  function scoreColor(s) {
+    if (s >= 0.75) return 'var(--score-high)';
+    if (s >= 0.40) return 'var(--score-mid)';
+    return 'var(--score-low)';
+  }
+
+  function scoreBar(s) {
+    const col = scoreColor(s);
+    return `<div class="score-bar">
+      <span class="score-num" style="color:${col}">${s.toFixed(4)}</span>
+      <div class="score-track"><div class="score-fill" style="width:${(s*100).toFixed(1)}%;background:${col}"></div></div>
+    </div>`;
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts * 1000).toLocaleTimeString();
+  }
+
+  // ── CSV export ──────────────────────────────────────────────────────────────
+  function exportCSV() {
+    if (allEntries.length === 0) return;
+    const rows = [['candidate','conjecture','near_miss_score','strategy','timestamp','rng_seed']];
+    getFiltered().forEach(e => {
+      rows.push([e.candidate, e.conjecture, e.near_miss_score, e.strategy, e.timestamp, e.rng_seed]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = Object.assign(document.createElement('a'), {
+      href: 'data:text/csv,' + encodeURIComponent(csv),
+      download: 'proofx_ledger.csv'
+    });
+    a.click();
+  }
+</script>
+</body>
+</html>
