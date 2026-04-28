@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CollatzX Engine | ProofX</title>
+  <meta name="description" content="Operator-grade verification engine for Collatz sequences — convergence testing, cycle detection, and statistical analysis across billions of iterations.">
+  <link rel="canonical" href="https://www.proofx.org/collatzx">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CollatzX Engine | ProofX">
+  <meta property="og:description" content="Convergence testing, cycle detection, and statistical analysis across billions of Collatz iterations.">
+  <meta property="og:url" content="https://www.proofx.org/collatzx">
+  <meta property="og:site_name" content="ProofX">
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CollatzX Engine | ProofX">
+  <meta name="twitter:description" content="Convergence testing, cycle detection, and statistical analysis across billions of Collatz iterations.">
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -35,6 +47,64 @@
         </div>
       </div>
     </section>
+
+
+    <!-- ================================ DEMO ================================= -->
+    <section id="demo" class="section" aria-labelledby="collatz-demo-title">
+      <div class="container card">
+        <h2 id="collatz-demo-title">Try It — Live Collatz Tracer</h2>
+        <p class="muted">Enter any positive integer to trace its Collatz sequence directly in your browser.</p>
+        <div style="display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap;">
+          <input id="collatz-input" type="number" min="1" max="10000000" value="27"
+                 placeholder="Positive integer"
+                 style="flex:1;min-width:140px;padding:.5rem .75rem;border-radius:8px;border:1px solid rgba(128,128,128,.35);background:var(--surface-1,#111);color:inherit;font-size:1rem;"
+                 aria-label="Starting value for Collatz sequence">
+          <button id="collatz-run" class="btn btn--primary btn--pill">Trace</button>
+        </div>
+        <div id="collatz-result" aria-live="polite"
+             style="display:none;margin-top:1rem;padding:1rem;border-radius:8px;background:var(--surface-1,rgba(0,0,0,.25));border:1px solid rgba(128,128,128,.15);font-family:monospace;font-size:.83rem;white-space:pre-wrap;word-break:break-all;"></div>
+      </div>
+    </section>
+    <script>
+    (function () {
+      var inp = document.getElementById('collatz-input');
+      var btn = document.getElementById('collatz-run');
+      var out = document.getElementById('collatz-result');
+      function trace(n) {
+        var seq = [n], cur = n, maxVal = n, steps = 0;
+        while (cur !== 1 && steps < 100000) {
+          cur = cur % 2 === 0 ? cur / 2 : 3 * cur + 1;
+          seq.push(cur);
+          if (cur > maxVal) maxVal = cur;
+          steps++;
+        }
+        return { seq: seq, steps: steps, maxVal: maxVal, converged: cur === 1 };
+      }
+      function run() {
+        var n = parseInt(inp.value, 10);
+        if (!n || n < 1 || !Number.isFinite(n)) {
+          out.textContent = 'Please enter a positive integer.';
+          out.style.display = 'block'; return;
+        }
+        var r = trace(n);
+        var preview = r.seq.length <= 20
+          ? r.seq.join(' → ')
+          : r.seq.slice(0, 10).join(' → ') + ' ···  ' + r.seq.slice(-5).join(' → ');
+        out.textContent = [
+          'Starting value : ' + n.toLocaleString(),
+          'Stopping time  : ' + r.steps + ' steps',
+          'Peak value     : ' + r.maxVal.toLocaleString(),
+          'Converged to 1 : ' + (r.converged ? 'yes' : 'limit reached (>100k steps)'),
+          '',
+          'Sequence (' + r.seq.length + ' values):',
+          preview
+        ].join('\n');
+        out.style.display = 'block';
+      }
+      btn.addEventListener('click', run);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+    }());
+    </script>
 
 
     <!-- ================================ CAPABILITIES ============================= -->
@@ -89,6 +159,7 @@
       <span>© 2025 ProofX</span>
       <nav class="footer__links">
         <a href="/index.html">Home</a>
+        <a href="/results.html">Results</a>
         <a href="/contact.html">Contact</a>
       </nav>
     </div>

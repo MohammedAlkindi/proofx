@@ -866,6 +866,8 @@ def main() -> None:
                         help="Number of top near-misses to print per conjecture")
     parser.add_argument("--save-ledger", type=str, default=None,
                         help="Path to save the full ledger as JSONL (optional)")
+    parser.add_argument("--output-json", type=str, default=None,
+                        help="Path to save a JSON summary report (optional)")
     args = parser.parse_args()
 
     engine = FalsificationEngine()
@@ -892,6 +894,37 @@ def main() -> None:
     if args.save_ledger:
         result["ledger"].save(Path(args.save_ledger))
         print(f"\n  Ledger saved: {args.save_ledger}")
+
+    if args.output_json:
+        summary = {
+            "seed": args.seed,
+            "budget": args.budget,
+            "target": args.target,
+            "elapsed_s": stats["elapsed_s"],
+            "stats": stats,
+            "top_collatz": [
+                {
+                    "candidate": e.candidate,
+                    "near_miss_score": e.near_miss_score,
+                    "strategy": e.strategy,
+                    "features": e.features,
+                }
+                for e in result["top_collatz"][: args.top_k]
+            ],
+            "top_goldbach": [
+                {
+                    "candidate": e.candidate,
+                    "near_miss_score": e.near_miss_score,
+                    "strategy": e.strategy,
+                    "features": e.features,
+                }
+                for e in result["top_goldbach"][: args.top_k]
+            ],
+        }
+        out_path = Path(args.output_json)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(f"\n  JSON summary saved: {args.output_json}")
 
 
 if __name__ == "__main__":

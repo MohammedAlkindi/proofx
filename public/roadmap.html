@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProofX Engine Roadmap</title>
+  <title>Engine Roadmap | ProofX</title>
+  <meta name="description" content="Strategic milestones and development phases guiding the evolution of ProofX's verification engines and research collaborations.">
+  <link rel="canonical" href="https://www.proofx.org/roadmap">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Engine Roadmap | ProofX">
+  <meta property="og:description" content="Strategic milestones and development phases for ProofX's conjecture verification engines.">
+  <meta property="og:url" content="https://www.proofx.org/roadmap">
+  <meta property="og:site_name" content="ProofX">
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Engine Roadmap | ProofX">
+  <meta name="twitter:description" content="Strategic milestones and development phases for ProofX's conjecture verification engines.">
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -52,9 +64,21 @@
         </p>
       </div>
 
-      <div class="test-cases-grid">
-        <div class="test-case">
+      <!-- Filter controls -->
+      <div id="roadmap-filters" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem;" role="group" aria-label="Filter roadmap by category">
+        <button class="btn btn--primary btn--pill roadmap-filter-btn" data-filter="all" aria-pressed="true">All</button>
+        <button class="btn btn--pill roadmap-filter-btn" data-filter="engineering" aria-pressed="false">Engineering</button>
+        <button class="btn btn--pill roadmap-filter-btn" data-filter="research" aria-pressed="false">Research</button>
+        <button class="btn btn--pill roadmap-filter-btn" data-filter="community" aria-pressed="false">Community</button>
+      </div>
+
+      <div class="test-cases-grid" id="roadmap-grid">
+        <div class="test-case" data-tags="engineering research">
           <h4>Phase 1: Core Engine Development</h4>
+          <p style="font-size:.78rem;color:var(--muted,rgba(255,255,255,.5));margin:.25rem 0 .5rem;">
+            <span style="background:var(--accent,#6366f1);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:4px;margin-right:.25rem;">Engineering</span>
+            <span style="background:rgba(99,102,241,.25);color:var(--accent,#6366f1);font-size:.7rem;padding:.1rem .4rem;border-radius:4px;">Research</span>
+          </p>
           <ul>
             <li>Algorithm optimization and parallelization</li>
             <li>Initial conjecture engine development</li>
@@ -62,8 +86,12 @@
           </ul>
         </div>
 
-        <div class="test-case">
+        <div class="test-case" data-tags="research community">
           <h4>Phase 2: Research Collaboration</h4>
+          <p style="font-size:.78rem;color:var(--muted,rgba(255,255,255,.5));margin:.25rem 0 .5rem;">
+            <span style="background:var(--accent,#6366f1);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:4px;margin-right:.25rem;">Research</span>
+            <span style="background:rgba(99,102,241,.25);color:var(--accent,#6366f1);font-size:.7rem;padding:.1rem .4rem;border-radius:4px;">Community</span>
+          </p>
           <ul>
             <li>Academic partnerships and collaboration tools</li>
             <li>Open-source contributions and community engagement</li>
@@ -71,8 +99,11 @@
           </ul>
         </div>
 
-        <div class="test-case">
+        <div class="test-case" data-tags="community">
           <h4>Phase 3: Community Impact</h4>
+          <p style="font-size:.78rem;color:var(--muted,rgba(255,255,255,.5));margin:.25rem 0 .5rem;">
+            <span style="background:rgba(99,102,241,.25);color:var(--accent,#6366f1);font-size:.7rem;padding:.1rem .4rem;border-radius:4px;">Community</span>
+          </p>
           <ul>
             <li>STEM educational initiatives</li>
             <li>Open data publication and reproducibility tools</li>
@@ -80,8 +111,12 @@
           </ul>
         </div>
 
-        <div class="test-case">
+        <div class="test-case" data-tags="engineering research">
           <h4>Phase 4: Next-Gen Engines</h4>
+          <p style="font-size:.78rem;color:var(--muted,rgba(255,255,255,.5));margin:.25rem 0 .5rem;">
+            <span style="background:var(--accent,#6366f1);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:4px;margin-right:.25rem;">Engineering</span>
+            <span style="background:rgba(99,102,241,.25);color:var(--accent,#6366f1);font-size:.7rem;padding:.1rem .4rem;border-radius:4px;">Research</span>
+          </p>
           <ul>
             <li>Advanced conjecture verification modules</li>
             <li>High-performance computing integration</li>
@@ -89,6 +124,28 @@
           </ul>
         </div>
       </div>
+      <script>
+      (function () {
+        var btns = document.querySelectorAll('.roadmap-filter-btn');
+        var cards = document.querySelectorAll('#roadmap-grid .test-case');
+        btns.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var filter = btn.dataset.filter;
+            btns.forEach(function (b) {
+              b.setAttribute('aria-pressed', 'false');
+              b.classList.remove('btn--primary');
+              b.classList.add('btn--pill');
+            });
+            btn.setAttribute('aria-pressed', 'true');
+            btn.classList.add('btn--primary');
+            cards.forEach(function (card) {
+              var tags = card.dataset.tags || '';
+              card.style.display = (filter === 'all' || tags.indexOf(filter) !== -1) ? '' : 'none';
+            });
+          });
+        });
+      }());
+      </script>
 
       <div class="btn-row">
         <a class="btn btn--primary btn--pill" href="/engines/contribute">Contribute</a>

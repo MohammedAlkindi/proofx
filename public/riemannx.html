@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RiemannX Engine | ProofX</title>
+  <meta name="description" content="Operator-grade verification engine for the Riemann Hypothesis — zero testing, prime-counting validation, and functional symmetry analysis across massive computational ranges.">
+  <link rel="canonical" href="https://www.proofx.org/riemannx">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="RiemannX Engine | ProofX">
+  <meta property="og:description" content="Zero testing, prime-counting validation, and functional symmetry analysis for the Riemann Hypothesis.">
+  <meta property="og:url" content="https://www.proofx.org/riemannx">
+  <meta property="og:site_name" content="ProofX">
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RiemannX Engine | ProofX">
+  <meta name="twitter:description" content="Zero testing, prime-counting validation, and functional symmetry analysis for the Riemann Hypothesis.">
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -35,6 +47,111 @@
         </div>
       </div>
     </section>
+
+
+    <!-- ================================ DEMO ================================= -->
+    <section id="demo" class="section" aria-labelledby="riemann-demo-title">
+      <div class="container card">
+        <h2 id="riemann-demo-title">Try It — Prime Inspector</h2>
+        <p class="muted">Enter a positive integer to test primality, find the nearest primes, and count primes up to that value (exact up to 500,000).</p>
+        <div style="display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap;">
+          <input id="riemann-input" type="number" min="2" max="10000000" value="1000003"
+                 placeholder="Positive integer"
+                 style="flex:1;min-width:140px;padding:.5rem .75rem;border-radius:8px;border:1px solid rgba(128,128,128,.35);background:var(--surface-1,#111);color:inherit;font-size:1rem;"
+                 aria-label="Integer to inspect">
+          <button id="riemann-run" class="btn btn--primary btn--pill">Inspect</button>
+        </div>
+        <div id="riemann-result" aria-live="polite"
+             style="display:none;margin-top:1rem;padding:1rem;border-radius:8px;background:var(--surface-1,rgba(0,0,0,.25));border:1px solid rgba(128,128,128,.15);font-family:monospace;font-size:.83rem;white-space:pre-wrap;"></div>
+      </div>
+    </section>
+    <script>
+    (function () {
+      var inp = document.getElementById('riemann-input');
+      var btn = document.getElementById('riemann-run');
+      var out = document.getElementById('riemann-result');
+
+      function millerRabin(n) {
+        if (n < 2) return false;
+        if (n === 2 || n === 3 || n === 5 || n === 7 || n === 11 || n === 13) return true;
+        if (n % 2 === 0 || n % 3 === 0) return false;
+        var d = n - 1, r = 0;
+        while (d % 2 === 0) { d = Math.floor(d / 2); r++; }
+        var witnesses = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
+        for (var wi = 0; wi < witnesses.length; wi++) {
+          var a = witnesses[wi];
+          if (a >= n) continue;
+          var x = modpow(a, d, n);
+          if (x === 1 || x === n - 1) continue;
+          var cont = false;
+          for (var i = 0; i < r - 1; i++) {
+            x = mulmod(x, x, n);
+            if (x === n - 1) { cont = true; break; }
+          }
+          if (!cont) return false;
+        }
+        return true;
+      }
+      function modpow(base, exp, mod) {
+        var result = 1; base = base % mod;
+        while (exp > 0) {
+          if (exp % 2 === 1) result = mulmod(result, base, mod);
+          exp = Math.floor(exp / 2); base = mulmod(base, base, mod);
+        }
+        return result;
+      }
+      function mulmod(a, b, m) {
+        var result = 0; a = a % m;
+        while (b > 0) {
+          if (b % 2 === 1) result = (result + a) % m;
+          a = (a * 2) % m; b = Math.floor(b / 2);
+        }
+        return result;
+      }
+      function nearestPrimes(n) {
+        var prev = null, next = null;
+        for (var k = n - 1; k >= 2; k--) { if (millerRabin(k)) { prev = k; break; } }
+        for (var k = n + 1; k <= n + 10000; k++) { if (millerRabin(k)) { next = k; break; } }
+        return { prev: prev, next: next };
+      }
+      function piCount(n) {
+        if (n < 2) return 0;
+        var limit = Math.min(n, 500000);
+        var sieve = new Uint8Array(limit + 1).fill(1);
+        sieve[0] = sieve[1] = 0;
+        for (var i = 2; i * i <= limit; i++) {
+          if (sieve[i]) for (var j = i * i; j <= limit; j += i) sieve[j] = 0;
+        }
+        var count = 0;
+        for (var i = 2; i <= limit; i++) { if (sieve[i]) count++; }
+        return { count: count, exact: n <= 500000 };
+      }
+
+      function run() {
+        var n = parseInt(inp.value, 10);
+        if (!n || n < 2 || !Number.isFinite(n)) {
+          out.textContent = 'Please enter an integer ≥ 2.';
+          out.style.display = 'block'; return;
+        }
+        var isPrime = millerRabin(n);
+        var near = nearestPrimes(n);
+        var pi = piCount(n);
+        var approx = n / Math.log(n);
+        var lines = [
+          'n              : ' + n.toLocaleString(),
+          'Is prime       : ' + (isPrime ? 'yes' : 'no'),
+          'Nearest prime  : ' + (isPrime ? n + ' (itself)' : (near.prev ? near.prev.toLocaleString() + ' (below)' : '—') + '  /  ' + (near.next ? near.next.toLocaleString() + ' (above)' : '—')),
+          'π(n) exact     : ' + (pi.exact ? pi.count.toLocaleString() : '≥ ' + pi.count.toLocaleString() + ' (capped at 500k; full sieve unavailable)'),
+          'π(n) approx    : ~' + Math.round(approx).toLocaleString() + '  (n / ln n)',
+          'Error estimate : ' + (pi.exact ? (Math.abs(pi.count - approx) / pi.count * 100).toFixed(2) + '%' : 'n/a'),
+        ];
+        out.textContent = lines.join('\n');
+        out.style.display = 'block';
+      }
+      btn.addEventListener('click', run);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+    }());
+    </script>
 
 
     <!-- ================================ CAPABILITIES ============================= -->
@@ -89,6 +206,7 @@
       <span>© 2025 ProofX</span>
       <nav class="footer__links">
         <a href="/index.html">Home</a>
+        <a href="/results.html">Results</a>
         <a href="/contact.html">Contact</a>
       </nav>
     </div>

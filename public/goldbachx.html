@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GoldbachX Engine | ProofX</title>
+  <meta name="description" content="Operator-grade verification engine for Goldbach's Conjecture — even-number decomposition, prime-sum analysis, and counterexample searching across extremely large ranges.">
+  <link rel="canonical" href="https://www.proofx.org/goldbachx">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="GoldbachX Engine | ProofX">
+  <meta property="og:description" content="Even-number prime decomposition, partition analysis, and counterexample search across ranges up to 10^18.">
+  <meta property="og:url" content="https://www.proofx.org/goldbachx">
+  <meta property="og:site_name" content="ProofX">
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GoldbachX Engine | ProofX">
+  <meta name="twitter:description" content="Even-number prime decomposition, partition analysis, and counterexample search across ranges up to 10^18.">
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -35,7 +47,74 @@
         </div>
       </div>
     </section>
-    
+
+
+    <!-- ================================ DEMO ================================= -->
+    <section id="demo" class="section" aria-labelledby="goldbach-demo-title">
+      <div class="container card">
+        <h2 id="goldbach-demo-title">Try It — Live Goldbach Decomposer</h2>
+        <p class="muted">Enter an even number ≥ 4 (up to 100,000) to find all prime pair decompositions in your browser.</p>
+        <div style="display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap;">
+          <input id="goldbach-input" type="number" min="4" max="100000" step="2" value="28"
+                 placeholder="Even integer ≥ 4"
+                 style="flex:1;min-width:140px;padding:.5rem .75rem;border-radius:8px;border:1px solid rgba(128,128,128,.35);background:var(--surface-1,#111);color:inherit;font-size:1rem;"
+                 aria-label="Even number for Goldbach decomposition">
+          <button id="goldbach-run" class="btn btn--primary btn--pill">Decompose</button>
+        </div>
+        <div id="goldbach-result" aria-live="polite"
+             style="display:none;margin-top:1rem;padding:1rem;border-radius:8px;background:var(--surface-1,rgba(0,0,0,.25));border:1px solid rgba(128,128,128,.15);font-family:monospace;font-size:.83rem;white-space:pre-wrap;"></div>
+      </div>
+    </section>
+    <script>
+    (function () {
+      var inp = document.getElementById('goldbach-input');
+      var btn = document.getElementById('goldbach-run');
+      var out = document.getElementById('goldbach-result');
+      function sieve(limit) {
+        var isPrime = new Uint8Array(limit + 1).fill(1);
+        isPrime[0] = isPrime[1] = 0;
+        for (var i = 2; i * i <= limit; i++) {
+          if (isPrime[i]) for (var j = i * i; j <= limit; j += i) isPrime[j] = 0;
+        }
+        return isPrime;
+      }
+      function decompose(n) {
+        var isPrime = sieve(n);
+        var pairs = [];
+        for (var p = 2; p <= Math.floor(n / 2); p++) {
+          if (isPrime[p] && isPrime[n - p]) pairs.push([p, n - p]);
+        }
+        return pairs;
+      }
+      function run() {
+        var n = parseInt(inp.value, 10);
+        if (!n || n < 4 || n % 2 !== 0) {
+          out.textContent = 'Please enter an even integer ≥ 4.';
+          out.style.display = 'block'; return;
+        }
+        if (n > 100000) {
+          out.textContent = 'Please enter a value ≤ 100,000 for in-browser computation.';
+          out.style.display = 'block'; return;
+        }
+        var pairs = decompose(n);
+        var lines = [
+          'Input          : ' + n.toLocaleString(),
+          'Decompositions : ' + pairs.length,
+          ''
+        ];
+        var show = pairs.length <= 20 ? pairs : pairs.slice(0, 20);
+        show.forEach(function (p, i) {
+          lines.push('  ' + (i + 1) + '.  ' + p[0] + ' + ' + p[1]);
+        });
+        if (pairs.length > 20) lines.push('  … and ' + (pairs.length - 20) + ' more pairs');
+        out.textContent = lines.join('\n');
+        out.style.display = 'block';
+      }
+      btn.addEventListener('click', run);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+    }());
+    </script>
+
 
     <!-- ================================ CAPABILITIES ============================= -->
     <section id="capabilities" class="section" aria-labelledby="capabilities-title">
@@ -89,6 +168,7 @@
       <span>© 2025 ProofX</span>
       <nav class="footer__links">
         <a href="/index.html">Home</a>
+        <a href="/results.html">Results</a>
         <a href="/contact.html">Contact</a>
       </nav>
     </div>
