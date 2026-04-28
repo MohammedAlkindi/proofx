@@ -222,5 +222,55 @@ python FalsificationEngine.py --budget 500 --seed 42 --target both --save-ledger
       </nav>
     </div>
   </footer>
+
+  <script>
+    // Overlay live data from /results.json if available.
+    // Generate it with: python -m codebase.cli falsify --budget 500 --seed 42
+    //                     --target both --output-json public/results.json
+    (function () {
+      fetch('/results.json')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => {
+          populateTable(
+            document.querySelector('[aria-label="CollatzX near-miss candidates"] tbody'),
+            data.top_collatz || [],
+            e => [
+              e.candidate.toLocaleString(),
+              e.near_miss_score.toFixed(4),
+              e.features && e.features.stopping_time != null
+                ? Math.round(e.features.stopping_time).toLocaleString() : '—',
+              e.features && e.features.max_value != null
+                ? Math.round(e.features.max_value).toLocaleString() : '—',
+              e.strategy || '—'
+            ]
+          );
+          populateTable(
+            document.querySelector('[aria-label="GoldbachX partition deficit candidates"] tbody'),
+            data.top_goldbach || [],
+            e => [
+              e.candidate.toLocaleString(),
+              e.features && e.features.expected_partitions != null
+                ? Math.round(e.features.expected_partitions).toLocaleString() : '—',
+              e.features && e.features.actual_partitions != null
+                ? Math.round(e.features.actual_partitions).toLocaleString() : '—',
+              e.near_miss_score.toFixed(4),
+              e.strategy || '—'
+            ]
+          );
+          const badge = document.querySelector('[data-live-badge]');
+          if (badge) badge.style.display = 'inline';
+        })
+        .catch(() => { /* silently keep static fallback */ });
+
+      function populateTable(tbody, entries, rowFn) {
+        if (!tbody || !entries.length) return;
+        tbody.innerHTML = entries.map((e, i) =>
+          '<tr><td>' + (i + 1) + '</td>' +
+          rowFn(e).map(v => '<td>' + v + '</td>').join('') +
+          '</tr>'
+        ).join('');
+      }
+    })();
+  </script>
 </body>
 </html>

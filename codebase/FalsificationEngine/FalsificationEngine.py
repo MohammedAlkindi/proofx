@@ -26,6 +26,7 @@ np.random.Generator; given seed s, the search path is identical across runs.
 from __future__ import annotations
 
 import contextlib
+import concurrent.futures
 import heapq
 import io
 import json
@@ -340,10 +341,15 @@ class CollatzFalsifier:
         parity_contrib = max(0.0, p - _PARITY_CONVERGENCE_THRESHOLD)
         return 0.5 * min(1.0, parity_contrib / 0.2) + 0.5 * ent
 
+    # How often (in evaluations) to re-seed the queue from the current top-k.
+    _ANCHOR_REFRESH_INTERVAL: int = 50
+    # Number of top ledger entries to recycle as new anchors on each refresh.
+    _ANCHOR_REFRESH_TOP_K: int = 5
+
     # ── Beam search ──────────────────────────────────────────────────────────
 
     def search(self, budget: int, seed: int) -> FalsificationLedger:
-        """Run the inverse-tree beam search.
+        """Run the inverse-tree beam search with dynamic anchor refresh.
 
         Parameters
         ──────────
@@ -380,13 +386,20 @@ class CollatzFalsifier:
             ledger.append(entry)
             evaluated += 1
 
-            if evaluated % 50 == 0:
+            if evaluated % self._ANCHOR_REFRESH_INTERVAL == 0:
                 logger.info(
                     "Collatz search: %d/%d evaluated | top near-miss: %.4f",
                     evaluated,
                     budget,
                     ledger.top_k(1)[0].near_miss_score if ledger else 0.0,
                 )
+                # Dynamic anchor refresh: re-seed queue from current top-k so
+                # the search keeps expanding around the highest-risk region found
+                # so far rather than drifting away from it via the doubling chain.
+                for refresh_entry in ledger.top_k(self._ANCHOR_REFRESH_TOP_K):
+                    anchor = refresh_entry.candidate
+                    if anchor not in visited:
+                        heapq.heappush(pq, (-self._quick_score(anchor), anchor))
 
             # Expand: predecessors + residue neighborhood
             predecessors = self._inverse_collatz_predecessors(candidate)
@@ -476,8 +489,8 @@ class GoldbachFalsifier:
     misleading.  The deficit measures how anomalous n is RELATIVE TO ITS SCALE.
     """
 
-    def __init__(self) -> None:
-        self._primes: List[int] = eratosthenes(_SIEVE_LIMIT)
+    def __init__(self, sieve_limit: int = _SIEVE_LIMIT) -> None:
+        self._primes: List[int] = eratosthenes(sieve_limit)
         self._prime_set: Set[int] = set(self._primes)
         # Small primes used in the H-L Euler product correction (up to sqrt of max n)
         self._small_primes: List[int] = [p for p in self._primes if p >= 3 and p <= 1000]
@@ -750,25 +763,35 @@ class FalsificationEngine:
         result["ledger"].save(Path("falsification_ledger.jsonl"))
     """
 
-    def __init__(self) -> None:
+    def __init__(self, sieve_limit: int = _SIEVE_LIMIT) -> None:
         self._collatz = CollatzFalsifier()
-        self._goldbach = GoldbachFalsifier()
+        self._goldbach = GoldbachFalsifier(sieve_limit=sieve_limit)
+        self._riemann: Optional[Any] = None  # lazy-loaded; requires mpmath
+
+    def _get_riemann(self) -> Any:
+        if self._riemann is None:
+            from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+            self._riemann = RiemannFalsifier()
+        return self._riemann
 
     def run(
         self,
         budget: int,
         seed: int,
         target: str = "both",
+        min_score: float = 0.0,
     ) -> Dict[str, Any]:
         """Run falsification search and return a summary dict.
 
         Parameters
         ──────────
-        budget : total evaluation budget (split evenly between engines if
-                 target == "both")
-        seed   : master seed; each sub-engine receives a deterministically
-                 derived child seed so results are jointly reproducible
-        target : "collatz", "goldbach", or "both"
+        budget    : total evaluation budget (split evenly between engines if
+                    target == "both")
+        seed      : master seed; each sub-engine receives a deterministically
+                    derived child seed so results are jointly reproducible
+        target    : "collatz", "goldbach", or "both"
+        min_score : drop ledger entries below this near-miss score before
+                    returning (reduces JSONL noise when saving large runs)
 
         Returns
         ───────
@@ -780,56 +803,101 @@ class FalsificationEngine:
             "elapsed_s"      : wall-clock seconds,
         }
         """
-        if target not in {"collatz", "goldbach", "both"}:
-            raise ValueError(f"target must be 'collatz', 'goldbach', or 'both'; got {target!r}")
+        _VALID_TARGETS = {"collatz", "goldbach", "riemann", "both", "all"}
+        if target not in _VALID_TARGETS:
+            raise ValueError(
+                f"target must be one of {sorted(_VALID_TARGETS)}; got {target!r}"
+            )
+
+        run_collatz = target in {"collatz", "both", "all"}
+        run_goldbach = target in {"goldbach", "both", "all"}
+        run_riemann = target in {"riemann", "all"}
 
         t0 = time.perf_counter()
         rng_master = np.random.default_rng(seed)
 
         # Derive independent child seeds using the master RNG to preserve
         # reproducibility even if the user only runs one target.
-        child_seeds = rng_master.integers(0, 2**31, size=2).tolist()
-        collatz_seed, goldbach_seed = int(child_seeds[0]), int(child_seeds[1])
+        child_seeds = rng_master.integers(0, 2**31, size=3).tolist()
+        collatz_seed = int(child_seeds[0])
+        goldbach_seed = int(child_seeds[1])
+        riemann_seed = int(child_seeds[2])
 
         collatz_ledger = FalsificationLedger()
         goldbach_ledger = FalsificationLedger()
+        riemann_ledger = FalsificationLedger()
 
-        half = budget // 2
+        # Split budget across active engines.
+        n_active = sum([run_collatz, run_goldbach, run_riemann])
+        per_engine = max(1, budget // n_active)
+        remainder = budget - per_engine * n_active
 
-        if target in {"collatz", "both"}:
-            alloc = half if target == "both" else budget
-            logger.info("Starting Collatz falsification (budget=%d, seed=%d)", alloc, collatz_seed)
-            collatz_ledger = self._collatz.search(alloc, collatz_seed)
+        collatz_budget = (per_engine + remainder) if run_collatz else 0
+        goldbach_budget = per_engine if run_goldbach else 0
+        riemann_budget = per_engine if run_riemann else 0
 
-        if target in {"goldbach", "both"}:
-            alloc = budget - half if target == "both" else budget
+        if run_collatz and run_goldbach and not run_riemann:
+            # Original "both" path: run the two fast engines in parallel.
             logger.info(
-                "Starting Goldbach falsification (budget=%d, seed=%d)", alloc, goldbach_seed
+                "Starting parallel falsification (collatz budget=%d seed=%d, "
+                "goldbach budget=%d seed=%d)",
+                collatz_budget, collatz_seed, goldbach_budget, goldbach_seed,
             )
-            goldbach_ledger = self._goldbach.search(alloc, goldbach_seed)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                cf = pool.submit(self._collatz.search, collatz_budget, collatz_seed)
+                gf = pool.submit(self._goldbach.search, goldbach_budget, goldbach_seed)
+                collatz_ledger = cf.result()
+                goldbach_ledger = gf.result()
+        else:
+            # Sequential for single-engine or all-engine runs (Riemann is slow).
+            if run_collatz:
+                logger.info(
+                    "Starting Collatz falsification (budget=%d, seed=%d)",
+                    collatz_budget, collatz_seed,
+                )
+                collatz_ledger = self._collatz.search(collatz_budget, collatz_seed)
 
-        merged = self._merge_ledgers([collatz_ledger, goldbach_ledger])
+            if run_goldbach:
+                logger.info(
+                    "Starting Goldbach falsification (budget=%d, seed=%d)",
+                    goldbach_budget, goldbach_seed,
+                )
+                goldbach_ledger = self._goldbach.search(goldbach_budget, goldbach_seed)
+
+            if run_riemann:
+                logger.info(
+                    "Starting Riemann falsification (budget=%d, seed=%d)",
+                    riemann_budget, riemann_seed,
+                )
+                riemann_ledger = self._get_riemann().search(riemann_budget, riemann_seed)
+
+        all_ledgers = [collatz_ledger, goldbach_ledger, riemann_ledger]
+        merged = self._merge_ledgers(all_ledgers, min_score=min_score)
 
         elapsed = time.perf_counter() - t0
         logger.info(
-            "FalsificationEngine complete: %d total entries in %.2fs",
-            len(merged),
-            elapsed,
+            "FalsificationEngine complete: %d total entries (min_score=%.2f) in %.2fs",
+            len(merged), min_score, elapsed,
         )
 
         return {
             "ledger": merged,
             "top_collatz": collatz_ledger.top_k(5),
             "top_goldbach": goldbach_ledger.top_k(5),
+            "top_riemann": riemann_ledger.top_k(5),
             "stats": {
                 "collatz_evaluated": len(collatz_ledger),
                 "goldbach_evaluated": len(goldbach_ledger),
+                "riemann_evaluated": len(riemann_ledger),
                 "total_evaluated": len(merged),
                 "collatz_max_near_miss": (
                     collatz_ledger.top_k(1)[0].near_miss_score if collatz_ledger else 0.0
                 ),
                 "goldbach_max_near_miss": (
                     goldbach_ledger.top_k(1)[0].near_miss_score if goldbach_ledger else 0.0
+                ),
+                "riemann_max_near_miss": (
+                    riemann_ledger.top_k(1)[0].near_miss_score if riemann_ledger else 0.0
                 ),
                 "seed": seed,
                 "elapsed_s": round(elapsed, 3),
@@ -838,12 +906,15 @@ class FalsificationEngine:
         }
 
     @staticmethod
-    def _merge_ledgers(ledgers: List[FalsificationLedger]) -> FalsificationLedger:
-        """Merge multiple ledgers into one, preserving all entries."""
+    def _merge_ledgers(
+        ledgers: List[FalsificationLedger], min_score: float = 0.0
+    ) -> FalsificationLedger:
+        """Merge multiple ledgers, dropping entries below min_score."""
         merged = FalsificationLedger()
         for ledger in ledgers:
             for entry in ledger._entries:
-                merged.append(entry)
+                if entry.near_miss_score >= min_score:
+                    merged.append(entry)
         return merged
 
 
@@ -860,7 +931,9 @@ def main() -> None:
                         help="Total evaluation budget (default 200)")
     parser.add_argument("--seed", type=int, default=42,
                         help="RNG seed for reproducible search (default 42)")
-    parser.add_argument("--target", choices=["collatz", "goldbach", "both"], default="both",
+    parser.add_argument("--target",
+                        choices=["collatz", "goldbach", "riemann", "both", "all"],
+                        default="both",
                         help="Which conjecture to search (default both)")
     parser.add_argument("--top-k", type=int, default=5,
                         help="Number of top near-misses to print per conjecture")
@@ -868,10 +941,15 @@ def main() -> None:
                         help="Path to save the full ledger as JSONL (optional)")
     parser.add_argument("--output-json", type=str, default=None,
                         help="Path to save a JSON summary report (optional)")
+    parser.add_argument("--sieve-limit", type=int, default=_SIEVE_LIMIT,
+                        help=f"Upper bound for the Goldbach prime sieve (default {_SIEVE_LIMIT})")
+    parser.add_argument("--min-score", type=float, default=0.0,
+                        help="Drop ledger entries with near-miss score below this value (default 0)")
     args = parser.parse_args()
 
-    engine = FalsificationEngine()
-    result = engine.run(budget=args.budget, seed=args.seed, target=args.target)
+    engine = FalsificationEngine(sieve_limit=args.sieve_limit)
+    result = engine.run(budget=args.budget, seed=args.seed, target=args.target,
+                        min_score=args.min_score)
 
     stats = result["stats"]
     print(f"\n{'═'*60}")
@@ -881,9 +959,12 @@ def main() -> None:
     print(f"  Goldbach evaluated  : {stats['goldbach_evaluated']}")
     print(f"  Elapsed             : {stats['elapsed_s']:.2f}s")
 
-    for label, key in [("Collatz top near-misses", "top_collatz"),
-                        ("Goldbach top near-misses", "top_goldbach")]:
-        entries = result[key]
+    for label, key in [
+        ("Collatz top near-misses", "top_collatz"),
+        ("Goldbach top near-misses", "top_goldbach"),
+        ("Riemann top near-misses", "top_riemann"),
+    ]:
+        entries = result.get(key, [])
         if not entries:
             continue
         print(f"\n  {label}:")

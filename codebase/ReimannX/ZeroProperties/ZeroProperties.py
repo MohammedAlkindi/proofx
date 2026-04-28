@@ -81,6 +81,13 @@ try:
 except ImportError:
     SYMPY_AVAILABLE = False
 
+try:
+    import sage as _sage_probe  # noqa: F401
+    SAGE_AVAILABLE = True
+    del _sage_probe
+except ImportError:
+    SAGE_AVAILABLE = False
+
 @dataclass
 class SystemInfo:
     platform: str

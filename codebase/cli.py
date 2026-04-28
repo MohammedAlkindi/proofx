@@ -56,12 +56,15 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
 
 def _cmd_falsify(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
-    from codebase.FalsificationEngine.FalsificationEngine import FalsificationEngine
+    from codebase.FalsificationEngine.FalsificationEngine import FalsificationEngine, _SIEVE_LIMIT
     from pathlib import Path
     import json
 
-    engine = FalsificationEngine()
-    result = engine.run(budget=args.budget, seed=args.seed, target=args.target)
+    sieve = getattr(args, "sieve_limit", _SIEVE_LIMIT)
+    min_score = getattr(args, "min_score", 0.0)
+    engine = FalsificationEngine(sieve_limit=sieve)
+    result = engine.run(budget=args.budget, seed=args.seed, target=args.target,
+                        min_score=min_score)
 
     stats = result["stats"]
     print(f"\n{'═'*62}")
@@ -73,8 +76,11 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
     print(f"  Max Collatz score  : {stats['collatz_max_near_miss']:.4f}")
     print(f"  Max Goldbach score : {stats['goldbach_max_near_miss']:.4f}")
 
-    for label, key in [("Collatz top near-misses", "top_collatz"),
-                       ("Goldbach top near-misses", "top_goldbach")]:
+    for label, key in [
+        ("Collatz top near-misses", "top_collatz"),
+        ("Goldbach top near-misses", "top_goldbach"),
+        ("Riemann top near-misses", "top_riemann"),
+    ]:
         entries = result[key]
         if not entries:
             continue
@@ -88,19 +94,19 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
         print(f"\n  Ledger: {args.save_ledger}")
 
     if args.output_json:
+        def _serialize_top(key: str) -> list:
+            return [
+                {"candidate": e.candidate, "near_miss_score": e.near_miss_score,
+                 "strategy": e.strategy, "features": e.features}
+                for e in result.get(key, [])[: args.top_k]
+            ]
+
         out = {
             "seed": args.seed, "budget": args.budget, "target": args.target,
             "stats": stats,
-            "top_collatz": [
-                {"candidate": e.candidate, "near_miss_score": e.near_miss_score,
-                 "features": e.features}
-                for e in result["top_collatz"][: args.top_k]
-            ],
-            "top_goldbach": [
-                {"candidate": e.candidate, "near_miss_score": e.near_miss_score,
-                 "features": e.features}
-                for e in result["top_goldbach"][: args.top_k]
-            ],
+            "top_collatz": _serialize_top("top_collatz"),
+            "top_goldbach": _serialize_top("top_goldbach"),
+            "top_riemann": _serialize_top("top_riemann"),
         }
         p = Path(args.output_json)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -115,10 +121,16 @@ def _build_falsify(sub: argparse._SubParsersAction) -> None:
     _add_common_args(p)
     p.add_argument("--budget", type=int, default=200)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--target", choices=["collatz", "goldbach", "both"], default="both")
+    p.add_argument("--target",
+                   choices=["collatz", "goldbach", "riemann", "both", "all"],
+                   default="both")
     p.add_argument("--top-k", type=int, default=5)
     p.add_argument("--save-ledger", metavar="PATH")
     p.add_argument("--output-json", metavar="PATH")
+    p.add_argument("--sieve-limit", type=int, default=None,
+                   metavar="N", help="Upper bound for Goldbach prime sieve")
+    p.add_argument("--min-score", type=float, default=0.0,
+                   metavar="F", help="Drop ledger entries below this near-miss score")
     p.set_defaults(func=_cmd_falsify)
 
 

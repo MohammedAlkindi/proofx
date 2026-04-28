@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(uv run python -c \"import ast; ast.parse\\(open\\('codebase/CollatzX/PrimeGraph/PrimeGraph.py'\\).read\\(\\)\\); print\\('OK'\\)\" 2>&1)"
+    ]
+  }
+}
