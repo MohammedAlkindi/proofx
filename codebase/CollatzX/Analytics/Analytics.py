@@ -27,8 +27,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sympy as sp
-import torch
-import torch.nn as nn
 from matplotlib import cm
 from plotly.subplots import make_subplots
 from scipy.optimize import curve_fit
@@ -46,8 +44,15 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from statsmodels.tsa.stattools import acf
-from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
+
+try:
+    import torch
+    import torch.nn as nn
+    from torch.utils.data import DataLoader, Dataset
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
 
 # ============================================================
 # Enhanced Logging & Configuration
@@ -65,7 +70,7 @@ class EnhancedConfig:
         self.PLOT_STYLE = "seaborn-v0_8-darkgrid"
         
         # Enhanced defaults
-        self.USE_GPU = torch.cuda.is_available()
+        self.USE_GPU = _TORCH_AVAILABLE and torch.cuda.is_available()
         self.MAX_PROCESSES = max(1, (__import__("os").cpu_count() or 2) - 1)  # Better CPU utilization
         self.PRECISION = np.float64
         self.ENABLE_CACHE = True
@@ -90,10 +95,11 @@ class EnhancedConfig:
     def _setup_determinism(self):
         """Enhanced deterministic setup."""
         np.random.seed(self.RANDOM_SEED)
-        torch.manual_seed(self.RANDOM_SEED)
-        if torch.cuda.is_available():
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
+        if _TORCH_AVAILABLE:
+            torch.manual_seed(self.RANDOM_SEED)
+            if torch.cuda.is_available():
+                torch.backends.cudnn.deterministic = True
+                torch.backends.cudnn.benchmark = False
 
 config = EnhancedConfig()
 
