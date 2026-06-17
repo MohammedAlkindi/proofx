@@ -15,7 +15,7 @@ from typing import Any
 from api.celery_app import celery_app
 from src.complexity import ComplexityEstimator
 from src.conjecture_generator import ConjectureGenerator
-from src.counterexample import CounterexampleFinder
+from src.counterexample import search_dual
 from src.failure_registry import FailureRegistry
 from src.formalizer import Formalizer
 from src.novelty import NoveltyChecker
@@ -82,7 +82,6 @@ def run_pipeline_task(
         novelty_checker = NoveltyChecker(threshold=settings.novelty_threshold)
         failure_registry = FailureRegistry(settings.redis_url)
         snapshot = SnapshotManager(settings=settings)
-        cx_finder = CounterexampleFinder(settings)
 
         # Fetch arXiv context asynchronously
         arxiv_papers = asyncio.run(_fetch_arxiv(domain, settings.arxiv_max_results))
@@ -132,15 +131,23 @@ def run_pipeline_task(
                         cx_result: dict[str, Any] = {"found": False, "counterexample": None, "reasoning": "Proof succeeded — no counterexample search needed"}
                     else:
                         failure_registry.record_failure(conjecture.get("subfield", ""), "verify")
-                        # Search for a counterexample to distinguish false from hard-to-prove
+                        # Run both LLM and symbolic searches independently.
+                        # Two independent failures-to-disprove are more informative than one.
                         try:
-                            cx_result = cx_finder.search(
+                            cx_result = search_dual(
                                 conjecture["statement"],
                                 conjecture.get("subfield", ""),
+                                settings,
                             )
                         except Exception as cx_exc:
-                            logger.warning("Counterexample search failed: %s", cx_exc)
-                            cx_result = {"found": False, "counterexample": None, "reasoning": str(cx_exc)}
+                            logger.warning("Dual counterexample search failed: %s", cx_exc)
+                            cx_result = {
+                                "found": False,
+                                "counterexample": None,
+                                "reasoning": str(cx_exc),
+                                "llm_result": None,
+                                "symbolic_result": None,
+                            }
                 else:
                     failure_registry.record_failure(conjecture.get("subfield", ""), "formalize")
                     verify_result = {"proved": False, "attempts": [], "final_proof": None, "failure_reason": "Formalization failed"}
@@ -199,6 +206,7 @@ def run_pipeline_task(
                 "counterexample_result": cx_result,
             })
 
+            cx_checked = isinstance(cx_result, dict) and "llm_result" in cx_result
             results.append({
                 "experiment_id": exp_id,
                 "conjecture": conjecture["statement"],
@@ -209,6 +217,8 @@ def run_pipeline_task(
                 "proof_strategy": strategy,
                 "novelty_score": conjecture.get("novelty_score", 1.0),
                 "complexity": complexity,
+                "counterexample_checked": cx_checked,
+                "counterexample_found": bool(cx_result.get("found", False)) if cx_checked else False,
             })
 
         total_ms = int((time.monotonic() - t_start) * 1000)

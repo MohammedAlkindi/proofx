@@ -1,38 +1,69 @@
 # Germinal
 
-AI-powered mathematical conjecture explorer — generate candidate hypotheses via Claude, auto-formalize them in Lean 4, attempt automated proofs, and log every experiment as a reproducible Git snapshot.
+AI-powered mathematical conjecture explorer — generate candidate hypotheses via Claude, auto-formalize them in Lean 4, attempt automated proofs, search for counterexamples, and log every experiment as a reproducible Git snapshot.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Germinal Pipeline                        │
-│                                                                 │
-│   Domain Input                                                  │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌──────────────────┐                                           │
-│  │ ConjectureGen    │  Claude API → structured JSON             │
-│  └────────┬─────────┘                                           │
-│           │ natural language statement                          │
-│           ▼                                                     │
-│  ┌──────────────────┐                                           │
-│  │   Formalizer     │  Claude API → Lean 4 code                 │
-│  │                  │  lake build validation (subprocess)       │
-│  └────────┬─────────┘                                           │
-│           │ valid Lean 4 source                                 │
-│           ▼                                                     │
-│  ┌──────────────────┐                                           │
-│  │    Verifier      │  Claude API → tactic proof (≤3 attempts)  │
-│  │                  │  lake build validation (subprocess)       │
-│  └────────┬─────────┘                                           │
-│           │ proof result                                        │
-│           ▼                                                     │
-│  ┌──────────────────┐                                           │
-│  │ SnapshotManager  │  Git commit to `experiments` branch       │
-│  │                  │  experiment.json + .lean files            │
-│  └──────────────────┘                                           │
-│                                                                 │
-│  FastAPI ←→ Next.js (live pipeline status, experiment table)    │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                          Germinal Pipeline                           │
+│                                                                      │
+│   Domain Input                                                       │
+│       │                                                              │
+│       ├─── arXiv context fetch (recent papers for the domain)        │
+│       │                                                              │
+│       ▼                                                              │
+│  ┌──────────────────┐                                                │
+│  │ ComplexityRouter │  Scores formalizability + proof difficulty     │
+│  │                  │  Routes: quick_tactics / claude_standard /     │
+│  │                  │          extended_thinking / human_review      │
+│  └────────┬─────────┘                                                │
+│           │                                                          │
+│           ▼                                                          │
+│  ┌──────────────────┐                                                │
+│  │ NoveltyChecker   │  Jaccard similarity deduplication              │
+│  │                  │  Rejects near-duplicate conjectures            │
+│  └────────┬─────────┘                                                │
+│           │ novel conjecture                                         │
+│           ▼                                                          │
+│  ┌──────────────────┐                                                │
+│  │ ConjectureGen    │  Claude API + arXiv + Mathlib4 RAG context     │
+│  └────────┬─────────┘                                                │
+│           │ natural language statement                               │
+│           ▼                                                          │
+│  ┌──────────────────┐                                                │
+│  │   Formalizer     │  Claude → Lean 4 (Mathlib4 RAG-assisted)       │
+│  │                  │  lake build validation                         │
+│  │                  │  Repair loop: compiler errors fed back to      │
+│  │                  │  Claude for up to N retries                    │
+│  └────────┬─────────┘                                                │
+│           │ valid Lean 4 source                                      │
+│           ▼                                                          │
+│  ┌──────────────────┐                                                │
+│  │    Verifier      │  Races 7 tactics: decide / norm_num / ring /   │
+│  │                  │  omega / simp_all / aesop / tauto              │
+│  │                  │  + Claude tactic proof (extended thinking      │
+│  │                  │    for hard conjectures)                       │
+│  │                  │  lake build validation on every attempt        │
+│  └────────┬─────────┘                                                │
+│           │                                                          │
+│     ┌─────┴──────┐                                                   │
+│   proved      not proved                                             │
+│                   │                                                  │
+│                   ▼                                                  │
+│          ┌──────────────────┐                                        │
+│          │ CounterexSearch  │  Two independent methods in parallel:  │
+│          │                  │  1. LLM-based (Claude)                 │
+│          │                  │  2. Symbolic/sympy brute-force         │
+│          └────────┬─────────┘                                        │
+│                   │ unrefuted (not proved, not disproved)            │
+│                   ▼                                                  │
+│  ┌──────────────────┐                                                │
+│  │ SnapshotManager  │  Git commit to `experiments` branch            │
+│  │                  │  experiment.json + .lean files                 │
+│  └──────────────────┘                                                │
+│                                                                      │
+│  FastAPI ←→ Celery workers ←→ Next.js                                │
+│  (SSE live streaming, interactive Lean editor, lineage graph)        │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quickstart
@@ -44,7 +75,7 @@ cd Germinal
 
 # 2. Configure
 cp .env.example .env
-# Edit .env and set ANTHROPIC_API_KEY
+# Edit .env — set ANTHROPIC_API_KEY at minimum
 
 # 3. Launch
 docker-compose up --build
@@ -57,12 +88,22 @@ docker-compose up --build
 
 | Module | Location | Responsibility |
 |--------|----------|----------------|
-| Conjecture Generator | `src/conjecture_generator.py` | Calls Claude to propose N conjectures for a domain |
-| Formalizer | `src/formalizer.py` | Translates conjectures to Lean 4; validates with `lake build` |
-| Verifier | `src/verifier.py` | Attempts automated tactic proofs (up to 3 rounds) |
-| Snapshot Manager | `src/snapshot.py` | Commits each experiment to the `experiments` Git branch |
-| API | `api/` | FastAPI: /generate, /formalize, /verify, /pipeline, /experiments |
-| Frontend | `frontend/` | Next.js + Tailwind: pipeline UI, experiment table, detail view |
+| Conjecture Generator | `src/conjecture_generator.py` | Claude + arXiv context + Mathlib4 RAG → structured conjecture JSON |
+| Complexity Router | `src/complexity.py` | Scores formalizability/difficulty; routes to quick_tactics / claude_standard / extended_thinking / human_review |
+| Novelty Checker | `src/novelty.py` | Jaccard similarity filter — rejects near-duplicate conjectures before they enter the pipeline |
+| Formalizer | `src/formalizer.py` | Claude → Lean 4; `lake build` validation; repair loop feeds compiler errors back for up to N retries |
+| Verifier | `src/verifier.py` | Races 7 automation tactics against Claude tactic proofs; only counts success if `lake build` passes |
+| Counterexample Finder | `src/counterexample.py` | Two independent methods: LLM-based (Claude) + symbolic/sympy brute-force; `search_dual()` runs both |
+| arXiv Client | `src/arxiv_client.py` | Fetches recent paper abstracts to ground conjecture generation in current literature |
+| Mathlib4 RAG | `src/mathlib_rag.py` | Curated Mathlib4 declaration index; injects relevant lemma signatures into formalization prompts |
+| Lean Sandbox | `src/lean_sandbox.py` | Persistent Lean 4 + Mathlib4 environment; all `lake build` calls go through here |
+| Snapshot Manager | `src/snapshot.py` | Commits each experiment to the `experiments` Git branch; preserves active branch via symbolic_ref swap |
+| API | `api/` | FastAPI: async jobs via Celery (sync fallback if Redis unavailable), SSE streaming |
+| Frontend | `frontend/` | Next.js + Tailwind: pipeline UI, experiment table, interactive Lean editor, lineage view, command palette |
+
+## What "unrefuted" means
+
+When a conjecture is neither proved nor disproved, Germinal labels it **unrefuted** — not "promising" or "likely true". Two independent counterexample methods (LLM + symbolic) both failing to find a disproof is a stronger signal than one, but it is still absence-of-disproof, not a proof. The status reflects that.
 
 ## API Reference
 
@@ -71,7 +112,7 @@ docker-compose up --build
 | `POST` | `/api/v1/generate` | Generate N conjectures for a domain |
 | `POST` | `/api/v1/formalize` | Translate a conjecture to Lean 4 |
 | `POST` | `/api/v1/verify` | Attempt automated proof |
-| `POST` | `/api/v1/pipeline` | Full generate→formalize→verify run |
+| `POST` | `/api/v1/pipeline` | Full generate→formalize→verify→snapshot run |
 | `GET` | `/api/v1/experiments` | List all experiments |
 | `GET` | `/api/v1/experiments/{id}` | Full detail for one experiment |
 
@@ -129,16 +170,6 @@ curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh 
 ruff check src/ api/
 ruff format --check src/ api/
 ```
-
-## Roadmap
-
-- [ ] Async Celery workers for long-running Lean 4 builds
-- [ ] PostgreSQL persistence for experiment metadata
-- [ ] Batch generation with parallelism across conjectures
-- [ ] Citation of related Mathlib4 theorems in generated Lean code
-- [ ] HPC cluster job submission via SLURM adapter
-- [ ] Conjecture similarity search (embedding-based deduplication)
-- [ ] Public experiment registry
 
 ## License
 

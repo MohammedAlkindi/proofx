@@ -29,6 +29,7 @@ from api.models import (
     JobStatusResponse,
     LineageNode,
     LineageResponse,
+    MethodResult,
     PipelineRequest,
     StatsResponse,
     VerifyRequest,
@@ -325,6 +326,10 @@ async def list_experiments(
 
     summaries = []
     for exp in experiments:
+        cx = exp.get("counterexample_result") or {}
+        # "llm_result" key is only present in records written by search_dual().
+        # Its presence is the reliable signal that a dual check was actually run.
+        cx_checked = isinstance(cx, dict) and "llm_result" in cx
         summaries.append(
             ExperimentSummary(
                 id=exp.get("id", ""),
@@ -337,6 +342,8 @@ async def list_experiments(
                 duration_ms=exp.get("duration_ms", 0),
                 novelty_score=float(exp.get("novelty_score", 1.0)),
                 proof_strategy=str(exp.get("proof_strategy", "claude_standard")),
+                counterexample_checked=cx_checked if cx_checked else None,
+                counterexample_found=bool(cx.get("found", False)) if cx_checked else None,
             )
         )
     return summaries
@@ -580,29 +587,30 @@ async def find_counterexample(
     snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> CounterexampleResponse:
-    """Search for a concrete counterexample for a given experiment's conjecture.
+    """Run dual (LLM + symbolic) counterexample search for an unproved conjecture.
 
-    Useful for open (unproved) conjectures to distinguish false from hard-to-prove.
-    The result is persisted back to the experiment row in the database.
+    Both methods run independently; both results are persisted.  The response
+    carries per-method detail so the frontend can render them separately and
+    flag any disagreement between them.
     """
     exp = snapshot.get_experiment(experiment_id)
     if exp is None:
         raise HTTPException(status_code=404, detail="Experiment not found")
 
-    from src.counterexample import CounterexampleFinder
+    from src.counterexample import search_dual
 
-    finder = CounterexampleFinder(settings)
     try:
         result = await asyncio.to_thread(
-            finder.search,
+            search_dual,
             exp.get("conjecture", ""),
             str(exp.get("subfield", "")),
+            settings,
         )
     except Exception as exc:
-        logger.exception("Counterexample search failed for %s", experiment_id)
+        logger.exception("Dual counterexample search failed for %s", experiment_id)
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # Persist result to DB
+    # Persist full dual result to DB
     try:
         from sqlalchemy import update as sa_update
 
@@ -618,17 +626,33 @@ async def find_counterexample(
     except Exception as exc:
         logger.warning("Could not persist counterexample result: %s", exc)
 
+    def _to_method_result(d: dict | None) -> MethodResult | None:
+        if not d:
+            return None
+        return MethodResult(
+            method=d.get("method", ""),
+            applicable=bool(d.get("applicable", True)),
+            found=bool(d.get("found", False)),
+            counterexample=d.get("counterexample"),
+            reasoning=str(d.get("reasoning", "")),
+        )
+
     return CounterexampleResponse(
         experiment_id=experiment_id,
         found=result["found"],
         counterexample=result.get("counterexample"),
         reasoning=result.get("reasoning", ""),
+        llm_result=_to_method_result(result.get("llm_result")),
+        symbolic_result=_to_method_result(result.get("symbolic_result")),
     )
 
 
 @router.get("/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse)
 async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
-    """Return the stored counterexample result for an experiment (if any)."""
+    """Return the stored counterexample result for an experiment (if any).
+
+    Handles both old single-method records and new dual-method records transparently.
+    """
     try:
         from sqlalchemy import select
 
@@ -643,11 +667,25 @@ async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
             raise HTTPException(status_code=404, detail="Experiment not found")
 
         result = row.counterexample_result or {}
+
+        def _to_method_result(d: dict | None) -> MethodResult | None:
+            if not d:
+                return None
+            return MethodResult(
+                method=d.get("method", ""),
+                applicable=bool(d.get("applicable", True)),
+                found=bool(d.get("found", False)),
+                counterexample=d.get("counterexample"),
+                reasoning=str(d.get("reasoning", "")),
+            )
+
         return CounterexampleResponse(
             experiment_id=experiment_id,
             found=bool(result.get("found", False)),
             counterexample=result.get("counterexample"),
             reasoning=str(result.get("reasoning", "")),
+            llm_result=_to_method_result(result.get("llm_result")),
+            symbolic_result=_to_method_result(result.get("symbolic_result")),
         )
     except HTTPException:
         raise

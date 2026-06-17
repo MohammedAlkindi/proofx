@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(npx tsc *)",
-      "PowerShell(Get-Command py -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Command py -ErrorAction SilentlyContinue)",
+      "Bash(pip install *)",
+      "Bash(python -m pytest tests/test_symbolic_counterexample.py -v)"
     ]
   }
 }

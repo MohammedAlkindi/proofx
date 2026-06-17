@@ -15,6 +15,9 @@ export interface PipelineResult {
   proof_strategy?: string;
   novelty_score?: number;
   complexity?: { formalizability?: number; proof_difficulty?: number; recommended_strategy?: string };
+  // Present when dual counterexample search ran during the pipeline.
+  counterexample_checked?: boolean;
+  counterexample_found?: boolean;
 }
 
 export interface PipelineResponse {
@@ -185,7 +188,7 @@ function CodeBlock({
   badge,
 }: {
   code: string;
-  badge: "proved" | "sorry" | "error" | null;
+  badge: "proved" | "unrefuted" | "sorry" | "error" | null;
 }) {
   const [copied, setCopied] = useState(false);
   const lines = code.split("\n");
@@ -202,6 +205,12 @@ function CodeBlock({
         background: "rgba(16,185,129,0.12)",
         color: "var(--success)",
         border: "1px solid rgba(16,185,129,0.25)",
+      };
+    if (badge === "unrefuted")
+      return {
+        background: "rgba(59,130,246,0.12)",
+        color: "#3b82f6",
+        border: "1px solid rgba(59,130,246,0.25)",
       };
     if (badge === "sorry")
       return {
@@ -344,16 +353,21 @@ function NoveltyBar({ score }: { score: number }) {
 
 /* ─── Result card ────────────────────────────────────────────────────────── */
 function ResultCard({ result }: { result: PipelineResult }) {
-  const badge: "proved" | "sorry" | "error" = result.proved
+  // "unrefuted": dual search ran, lean-valid, but neither method found a counterexample.
+  // Distinct from "sorry" (unchecked open conjecture) — absence of disproof ≠ truth.
+  const badge: "proved" | "unrefuted" | "sorry" | "error" = result.proved
     ? "proved"
+    : result.is_valid && result.counterexample_checked && !result.counterexample_found
+    ? "unrefuted"
     : result.is_valid
     ? "sorry"
     : "error";
 
   const badgeColors = {
-    proved: { bg: "rgba(16,185,129,0.1)", color: "var(--success)", border: "rgba(16,185,129,0.2)" },
-    sorry:  { bg: "rgba(245,158,11,0.1)",  color: "var(--warning)", border: "rgba(245,158,11,0.2)" },
-    error:  { bg: "rgba(239,68,68,0.1)",   color: "var(--danger)",  border: "rgba(239,68,68,0.2)" },
+    proved:    { bg: "rgba(16,185,129,0.1)", color: "var(--success)", border: "rgba(16,185,129,0.2)" },
+    unrefuted: { bg: "rgba(59,130,246,0.1)", color: "#3b82f6",        border: "rgba(59,130,246,0.2)" },
+    sorry:     { bg: "rgba(245,158,11,0.1)", color: "var(--warning)", border: "rgba(245,158,11,0.2)" },
+    error:     { bg: "rgba(239,68,68,0.1)",  color: "var(--danger)",  border: "rgba(239,68,68,0.2)" },
   }[badge];
 
   return (

@@ -131,6 +131,10 @@ class ExperimentSummary(BaseModel):
     duration_ms: int
     novelty_score: float = 1.0
     proof_strategy: str = "claude_standard"
+    # Populated when dual counterexample search has been run for this experiment.
+    # None means the search has never been run (e.g. proved conjectures, or old records).
+    counterexample_checked: bool | None = None
+    counterexample_found: bool | None = None
 
 
 class ExperimentDetail(BaseModel):
@@ -182,11 +186,25 @@ class StatsResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class MethodResult(BaseModel):
+    """Result from a single counterexample-search method."""
+
+    method: str                     # "llm" or "symbolic"
+    applicable: bool = True         # False only for symbolic when conjecture is out-of-scope
+    found: bool
+    counterexample: str | None = None
+    reasoning: str
+
+
 class CounterexampleResponse(BaseModel):
+    # Top-level fields preserved for backward compatibility
     experiment_id: str
     found: bool
     counterexample: str | None
     reasoning: str
+    # Per-method detail (absent for old records that pre-date dual search)
+    llm_result: MethodResult | None = None
+    symbolic_result: MethodResult | None = None
 
 
 # ---------------------------------------------------------------------------

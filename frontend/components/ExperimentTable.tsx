@@ -12,6 +12,10 @@ export interface ExperimentSummary {
   duration_ms: number;
   novelty_score?: number;
   proof_strategy?: string;
+  // Present only when the dual counterexample search has been run (new records).
+  // null/undefined means "never checked" (proved conjectures or pre-dual records).
+  counterexample_checked?: boolean | null;
+  counterexample_found?: boolean | null;
 }
 
 type SortKey = keyof Pick<ExperimentSummary, "timestamp" | "domain" | "duration_ms" | "proved">;
@@ -102,12 +106,34 @@ function NoveltyBar({ score }: { score: number }) {
   );
 }
 
-function StatusBadge({ proved, isValid }: { proved: boolean; isValid: boolean }) {
-  const label = proved ? "proved" : isValid ? "sorry" : "error";
-  const colors: Record<string, CSSProperties> = {
-    proved: { background: "rgba(16,185,129,0.1)", color: "var(--success)", border: "1px solid rgba(16,185,129,0.2)" },
-    sorry:  { background: "rgba(245,158,11,0.1)", color: "var(--warning)", border: "1px solid rgba(245,158,11,0.2)" },
-    error:  { background: "rgba(239,68,68,0.1)",  color: "var(--danger)",  border: "1px solid rgba(239,68,68,0.2)" },
+type StatusLabel = "proved" | "unrefuted" | "sorry" | "error";
+
+function StatusBadge({
+  proved,
+  isValid,
+  counterexampleChecked,
+  counterexampleFound,
+}: {
+  proved: boolean;
+  isValid: boolean;
+  counterexampleChecked?: boolean | null;
+  counterexampleFound?: boolean | null;
+}) {
+  // "unrefuted": dual search ran, is lean-valid, but neither method found a counterexample.
+  // Distinct from "sorry" (not yet checked) — absence of disproof ≠ evidence of truth.
+  const label: StatusLabel = proved
+    ? "proved"
+    : isValid && counterexampleChecked && !counterexampleFound
+    ? "unrefuted"
+    : isValid
+    ? "sorry"
+    : "error";
+
+  const colors: Record<StatusLabel, CSSProperties> = {
+    proved:    { background: "rgba(16,185,129,0.1)", color: "var(--success)", border: "1px solid rgba(16,185,129,0.2)" },
+    unrefuted: { background: "rgba(59,130,246,0.1)", color: "#3b82f6",        border: "1px solid rgba(59,130,246,0.2)" },
+    sorry:     { background: "rgba(245,158,11,0.1)", color: "var(--warning)", border: "1px solid rgba(245,158,11,0.2)" },
+    error:     { background: "rgba(239,68,68,0.1)",  color: "var(--danger)",  border: "1px solid rgba(239,68,68,0.2)" },
   };
   return (
     <span
@@ -413,7 +439,12 @@ export default function ExperimentTable({
                     <Highlight text={exp.conjecture} query={filter} />
                   </td>
                   <td style={{ padding: "9px 12px" }}>
-                    <StatusBadge proved={exp.proved} isValid={exp.is_valid} />
+                    <StatusBadge
+                      proved={exp.proved}
+                      isValid={exp.is_valid}
+                      counterexampleChecked={exp.counterexample_checked}
+                      counterexampleFound={exp.counterexample_found}
+                    />
                   </td>
                   <td style={{ padding: "9px 12px" }}>
                     {typeof exp.novelty_score === "number" ? (

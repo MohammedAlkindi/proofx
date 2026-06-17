@@ -35,11 +35,22 @@ interface LineageData {
   children: LineageNode[];
 }
 
+interface MethodResult {
+  method: string;          // "llm" | "symbolic"
+  applicable: boolean;
+  found: boolean;
+  counterexample: string | null;
+  reasoning: string;
+}
+
 interface CounterexampleData {
   experiment_id: string;
   found: boolean;
   counterexample: string | null;
   reasoning: string;
+  // Present only in dual-search records (new format)
+  llm_result?: MethodResult;
+  symbolic_result?: MethodResult;
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -496,6 +507,75 @@ function LeanEditor({ initialCode }: { initialCode: string }) {
 
 // ── Counterexample panel ───────────────────────────────────────────────────
 
+/** Single-method result card used inside CounterexamplePanel. */
+function MethodResultCard({ result }: { result: MethodResult }) {
+  const label = result.method === "symbolic" ? "Symbolic (brute-force)" : "LLM (Claude)";
+
+  if (!result.applicable) {
+    return (
+      <div
+        style={{
+          padding: "8px 12px",
+          borderRadius: 6,
+          border: "1px solid var(--border-s)",
+          background: "var(--bg-input)",
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--t-tertiary)" }}>
+          {label}
+        </span>
+        <span style={{ fontSize: 11, color: "var(--t-tertiary)", marginLeft: 8 }}>
+          — not applicable
+        </span>
+        <p style={{ fontSize: 11, color: "var(--t-tertiary)", margin: "4px 0 0", lineHeight: 1.5 }}>
+          {result.reasoning}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        padding: "8px 12px",
+        borderRadius: 6,
+        border: `1px solid ${result.found ? "rgba(239,68,68,0.25)" : "rgba(100,116,139,0.25)"}`,
+        background: result.found ? "rgba(239,68,68,0.05)" : "var(--bg-input)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--t-secondary)" }}>{label}</span>
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            fontFamily: "JetBrains Mono, monospace",
+            padding: "1px 6px",
+            borderRadius: 3,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            background: result.found ? "rgba(239,68,68,0.1)" : "rgba(100,116,139,0.1)",
+            color: result.found ? "var(--danger)" : "var(--t-tertiary)",
+            border: `1px solid ${result.found ? "rgba(239,68,68,0.2)" : "rgba(100,116,139,0.2)"}`,
+          }}
+        >
+          {result.found ? "found" : "none found"}
+        </span>
+      </div>
+
+      {result.found && result.counterexample && (
+        <p style={{ fontSize: 12, color: "var(--t-primary)", margin: "4px 0 4px", lineHeight: 1.6 }}>
+          <MathDisplay text={result.counterexample} />
+        </p>
+      )}
+
+      <p style={{ fontSize: 11, color: "var(--t-tertiary)", margin: "4px 0 0", lineHeight: 1.5 }}>
+        {result.reasoning}
+      </p>
+    </div>
+  );
+}
+
 function CounterexamplePanel({ experimentId, isProved }: { experimentId: string; isProved: boolean }) {
   const [searching, setSearching] = useState(false);
   const [result, setResult]       = useState<CounterexampleData | null>(null);
@@ -531,6 +611,13 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
       setSearching(false);
     }
   };
+
+  // Detect disagreement: one method found a CX, the other (applicable) didn't
+  const hasDual = displayResult?.llm_result != null && displayResult?.symbolic_result != null;
+  const llmFound = displayResult?.llm_result?.found ?? false;
+  const symApplicable = displayResult?.symbolic_result?.applicable ?? false;
+  const symFound = displayResult?.symbolic_result?.found ?? false;
+  const disagreement = hasDual && llmFound !== (symApplicable && symFound);
 
   return (
     <div
@@ -589,56 +676,87 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
 
       {displayResult && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Aggregate verdict */}
           <div
             style={{
               padding: "8px 12px",
               borderRadius: 6,
-              background: displayResult.found
-                ? "rgba(239,68,68,0.07)"
-                : "rgba(16,185,129,0.07)",
-              border: `1px solid ${displayResult.found ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`,
+              background: displayResult.found ? "rgba(239,68,68,0.07)" : "rgba(59,130,246,0.05)",
+              border: `1px solid ${displayResult.found ? "rgba(239,68,68,0.2)" : "rgba(59,130,246,0.2)"}`,
             }}
           >
             <span
               style={{
                 fontSize: 12,
                 fontWeight: 600,
-                color: displayResult.found ? "var(--danger)" : "var(--success)",
+                color: displayResult.found ? "var(--danger)" : "#3b82f6",
               }}
             >
               {displayResult.found
                 ? "Counterexample found — conjecture appears false"
-                : "No counterexample found — conjecture may be true"}
+                : hasDual
+                ? "Unrefuted — neither method found a counterexample (absence of disproof ≠ truth)"
+                : "No counterexample found"}
             </span>
           </div>
 
-          {displayResult.found && displayResult.counterexample && (
-            <div>
-              <span style={{ fontSize: 11, color: "var(--t-tertiary)", display: "block", marginBottom: 4 }}>
-                Counterexample
+          {/* Disagreement warning */}
+          {disagreement && (
+            <div
+              style={{
+                padding: "8px 12px",
+                borderRadius: 6,
+                background: "rgba(245,158,11,0.08)",
+                border: "1px solid rgba(245,158,11,0.3)",
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--warning)" }}>
+                ⚠ Methods disagree — inspect both results carefully before drawing conclusions
               </span>
-              <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--t-primary)", margin: 0 }}>
-                <MathDisplay text={displayResult.counterexample} />
-              </p>
             </div>
           )}
 
-          {displayResult.reasoning && (
-            <div>
-              <span style={{ fontSize: 11, color: "var(--t-tertiary)", display: "block", marginBottom: 4 }}>
-                Reasoning
+          {/* Dual method results (new format) */}
+          {hasDual ? (
+            <>
+              <span style={{ fontSize: 10, color: "var(--t-tertiary)", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                Per-method results
               </span>
-              <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--t-secondary)", margin: 0 }}>
-                {displayResult.reasoning}
-              </p>
-            </div>
+              <MethodResultCard result={displayResult.llm_result!} />
+              <MethodResultCard result={displayResult.symbolic_result!} />
+            </>
+          ) : (
+            /* Legacy single-method display */
+            <>
+              {displayResult.found && displayResult.counterexample && (
+                <div>
+                  <span style={{ fontSize: 11, color: "var(--t-tertiary)", display: "block", marginBottom: 4 }}>
+                    Counterexample
+                  </span>
+                  <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--t-primary)", margin: 0 }}>
+                    <MathDisplay text={displayResult.counterexample} />
+                  </p>
+                </div>
+              )}
+              {displayResult.reasoning && (
+                <div>
+                  <span style={{ fontSize: 11, color: "var(--t-tertiary)", display: "block", marginBottom: 4 }}>
+                    Reasoning
+                  </span>
+                  <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--t-secondary)", margin: 0 }}>
+                    {displayResult.reasoning}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {!displayResult && !searching && !error && (
         <p style={{ fontSize: 12, color: "var(--t-tertiary)", margin: 0 }}>
-          Ask Claude to search for a concrete counterexample that disproves this conjecture.
+          Run dual search (LLM + symbolic brute-force) to attempt to disprove this conjecture.
+          Two independent methods — different failure modes — run simultaneously.
         </p>
       )}
     </div>
@@ -933,6 +1051,12 @@ export default function ExperimentDetailPage() {
   const badge: "proved" | "sorry" | "error" = data.proved ? "proved" : data.is_valid ? "sorry" : "error";
   const complexity = extra.complexity as Record<string, number> | undefined;
 
+  // Determine if dual CX search has run and found nothing — "unrefuted" state.
+  const cxResult = extra.counterexample_result as Record<string, unknown> | null | undefined;
+  const cxChecked = cxResult != null && "llm_result" in cxResult;
+  const cxFound = Boolean(cxResult?.found);
+  const isUnrefuted = !data.proved && cxChecked && !cxFound;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -982,7 +1106,7 @@ export default function ExperimentDetailPage() {
           <ExportButton id={data.id} fmt="lean" label="↓ .lean" />
           <ExportButton id={data.id} fmt="latex" label="↓ .tex" />
           <Badge ok={data.is_valid} trueLabel="lean ✓" falseLabel="lean ✗" />
-          <Badge ok={data.proved} trueLabel="proved" falseLabel="open" />
+          <Badge ok={data.proved} trueLabel="proved" falseLabel={isUnrefuted ? "unrefuted" : "open"} />
         </div>
       </div>
 
@@ -1150,13 +1274,21 @@ export default function ExperimentDetailPage() {
               style={{
                 padding: "12px 16px",
                 borderRadius: 8,
-                background: "rgba(245,158,11,0.06)",
-                border: "1px solid rgba(245,158,11,0.2)",
+                background: isUnrefuted ? "rgba(59,130,246,0.05)" : "rgba(245,158,11,0.06)",
+                border: isUnrefuted ? "1px solid rgba(59,130,246,0.2)" : "1px solid rgba(245,158,11,0.2)",
               }}
             >
-              <span style={{ fontSize: 13, color: "var(--warning)" }}>
-                This conjecture remains open — no automated proof was found.
-              </span>
+              {isUnrefuted ? (
+                <span style={{ fontSize: 13, color: "#3b82f6" }}>
+                  This conjecture is <strong>unrefuted</strong> — both LLM and symbolic search found
+                  no counterexample, but absence of disproof is not evidence of truth. It has not
+                  been proved.
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: "var(--warning)" }}>
+                  This conjecture remains open — no automated proof was found.
+                </span>
+              )}
             </div>
           )}
         </div>
