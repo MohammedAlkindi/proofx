@@ -26,8 +26,11 @@ from src.verifier import Verifier
 logger = logging.getLogger(__name__)
 
 
-def _update_job_status(job_id: str, status: str, result: Any = None, error: str | None = None) -> None:
+def _update_job_status(
+    job_id: str, status: str, result: Any = None, error: str | None = None
+) -> None:
     """Write job status back to the DB (runs in a thread inside Celery worker)."""
+
     async def _write() -> None:
         from sqlalchemy import update as sa_update
 
@@ -111,15 +114,26 @@ def run_pipeline_task(
 
             if strategy == "human_review":
                 logger.info("Conjecture flagged for human review — skipping Lean steps")
-                formalize_result: dict[str, Any] = {"lean_code": "", "is_valid": False, "error_log": "Complexity too high — flagged for human review"}
-                verify_result: dict[str, Any] = {"proved": False, "attempts": [], "final_proof": None, "failure_reason": "Skipped — human review required"}
+                formalize_result: dict[str, Any] = {
+                    "lean_code": "",
+                    "is_valid": False,
+                    "error_log": "Complexity too high — flagged for human review",
+                }
+                verify_result: dict[str, Any] = {
+                    "proved": False,
+                    "attempts": [],
+                    "final_proof": None,
+                    "failure_reason": "Skipped — human review required",
+                }
             else:
                 formalize_result = formalizer.formalize(
                     conjecture=conjecture["statement"],
                     subfield=conjecture.get("subfield", ""),
                 )
                 if formalize_result["is_valid"]:
-                    failure_registry.record_success(conjecture.get("subfield", ""), "formalize")
+                    failure_registry.record_success(
+                        conjecture.get("subfield", ""), "formalize"
+                    )
                     verify_result = asyncio.run(
                         verifier.verify_async(
                             lean_code=formalize_result["lean_code"],
@@ -127,12 +141,20 @@ def run_pipeline_task(
                         )
                     )
                     if verify_result["proved"]:
-                        failure_registry.record_success(conjecture.get("subfield", ""), "verify")
-                        cx_result: dict[str, Any] = {"found": False, "counterexample": None, "reasoning": "Proof succeeded — no counterexample search needed"}
+                        failure_registry.record_success(
+                            conjecture.get("subfield", ""), "verify"
+                        )
+                        cx_result: dict[str, Any] = {
+                            "found": False,
+                            "counterexample": None,
+                            "reasoning": "Proof succeeded — no counterexample search needed",
+                        }
                     else:
-                        failure_registry.record_failure(conjecture.get("subfield", ""), "verify")
-                        # Run both LLM and symbolic searches independently.
-                        # Two independent failures-to-disprove are more informative than one.
+                        failure_registry.record_failure(
+                            conjecture.get("subfield", ""), "verify"
+                        )
+                        # Run independent counterexample searches.
+                        # Multiple independent failures-to-disprove are more informative than one.
                         try:
                             cx_result = search_dual(
                                 conjecture["statement"],
@@ -140,18 +162,32 @@ def run_pipeline_task(
                                 settings,
                             )
                         except Exception as cx_exc:
-                            logger.warning("Dual counterexample search failed: %s", cx_exc)
+                            logger.warning(
+                                "Dual counterexample search failed: %s", cx_exc
+                            )
                             cx_result = {
                                 "found": False,
                                 "counterexample": None,
                                 "reasoning": str(cx_exc),
                                 "llm_result": None,
                                 "symbolic_result": None,
+                                "wolfram_result": None,
                             }
                 else:
-                    failure_registry.record_failure(conjecture.get("subfield", ""), "formalize")
-                    verify_result = {"proved": False, "attempts": [], "final_proof": None, "failure_reason": "Formalization failed"}
-                    cx_result = {"found": False, "counterexample": None, "reasoning": "Formalization failed — counterexample search skipped"}
+                    failure_registry.record_failure(
+                        conjecture.get("subfield", ""), "formalize"
+                    )
+                    verify_result = {
+                        "proved": False,
+                        "attempts": [],
+                        "final_proof": None,
+                        "failure_reason": "Formalization failed",
+                    }
+                    cx_result = {
+                        "found": False,
+                        "counterexample": None,
+                        "reasoning": "Formalization failed — counterexample search skipped",
+                    }
 
             duration_ms = int((time.monotonic() - step_start) * 1000)
 
@@ -169,7 +205,9 @@ def run_pipeline_task(
                     extra={
                         "subfield": conjecture.get("subfield", ""),
                         "motivation": conjecture.get("motivation", ""),
-                        "confidence_estimate": conjecture.get("confidence_estimate", 0.0),
+                        "confidence_estimate": conjecture.get(
+                            "confidence_estimate", 0.0
+                        ),
                         "novelty_score": conjecture.get("novelty_score", 1.0),
                         "tags": conjecture.get("tags", []),
                         "complexity": complexity,
@@ -184,42 +222,54 @@ def run_pipeline_task(
                 logger.error("Snapshot failed for %s: %s", exp_id, exc)
                 sha = None
 
-            _write_experiment({
-                "id": exp_id,
-                "domain": domain,
-                "subfield": conjecture.get("subfield", ""),
-                "conjecture": conjecture["statement"],
-                "lean_code": formalize_result.get("lean_code", ""),
-                "is_valid": formalize_result.get("is_valid", False),
-                "proved": verify_result.get("proved", False),
-                "final_proof": verify_result.get("final_proof"),
-                "model_used": settings.claude_model,
-                "duration_ms": duration_ms,
-                "confidence_estimate": conjecture.get("confidence_estimate", 0.5),
-                "novelty_score": conjecture.get("novelty_score", 1.0),
-                "complexity_formalizability": complexity.get("formalizability", 3),
-                "complexity_proof_difficulty": complexity.get("proof_difficulty", 3),
-                "proof_strategy": strategy,
-                "git_sha": sha,
-                "tags": conjecture.get("tags", []),
-                "job_id": job_id,
-                "counterexample_result": cx_result,
-            })
+            _write_experiment(
+                {
+                    "id": exp_id,
+                    "domain": domain,
+                    "subfield": conjecture.get("subfield", ""),
+                    "conjecture": conjecture["statement"],
+                    "lean_code": formalize_result.get("lean_code", ""),
+                    "is_valid": formalize_result.get("is_valid", False),
+                    "proved": verify_result.get("proved", False),
+                    "final_proof": verify_result.get("final_proof"),
+                    "model_used": settings.claude_model,
+                    "duration_ms": duration_ms,
+                    "confidence_estimate": conjecture.get("confidence_estimate", 0.5),
+                    "novelty_score": conjecture.get("novelty_score", 1.0),
+                    "complexity_formalizability": complexity.get("formalizability", 3),
+                    "complexity_proof_difficulty": complexity.get(
+                        "proof_difficulty", 3
+                    ),
+                    "proof_strategy": strategy,
+                    "git_sha": sha,
+                    "tags": conjecture.get("tags", []),
+                    "job_id": job_id,
+                    "counterexample_result": cx_result,
+                }
+            )
 
-            cx_checked = isinstance(cx_result, dict) and "llm_result" in cx_result
-            results.append({
-                "experiment_id": exp_id,
-                "conjecture": conjecture["statement"],
-                "is_valid": formalize_result.get("is_valid", False),
-                "proved": verify_result.get("proved", False),
-                "duration_ms": duration_ms,
-                "git_sha": sha,
-                "proof_strategy": strategy,
-                "novelty_score": conjecture.get("novelty_score", 1.0),
-                "complexity": complexity,
-                "counterexample_checked": cx_checked,
-                "counterexample_found": bool(cx_result.get("found", False)) if cx_checked else False,
-            })
+            cx_checked = isinstance(cx_result, dict) and (
+                "llm_result" in cx_result
+                or "symbolic_result" in cx_result
+                or "wolfram_result" in cx_result
+            )
+            results.append(
+                {
+                    "experiment_id": exp_id,
+                    "conjecture": conjecture["statement"],
+                    "is_valid": formalize_result.get("is_valid", False),
+                    "proved": verify_result.get("proved", False),
+                    "duration_ms": duration_ms,
+                    "git_sha": sha,
+                    "proof_strategy": strategy,
+                    "novelty_score": conjecture.get("novelty_score", 1.0),
+                    "complexity": complexity,
+                    "counterexample_checked": cx_checked,
+                    "counterexample_found": bool(cx_result.get("found", False))
+                    if cx_checked
+                    else False,
+                }
+            )
 
         total_ms = int((time.monotonic() - t_start) * 1000)
         payload = {
@@ -239,4 +289,5 @@ def run_pipeline_task(
 
 async def _fetch_arxiv(domain: str, max_results: int) -> list[dict[str, Any]]:
     from src.arxiv_client import fetch_context_papers
+
     return await fetch_context_papers(domain, max_results)

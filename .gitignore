@@ -60,6 +60,9 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.db
+*.db-shm
+*.db-wal
 
 # Flask stuff:
 instance/
@@ -208,8 +211,16 @@ __marimo__/
 node_modules/
 frontend/node_modules/
 
-# Claude Code -- ignore user-local settings dir but track CLAUDE.md
-.claude/
+# Claude Code -- ignore user-local settings and runtime state, but keep public docs
+.claude/settings.local.json
+.claude/settings.local.yaml
+.claude/settings.local.yml
+.claude/local/**
+.claude/cache/**
+.claude/tmp/**
+.claude/logs/**
+!.claude/**/*.md
+!.claude/**/*.txt
 
 # Lean sandbox — runtime Mathlib4 build artifacts, regenerated on first boot
 .lean_sandbox/

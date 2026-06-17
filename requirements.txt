@@ -22,3 +22,4 @@ opentelemetry-instrumentation-httpx>=0.50b0
 opentelemetry-exporter-otlp-proto-http>=1.29.0
 ruff>=0.8.0
 sympy>=1.13.0
+wolframalpha>=5.0.0

@@ -36,7 +36,7 @@ interface LineageData {
 }
 
 interface MethodResult {
-  method: string;          // "llm" | "symbolic"
+  method: string;          // "llm" | "symbolic" | "wolfram"
   applicable: boolean;
   found: boolean;
   counterexample: string | null;
@@ -51,6 +51,7 @@ interface CounterexampleData {
   // Present only in dual-search records (new format)
   llm_result?: MethodResult;
   symbolic_result?: MethodResult;
+  wolfram_result?: MethodResult;
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -509,7 +510,12 @@ function LeanEditor({ initialCode }: { initialCode: string }) {
 
 /** Single-method result card used inside CounterexamplePanel. */
 function MethodResultCard({ result }: { result: MethodResult }) {
-  const label = result.method === "symbolic" ? "Symbolic (brute-force)" : "LLM (Claude)";
+  const label =
+    result.method === "symbolic"
+      ? "Symbolic (brute-force)"
+      : result.method === "wolfram"
+      ? "Wolfram Alpha"
+      : "LLM (Claude)";
 
   if (!result.applicable) {
     return (
@@ -612,12 +618,16 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
     }
   };
 
-  // Detect disagreement: one method found a CX, the other (applicable) didn't
-  const hasDual = displayResult?.llm_result != null && displayResult?.symbolic_result != null;
-  const llmFound = displayResult?.llm_result?.found ?? false;
-  const symApplicable = displayResult?.symbolic_result?.applicable ?? false;
-  const symFound = displayResult?.symbolic_result?.found ?? false;
-  const disagreement = hasDual && llmFound !== (symApplicable && symFound);
+  const methodResults = [
+    displayResult?.llm_result,
+    displayResult?.symbolic_result,
+    displayResult?.wolfram_result,
+  ].filter((item): item is MethodResult => item != null);
+  const hasMethodResults = methodResults.length >= 2;
+  const applicableResults = methodResults.filter((item) => item.applicable);
+  const disagreement =
+    applicableResults.some((item) => item.found)
+    && applicableResults.some((item) => !item.found);
 
   return (
     <div
@@ -694,8 +704,8 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
             >
               {displayResult.found
                 ? "Counterexample found — conjecture appears false"
-                : hasDual
-                ? "Unrefuted — neither method found a counterexample (absence of disproof ≠ truth)"
+                : hasMethodResults
+                ? "Unrefuted — no applicable method found a counterexample (absence of disproof ≠ truth)"
                 : "No counterexample found"}
             </span>
           </div>
@@ -716,14 +726,15 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
             </div>
           )}
 
-          {/* Dual method results (new format) */}
-          {hasDual ? (
+          {/* Per-method results (new format) */}
+          {hasMethodResults ? (
             <>
               <span style={{ fontSize: 10, color: "var(--t-tertiary)", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase" }}>
                 Per-method results
               </span>
-              <MethodResultCard result={displayResult.llm_result!} />
-              <MethodResultCard result={displayResult.symbolic_result!} />
+              {methodResults.map((methodResult) => (
+                <MethodResultCard key={methodResult.method} result={methodResult} />
+              ))}
             </>
           ) : (
             /* Legacy single-method display */
@@ -755,8 +766,9 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
 
       {!displayResult && !searching && !error && (
         <p style={{ fontSize: 12, color: "var(--t-tertiary)", margin: 0 }}>
-          Run dual search (LLM + symbolic brute-force) to attempt to disprove this conjecture.
-          Two independent methods — different failure modes — run simultaneously.
+          Run counterexample search (LLM + symbolic brute-force + Wolfram when configured) to attempt
+          to disprove this conjecture.
+          Independent methods with different failure modes run together.
         </p>
       )}
     </div>
@@ -1053,7 +1065,9 @@ export default function ExperimentDetailPage() {
 
   // Determine if dual CX search has run and found nothing — "unrefuted" state.
   const cxResult = extra.counterexample_result as Record<string, unknown> | null | undefined;
-  const cxChecked = cxResult != null && "llm_result" in cxResult;
+  const cxChecked =
+    cxResult != null
+    && ("llm_result" in cxResult || "symbolic_result" in cxResult || "wolfram_result" in cxResult);
   const cxFound = Boolean(cxResult?.found);
   const isUnrefuted = !data.proved && cxChecked && !cxFound;
 
@@ -1280,9 +1294,9 @@ export default function ExperimentDetailPage() {
             >
               {isUnrefuted ? (
                 <span style={{ fontSize: 13, color: "#3b82f6" }}>
-                  This conjecture is <strong>unrefuted</strong> — both LLM and symbolic search found
-                  no counterexample, but absence of disproof is not evidence of truth. It has not
-                  been proved.
+                  This conjecture is <strong>unrefuted</strong> — no configured/applicable
+                  counterexample search found a counterexample, but absence of disproof is not
+                  evidence of truth. It has not been proved.
                 </span>
               ) : (
                 <span style={{ fontSize: 13, color: "var(--warning)" }}>

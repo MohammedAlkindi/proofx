@@ -47,6 +47,7 @@ services:
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+      WOLFRAM_APP_ID: ${WOLFRAM_APP_ID:-}
       DATABASE_URL: postgresql+asyncpg://germinal:germinal@postgres:5432/germinal
       REDIS_URL: redis://redis:6379/0
       LEAN_TIMEOUT: ${LEAN_TIMEOUT:-120}
@@ -81,6 +82,7 @@ services:
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+      WOLFRAM_APP_ID: ${WOLFRAM_APP_ID:-}
       DATABASE_URL: postgresql+asyncpg://germinal:germinal@postgres:5432/germinal
       REDIS_URL: redis://redis:6379/0
       LEAN_TIMEOUT: ${LEAN_TIMEOUT:-120}

@@ -189,8 +189,8 @@ class StatsResponse(BaseModel):
 class MethodResult(BaseModel):
     """Result from a single counterexample-search method."""
 
-    method: str                     # "llm" or "symbolic"
-    applicable: bool = True         # False only for symbolic when conjecture is out-of-scope
+    method: str  # "llm", "symbolic", or "wolfram"
+    applicable: bool = True  # False when a method is out-of-scope or unavailable
     found: bool
     counterexample: str | None = None
     reasoning: str
@@ -205,6 +205,7 @@ class CounterexampleResponse(BaseModel):
     # Per-method detail (absent for old records that pre-date dual search)
     llm_result: MethodResult | None = None
     symbolic_result: MethodResult | None = None
+    wolfram_result: MethodResult | None = None
 
 
 # ---------------------------------------------------------------------------

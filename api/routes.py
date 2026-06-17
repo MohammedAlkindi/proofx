@@ -55,7 +55,9 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def get_generator(settings: Annotated[Settings, Depends(get_settings)]) -> ConjectureGenerator:
+def get_generator(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ConjectureGenerator:
     return ConjectureGenerator(settings)
 
 
@@ -67,11 +69,15 @@ def get_verifier(settings: Annotated[Settings, Depends(get_settings)]) -> Verifi
     return Verifier(settings)
 
 
-def get_snapshot(settings: Annotated[Settings, Depends(get_settings)]) -> SnapshotManager:
+def get_snapshot(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> SnapshotManager:
     return SnapshotManager(settings=settings)
 
 
-def get_failure_registry(settings: Annotated[Settings, Depends(get_settings)]) -> FailureRegistry:
+def get_failure_registry(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> FailureRegistry:
     return FailureRegistry(settings.redis_url)
 
 
@@ -80,7 +86,9 @@ def get_failure_registry(settings: Annotated[Settings, Depends(get_settings)]) -
 # ---------------------------------------------------------------------------
 
 
-@router.post("/generate", response_model=GenerateResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/generate", response_model=GenerateResponse, status_code=status.HTTP_200_OK
+)
 async def generate_conjectures(
     body: GenerateRequest,
     generator: Annotated[ConjectureGenerator, Depends(get_generator)],
@@ -99,7 +107,9 @@ async def generate_conjectures(
 
         async def sse_generator() -> AsyncGenerator[dict[str, Any], None]:
             try:
-                papers = await fetch_context_papers(body.domain, settings.arxiv_max_results)
+                papers = await fetch_context_papers(
+                    body.domain, settings.arxiv_max_results
+                )
                 arxiv_str = format_papers_for_prompt(papers)
                 conjectures = await asyncio.to_thread(
                     generator.generate,
@@ -116,10 +126,14 @@ async def generate_conjectures(
         return EventSourceResponse(sse_generator())
 
     try:
-        conjectures = await asyncio.to_thread(generator.generate, domain=body.domain, n=body.n)
+        conjectures = await asyncio.to_thread(
+            generator.generate, domain=body.domain, n=body.n
+        )
     except Exception as exc:
         logger.exception("Generation failed")
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
+        ) from exc
     return GenerateResponse(conjectures=conjectures)  # type: ignore[arg-type]
 
 
@@ -128,7 +142,9 @@ async def generate_conjectures(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/formalize", response_model=FormalizeResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/formalize", response_model=FormalizeResponse, status_code=status.HTTP_200_OK
+)
 async def formalize_conjecture(
     body: FormalizeRequest,
     formalizer: Annotated[Formalizer, Depends(get_formalizer)],
@@ -141,7 +157,9 @@ async def formalize_conjecture(
         )
     except Exception as exc:
         logger.exception("Formalization failed")
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
+        ) from exc
     return FormalizeResponse(**result)
 
 
@@ -158,10 +176,14 @@ async def verify_lean(
     """Attempt automated proof of Lean 4 code with multi-strategy search."""
     logger.info("POST /verify len=%d strategy=%s", len(body.lean_code), body.strategy)
     try:
-        result = await verifier.verify_async(lean_code=body.lean_code, strategy=body.strategy)
+        result = await verifier.verify_async(
+            lean_code=body.lean_code, strategy=body.strategy
+        )
     except Exception as exc:
         logger.exception("Verification failed")
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
+        ) from exc
     return VerifyResponse(**result)
 
 
@@ -170,7 +192,9 @@ async def verify_lean(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/pipeline", response_model=JobResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/pipeline", response_model=JobResponse, status_code=status.HTTP_202_ACCEPTED
+)
 async def run_pipeline(
     body: PipelineRequest,
     settings: Annotated[Settings, Depends(get_settings)],
@@ -187,7 +211,9 @@ async def run_pipeline(
         from src.db import JobRow, get_session
 
         async with get_session() as session:
-            session.add(JobRow(id=job_id, domain=body.domain, n=body.n, status="pending"))
+            session.add(
+                JobRow(id=job_id, domain=body.domain, n=body.n, status="pending")
+            )
             await session.commit()
     except Exception as exc:
         logger.warning("Could not persist job row: %s", exc)
@@ -213,7 +239,9 @@ async def run_pipeline(
     )
 
 
-async def _run_pipeline_sync(job_id: str, domain: str, n: int, settings: Settings) -> None:
+async def _run_pipeline_sync(
+    job_id: str, domain: str, n: int, settings: Settings
+) -> None:
     """Fallback: run the pipeline in the same process when Celery is unavailable."""
     try:
         from api.tasks import run_pipeline_task
@@ -237,7 +265,9 @@ async def get_job_status(job_id: str) -> JobStatusResponse:
         async with get_session() as session:
             from sqlalchemy import select
 
-            row = (await session.execute(select(JobRow).where(JobRow.id == job_id))).scalar_one_or_none()
+            row = (
+                await session.execute(select(JobRow).where(JobRow.id == job_id))
+            ).scalar_one_or_none()
             if row is None:
                 raise HTTPException(status_code=404, detail="Job not found")
             return JobStatusResponse(
@@ -272,7 +302,10 @@ async def stream_job(job_id: str) -> EventSourceResponse:
                     ).scalar_one_or_none()
 
                 if row is None:
-                    yield {"event": "error", "data": json.dumps({"detail": "Job not found"})}
+                    yield {
+                        "event": "error",
+                        "data": json.dumps({"detail": "Job not found"}),
+                    }
                     return
 
                 yield {
@@ -283,11 +316,13 @@ async def stream_job(job_id: str) -> EventSourceResponse:
                 if row.status in ("done", "error"):
                     yield {
                         "event": "complete",
-                        "data": json.dumps({
-                            "status": row.status,
-                            "result": row.result,
-                            "error": row.error,
-                        }),
+                        "data": json.dumps(
+                            {
+                                "status": row.status,
+                                "result": row.result,
+                                "error": row.error,
+                            }
+                        ),
                     }
                     return
 
@@ -307,7 +342,11 @@ async def stream_job(job_id: str) -> EventSourceResponse:
 # ---------------------------------------------------------------------------
 
 
-@router.get("/experiments", response_model=list[ExperimentSummary], status_code=status.HTTP_200_OK)
+@router.get(
+    "/experiments",
+    response_model=list[ExperimentSummary],
+    status_code=status.HTTP_200_OK,
+)
 async def list_experiments(
     snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
     domain: str | None = Query(None),
@@ -318,7 +357,9 @@ async def list_experiments(
     experiments = snapshot.list_experiments()
 
     if domain:
-        experiments = [e for e in experiments if e.get("domain", "").lower() == domain.lower()]
+        experiments = [
+            e for e in experiments if e.get("domain", "").lower() == domain.lower()
+        ]
     if proved is not None:
         experiments = [e for e in experiments if e.get("proved", False) == proved]
 
@@ -327,9 +368,11 @@ async def list_experiments(
     summaries = []
     for exp in experiments:
         cx = exp.get("counterexample_result") or {}
-        # "llm_result" key is only present in records written by search_dual().
-        # Its presence is the reliable signal that a dual check was actually run.
-        cx_checked = isinstance(cx, dict) and "llm_result" in cx
+        # Method-result keys are only present in records written by search_dual().
+        # Their presence is the reliable signal that a counterexample check ran.
+        cx_checked = isinstance(cx, dict) and (
+            "llm_result" in cx or "symbolic_result" in cx or "wolfram_result" in cx
+        )
         summaries.append(
             ExperimentSummary(
                 id=exp.get("id", ""),
@@ -343,7 +386,9 @@ async def list_experiments(
                 novelty_score=float(exp.get("novelty_score", 1.0)),
                 proof_strategy=str(exp.get("proof_strategy", "claude_standard")),
                 counterexample_checked=cx_checked if cx_checked else None,
-                counterexample_found=bool(cx.get("found", False)) if cx_checked else None,
+                counterexample_found=bool(cx.get("found", False))
+                if cx_checked
+                else None,
             )
         )
     return summaries
@@ -359,8 +404,16 @@ async def get_experiment(
         raise HTTPException(status_code=404, detail="Experiment not found")
 
     known_keys = {
-        "id", "timestamp", "domain", "conjecture", "lean_code",
-        "is_valid", "proved", "final_proof", "model_used", "duration_ms",
+        "id",
+        "timestamp",
+        "domain",
+        "conjecture",
+        "lean_code",
+        "is_valid",
+        "proved",
+        "final_proof",
+        "model_used",
+        "duration_ms",
     }
     extra = {k: v for k, v in exp.items() if k not in known_keys}
 
@@ -412,7 +465,9 @@ async def export_experiment(
             },
         )
     else:
-        raise HTTPException(status_code=400, detail="Unsupported format. Use 'lean' or 'latex'.")
+        raise HTTPException(
+            status_code=400, detail="Unsupported format. Use 'lean' or 'latex'."
+        )
 
 
 def _render_lean_export(exp: dict[str, Any]) -> str:
@@ -437,15 +492,15 @@ def _render_latex_export(exp: dict[str, Any]) -> str:
     def escape(s: str) -> str:
         return (
             s.replace("\\", "\\textbackslash{}")
-             .replace("_", "\\_")
-             .replace("{", "\\{")
-             .replace("}", "\\}")
-             .replace("$", "\\$")
-             .replace("%", "\\%")
-             .replace("&", "\\&")
-             .replace("#", "\\#")
-             .replace("^", "\\textasciicircum{}")
-             .replace("~", "\\textasciitilde{}")
+            .replace("_", "\\_")
+            .replace("{", "\\{")
+            .replace("}", "\\}")
+            .replace("$", "\\$")
+            .replace("%", "\\%")
+            .replace("&", "\\&")
+            .replace("#", "\\#")
+            .replace("^", "\\textasciicircum{}")
+            .replace("~", "\\textasciitilde{}")
         )
 
     domain = escape(exp.get("domain", ""))
@@ -469,7 +524,7 @@ def _render_latex_export(exp: dict[str, Any]) -> str:
         {conjecture}
         \\end{{conjecture}}
 
-        \\textbf{{Status:}} {'\\textcolor{{green}}{{Proved automatically}}' if proved else 'Open'}
+        \\textbf{{Status:}} {"\\textcolor{{green}}{{Proved automatically}}" if proved else "Open"}
 
         \\section*{{Lean 4 Formalization}}
         \\begin{{lstlisting}}[language=Lean4]
@@ -534,10 +589,16 @@ async def get_annotations(experiment_id: str) -> list[dict[str, Any]]:
 
         async with get_session() as session:
             rows = (
-                await session.execute(
-                    select(AnnotationRow).where(AnnotationRow.experiment_id == experiment_id)
+                (
+                    await session.execute(
+                        select(AnnotationRow).where(
+                            AnnotationRow.experiment_id == experiment_id
+                        )
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             return [
                 {
                     "id": r.id,
@@ -581,7 +642,9 @@ async def get_stats(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse)
+@router.post(
+    "/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse
+)
 async def find_counterexample(
     experiment_id: str,
     snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
@@ -644,10 +707,13 @@ async def find_counterexample(
         reasoning=result.get("reasoning", ""),
         llm_result=_to_method_result(result.get("llm_result")),
         symbolic_result=_to_method_result(result.get("symbolic_result")),
+        wolfram_result=_to_method_result(result.get("wolfram_result")),
     )
 
 
-@router.get("/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse)
+@router.get(
+    "/experiments/{experiment_id}/counterexample", response_model=CounterexampleResponse
+)
 async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
     """Return the stored counterexample result for an experiment (if any).
 
@@ -660,7 +726,9 @@ async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
 
         async with get_session() as session:
             row = (
-                await session.execute(select(ExperimentRow).where(ExperimentRow.id == experiment_id))
+                await session.execute(
+                    select(ExperimentRow).where(ExperimentRow.id == experiment_id)
+                )
             ).scalar_one_or_none()
 
         if row is None:
@@ -686,6 +754,7 @@ async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
             reasoning=str(result.get("reasoning", "")),
             llm_result=_to_method_result(result.get("llm_result")),
             symbolic_result=_to_method_result(result.get("symbolic_result")),
+            wolfram_result=_to_method_result(result.get("wolfram_result")),
         )
     except HTTPException:
         raise
@@ -736,10 +805,16 @@ async def get_lineage(
 
             # Fetch children
             child_rows = (
-                await session.execute(
-                    select(ExperimentRow).where(ExperimentRow.parent_id == experiment_id)
+                (
+                    await session.execute(
+                        select(ExperimentRow).where(
+                            ExperimentRow.parent_id == experiment_id
+                        )
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             children = [
                 LineageNode(
                     id=r.id,
@@ -795,12 +870,14 @@ async def derive_conjectures(
         from src.db import JobRow, get_session
 
         async with get_session() as session:
-            session.add(JobRow(
-                id=job_id,
-                domain=exp.get("domain", "derived"),
-                n=body.n,
-                status="pending",
-            ))
+            session.add(
+                JobRow(
+                    id=job_id,
+                    domain=exp.get("domain", "derived"),
+                    n=body.n,
+                    status="pending",
+                )
+            )
             await session.commit()
     except Exception as exc:
         logger.warning("Could not persist derive job row: %s", exc)
@@ -835,7 +912,9 @@ async def _run_derive_pipeline(
 
     from src.db import ExperimentRow, JobRow, get_session
 
-    async def _update_job(status: str, result: Any = None, error: str | None = None) -> None:
+    async def _update_job(
+        status: str, result: Any = None, error: str | None = None
+    ) -> None:
         try:
             from sqlalchemy import update as sa_update
 
@@ -868,7 +947,13 @@ async def _run_derive_pipeline(
             lambda: client.messages.create(
                 model=settings.claude_model,
                 max_tokens=2048,
-                system=[{"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}],
+                system=[
+                    {
+                        "type": "text",
+                        "text": system_text,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
                 messages=[{"role": "user", "content": user_text}],
             )
         )
@@ -910,7 +995,12 @@ async def _run_derive_pipeline(
                     strategy="claude_standard",
                 )
             else:
-                verify_result = {"proved": False, "attempts": [], "final_proof": None, "failure_reason": "Formalization failed"}
+                verify_result = {
+                    "proved": False,
+                    "attempts": [],
+                    "final_proof": None,
+                    "failure_reason": "Formalization failed",
+                }
 
             sha = snapshot.commit_experiment(
                 experiment_id=exp_id,
@@ -933,32 +1023,38 @@ async def _run_derive_pipeline(
             )
 
             async with get_session() as session:
-                session.add(ExperimentRow(
-                    id=exp_id,
-                    domain=domain,
-                    subfield=subfield,
-                    conjecture=statement,
-                    lean_code=formalize_result.get("lean_code", ""),
-                    is_valid=formalize_result.get("is_valid", False),
-                    proved=verify_result.get("proved", False),
-                    final_proof=verify_result.get("final_proof"),
-                    model_used=settings.claude_model,
-                    duration_ms=0,
-                    confidence_estimate=float(item.get("confidence", 0.5)),
-                    parent_id=parent_experiment.get("id"),
-                    job_id=job_id,
-                    git_sha=sha,
-                ))
+                session.add(
+                    ExperimentRow(
+                        id=exp_id,
+                        domain=domain,
+                        subfield=subfield,
+                        conjecture=statement,
+                        lean_code=formalize_result.get("lean_code", ""),
+                        is_valid=formalize_result.get("is_valid", False),
+                        proved=verify_result.get("proved", False),
+                        final_proof=verify_result.get("final_proof"),
+                        model_used=settings.claude_model,
+                        duration_ms=0,
+                        confidence_estimate=float(item.get("confidence", 0.5)),
+                        parent_id=parent_experiment.get("id"),
+                        job_id=job_id,
+                        git_sha=sha,
+                    )
+                )
                 await session.commit()
 
-            results.append({
-                "experiment_id": exp_id,
-                "conjecture": statement,
-                "is_valid": formalize_result.get("is_valid", False),
-                "proved": verify_result.get("proved", False),
-                "relation": relation,
-            })
+            results.append(
+                {
+                    "experiment_id": exp_id,
+                    "conjecture": statement,
+                    "is_valid": formalize_result.get("is_valid", False),
+                    "proved": verify_result.get("proved", False),
+                    "relation": relation,
+                }
+            )
         except Exception as exc:
             logger.error("Derive pipeline step failed for %s: %s", exp_id, exc)
 
-    await _update_job("done", result={"parent_id": parent_experiment.get("id"), "results": results})
+    await _update_job(
+        "done", result={"parent_id": parent_experiment.get("id"), "results": results}
+    )
