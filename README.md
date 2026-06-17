@@ -1,5 +1,13 @@
 # Germinal
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python](https://img.shields.io/badge/Python-3.11-blue.svg)
+![Lean 4](https://img.shields.io/badge/Lean-4-purple.svg)
+![Claude](https://img.shields.io/badge/LLM-Claude-orange.svg)
+![Wolfram Alpha](https://img.shields.io/badge/Wolfram-Integrated-red.svg)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg?logo=docker&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-pytest-green.svg)
+
 AI-powered mathematical conjecture explorer — generate candidate hypotheses via Claude, auto-formalize them in Lean 4, attempt automated proofs, search for counterexamples, and log every experiment as a reproducible Git snapshot.
 
 ```

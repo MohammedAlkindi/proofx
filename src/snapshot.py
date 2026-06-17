@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-import time
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -21,6 +21,11 @@ from typing import Any
 import git
 
 from src.settings import Settings
+
+# Module-level lock serializes the symbolic_ref HEAD swap across all threads in
+# this process.  Celery runs workers as separate processes, so this protects the
+# --concurrency=2 threads within a single worker.
+_COMMIT_LOCK = threading.Lock()
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +106,12 @@ class SnapshotManager:
         self._write_experiment_files(exp_dir, metadata)
         sha = self._commit_to_branch(experiment_id, timestamp)
 
-        logger.info("Experiment %s committed as %s on branch %s", experiment_id, sha, self._branch_name)
+        logger.info(
+            "Experiment %s committed as %s on branch %s",
+            experiment_id,
+            sha,
+            self._branch_name,
+        )
         return sha
 
     def list_experiments(self) -> list[dict[str, Any]]:
@@ -160,20 +170,26 @@ class SnapshotManager:
             (exp_dir / "proof.lean").write_text(final_proof, encoding="utf-8")
 
     def _commit_to_branch(self, experiment_id: str, timestamp: str) -> str:
-        """Stage experiment files and create a commit on the experiments branch."""
-        rel_dir = Path("experiments") / experiment_id
-        self._repo.index.add([str(rel_dir)])
+        """Stage experiment files and create a commit on the experiments branch.
 
-        current_branch = self._repo.active_branch.name
-        try:
-            self._repo.git.symbolic_ref("HEAD", f"refs/heads/{self._branch_name}")
-            commit = self._repo.index.commit(
-                f"experiment({experiment_id}): {timestamp}",
-                author=git.Actor("Germinal", "germinal@localhost"),
-                committer=git.Actor("Germinal", "germinal@localhost"),
-            )
-            sha = commit.hexsha
-        finally:
-            self._repo.git.symbolic_ref("HEAD", f"refs/heads/{current_branch}")
+        The symbolic_ref swap and commit are wrapped in _COMMIT_LOCK so that
+        concurrent calls from Celery worker threads never interleave their HEAD
+        manipulations and corrupt which branch HEAD points to.
+        """
+        with _COMMIT_LOCK:
+            rel_dir = Path("experiments") / experiment_id
+            self._repo.index.add([str(rel_dir)])
+
+            current_branch = self._repo.active_branch.name
+            try:
+                self._repo.git.symbolic_ref("HEAD", f"refs/heads/{self._branch_name}")
+                commit = self._repo.index.commit(
+                    f"experiment({experiment_id}): {timestamp}",
+                    author=git.Actor("Germinal", "germinal@localhost"),
+                    committer=git.Actor("Germinal", "germinal@localhost"),
+                )
+                sha = commit.hexsha
+            finally:
+                self._repo.git.symbolic_ref("HEAD", f"refs/heads/{current_branch}")
 
         return sha
