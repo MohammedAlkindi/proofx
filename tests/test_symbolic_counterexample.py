@@ -22,6 +22,7 @@ def finder() -> SymbolicCounterexampleFinder:
 # Case 1: Applicable, counterexample exists
 # ---------------------------------------------------------------------------
 
+
 def test_found_parity_n_squared_odd(finder: SymbolicCounterexampleFinder) -> None:
     """n^2 is NOT always odd — n=0 gives 0 (even)."""
     result = finder.search("For all integers n, n^2 is odd")
@@ -35,7 +36,9 @@ def test_found_parity_n_squared_odd(finder: SymbolicCounterexampleFinder) -> Non
     assert result["reasoning"]
 
 
-def test_found_divisibility_n_squared_divisible_by_3(finder: SymbolicCounterexampleFinder) -> None:
+def test_found_divisibility_n_squared_divisible_by_3(
+    finder: SymbolicCounterexampleFinder,
+) -> None:
     """n^2 is NOT always divisible by 3 — n=1 gives 1."""
     result = finder.search("For all integers n, n^2 is divisible by 3")
 
@@ -45,7 +48,9 @@ def test_found_divisibility_n_squared_divisible_by_3(finder: SymbolicCounterexam
     assert result["counterexample"] is not None
 
 
-def test_found_primality_n_squared_is_prime(finder: SymbolicCounterexampleFinder) -> None:
+def test_found_primality_n_squared_is_prime(
+    finder: SymbolicCounterexampleFinder,
+) -> None:
     """n^2 is NOT prime for n >= 2 (and 0, 1 < 2 anyway)."""
     result = finder.search("For all natural numbers n, n^2 is prime")
 
@@ -59,7 +64,10 @@ def test_found_primality_n_squared_is_prime(finder: SymbolicCounterexampleFinder
 # Case 2: Applicable, no counterexample found in the bounded domain
 # ---------------------------------------------------------------------------
 
-def test_not_found_parity_n_squared_plus_n_even(finder: SymbolicCounterexampleFinder) -> None:
+
+def test_not_found_parity_n_squared_plus_n_even(
+    finder: SymbolicCounterexampleFinder,
+) -> None:
     """n^2 + n = n(n+1) is always even (product of consecutive integers)."""
     result = finder.search("For all integers n, n^2 + n is divisible by 2")
 
@@ -70,7 +78,9 @@ def test_not_found_parity_n_squared_plus_n_even(finder: SymbolicCounterexampleFi
     assert result["reasoning"]
 
 
-def test_not_found_divisibility_6_divides_n3_minus_n(finder: SymbolicCounterexampleFinder) -> None:
+def test_not_found_divisibility_6_divides_n3_minus_n(
+    finder: SymbolicCounterexampleFinder,
+) -> None:
     """n^3 - n = (n-1)*n*(n+1) is always divisible by 6."""
     result = finder.search("For all integers n, n^3 - n is divisible by 6")
 
@@ -84,7 +94,10 @@ def test_not_found_divisibility_6_divides_n3_minus_n(finder: SymbolicCounterexam
 # Case 3: Not applicable (conjecture outside supported scope)
 # ---------------------------------------------------------------------------
 
-def test_not_applicable_algebraic_structure(finder: SymbolicCounterexampleFinder) -> None:
+
+def test_not_applicable_algebraic_structure(
+    finder: SymbolicCounterexampleFinder,
+) -> None:
     """Claims about prime ideals in Noetherian rings are not assessable symbolically."""
     result = finder.search(
         "For every prime ideal P in a Noetherian ring R, "
@@ -110,11 +123,11 @@ def test_not_applicable_no_quantifier(finder: SymbolicCounterexampleFinder) -> N
     assert result["found"] is False
 
 
-def test_not_applicable_unsupported_claim_type(finder: SymbolicCounterexampleFinder) -> None:
+def test_not_applicable_unsupported_claim_type(
+    finder: SymbolicCounterexampleFinder,
+) -> None:
     """Universal integer claim with an unsupported predicate type is not applicable."""
-    result = finder.search(
-        "For all integers n, the sequence a_n is convergent."
-    )
+    result = finder.search("For all integers n, the sequence a_n is convergent.")
 
     assert result["method"] == "symbolic"
     assert result["applicable"] is False
@@ -124,6 +137,7 @@ def test_not_applicable_unsupported_claim_type(finder: SymbolicCounterexampleFin
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 def test_robustness_empty_like_claim(finder: SymbolicCounterexampleFinder) -> None:
     """Graceful handling of a well-formed quantifier but unparseable expression."""
