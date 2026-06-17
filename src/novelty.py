@@ -74,7 +74,9 @@ class NoveltyChecker:
             stmt = exp.get("conjecture", "")
             if stmt:
                 self._seen.append(stmt)
-        logger.info("NoveltyChecker seeded with %d existing statements", len(self._seen))
+        logger.info(
+            "NoveltyChecker seeded with %d existing statements", len(self._seen)
+        )
 
     def _register(self, statement: str) -> None:
         self._seen.append(statement)

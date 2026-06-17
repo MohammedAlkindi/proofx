@@ -60,7 +60,9 @@ class Formalizer:
         self._client = anthropic.Anthropic(api_key=self._settings.anthropic_api_key)
 
     @retry(
-        retry=retry_if_exception_type((anthropic.RateLimitError, anthropic.APIConnectionError)),
+        retry=retry_if_exception_type(
+            (anthropic.RateLimitError, anthropic.APIConnectionError)
+        ),
         wait=wait_exponential(multiplier=1, min=2, max=60),
         stop=stop_after_attempt(5),
         reraise=True,
@@ -79,7 +81,9 @@ class Formalizer:
         user_content: list[dict[str, Any]] = [
             {
                 "type": "text",
-                "text": mathlib_context if mathlib_context else "(No specific Mathlib hints.)",
+                "text": mathlib_context
+                if mathlib_context
+                else "(No specific Mathlib hints.)",
                 "cache_control": {"type": "ephemeral"},
             },
             {
@@ -91,19 +95,23 @@ class Formalizer:
         messages: list[dict[str, Any]] = [{"role": "user", "content": user_content}]
 
         if previous_error:
-            messages.append({
-                "role": "assistant",
-                "content": "I'll try a corrected formalization.",
-            })
-            messages.append({
-                "role": "user",
-                "content": (
-                    f"The previous Lean 4 output failed to compile with this error:\n\n"
-                    f"```\n{previous_error}\n```\n\n"
-                    "Please produce a corrected Lean 4 theorem statement that fixes the error. "
-                    "Output only the Lean 4 source code."
-                ),
-            })
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": "I'll try a corrected formalization.",
+                }
+            )
+            messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        f"The previous Lean 4 output failed to compile with this error:\n\n"
+                        f"```\n{previous_error}\n```\n\n"
+                        "Please produce a corrected Lean 4 theorem statement that fixes the error. "
+                        "Output only the Lean 4 source code."
+                    ),
+                }
+            )
 
         response = self._client.messages.create(
             model=self._settings.claude_model,
@@ -137,17 +145,25 @@ class Formalizer:
         if not conjecture:
             raise ValueError("conjecture must be a non-empty string")
 
-        max_attempts = max_attempts if max_attempts is not None else self._settings.formalize_repair_attempts
+        max_attempts = (
+            max_attempts
+            if max_attempts is not None
+            else self._settings.formalize_repair_attempts
+        )
         logger.info(
             "Formalizing conjecture (len=%d, subfield=%r, max_attempts=%d)",
-            len(conjecture), subfield, max_attempts,
+            len(conjecture),
+            subfield,
+            max_attempts,
         )
 
         import asyncio
 
         relevant = mathlib_rag.retrieve(conjecture, subfield, top_k=12)
         mathlib_context = mathlib_rag.format_for_prompt(relevant)
-        sandbox = get_sandbox(self._settings.lean_sandbox_dir, self._settings.lean_timeout)
+        sandbox = get_sandbox(
+            self._settings.lean_sandbox_dir, self._settings.lean_timeout
+        )
 
         lean_code = ""
         error_log = ""
@@ -157,11 +173,22 @@ class Formalizer:
             try:
                 raw = self._call_api(conjecture, mathlib_context, previous_error)
             except Exception as exc:
-                logger.error("Claude API call failed on formalization attempt %d: %s", attempt, exc)
-                return {"lean_code": lean_code, "is_valid": False, "error_log": str(exc), "repair_attempts": attempt}
+                logger.error(
+                    "Claude API call failed on formalization attempt %d: %s",
+                    attempt,
+                    exc,
+                )
+                return {
+                    "lean_code": lean_code,
+                    "is_valid": False,
+                    "error_log": str(exc),
+                    "repair_attempts": attempt,
+                }
 
             lean_code = _strip_fences(raw)
-            logger.debug("Formalization attempt %d Lean output:\n%s", attempt, lean_code)
+            logger.debug(
+                "Formalization attempt %d Lean output:\n%s", attempt, lean_code
+            )
 
             try:
                 is_valid, error_log = asyncio.run(sandbox.build(lean_code))
@@ -170,10 +197,29 @@ class Formalizer:
                 is_valid, error_log = False, str(exc)
 
             if is_valid:
-                logger.info("Lean 4 validation succeeded on attempt %d/%d", attempt, max_attempts)
-                return {"lean_code": lean_code, "is_valid": True, "error_log": "", "repair_attempts": attempt}
+                logger.info(
+                    "Lean 4 validation succeeded on attempt %d/%d",
+                    attempt,
+                    max_attempts,
+                )
+                return {
+                    "lean_code": lean_code,
+                    "is_valid": True,
+                    "error_log": "",
+                    "repair_attempts": attempt,
+                }
 
-            logger.warning("Formalization attempt %d/%d failed:\n%s", attempt, max_attempts, error_log)
+            logger.warning(
+                "Formalization attempt %d/%d failed:\n%s",
+                attempt,
+                max_attempts,
+                error_log,
+            )
             previous_error = error_log
 
-        return {"lean_code": lean_code, "is_valid": False, "error_log": error_log, "repair_attempts": max_attempts}
+        return {
+            "lean_code": lean_code,
+            "is_valid": False,
+            "error_log": error_log,
+            "repair_attempts": max_attempts,
+        }

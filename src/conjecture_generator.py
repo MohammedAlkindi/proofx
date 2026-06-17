@@ -69,7 +69,15 @@ def _parse_response(raw: str, domain: str) -> list[dict[str, Any]]:
 def _derive_tags(item: dict[str, Any]) -> list[str]:
     tags: list[str] = []
     subfield = str(item.get("subfield", "")).lower()
-    for keyword in ("prime", "graph", "topology", "algebra", "number", "combinatorics", "geometry"):
+    for keyword in (
+        "prime",
+        "graph",
+        "topology",
+        "algebra",
+        "number",
+        "combinatorics",
+        "geometry",
+    ):
         if keyword in subfield or keyword in str(item.get("statement", "")).lower():
             tags.append(keyword)
     confidence = float(item.get("confidence", 0.5))
@@ -88,7 +96,9 @@ class ConjectureGenerator:
         self._client = anthropic.Anthropic(api_key=self._settings.anthropic_api_key)
 
     @retry(
-        retry=retry_if_exception_type((anthropic.RateLimitError, anthropic.APIConnectionError)),
+        retry=retry_if_exception_type(
+            (anthropic.RateLimitError, anthropic.APIConnectionError)
+        ),
         wait=wait_exponential(multiplier=1, min=2, max=60),
         stop=stop_after_attempt(5),
         reraise=True,
@@ -163,7 +173,9 @@ class ConjectureGenerator:
         arxiv_str = format_papers_for_prompt(arxiv_context or [])
 
         logger.info("Generating %d conjecture(s) for domain=%r", n, domain)
-        raw = self._call_api(domain, n, arxiv_context=arxiv_str, avoidance_hint=avoidance_hint)
+        raw = self._call_api(
+            domain, n, arxiv_context=arxiv_str, avoidance_hint=avoidance_hint
+        )
         logger.debug("Raw Claude response: %s", raw)
 
         try:

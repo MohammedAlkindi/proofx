@@ -766,7 +766,7 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
 
       {!displayResult && !searching && !error && (
         <p style={{ fontSize: 12, color: "var(--t-tertiary)", margin: 0 }}>
-          Run counterexample search (LLM + symbolic brute-force + Wolfram when configured) to attempt
+          Run counterexample search (Claude + symbolic SymPy + Wolfram when configured) to attempt
           to disprove this conjecture.
           Independent methods with different failure modes run together.
         </p>

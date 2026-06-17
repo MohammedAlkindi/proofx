@@ -1,6 +1,6 @@
 """Counterexample finder module.
 
-When automated proof search fails, independent methods run in parallel to
+When automated proof search fails, independent methods run as an ensemble to
 search for a concrete counterexample:
 
 1. LLM-based (CounterexampleFinder): asks Claude to reason about the conjecture.
@@ -11,15 +11,21 @@ search for a concrete counterexample:
    engine when configured. Independent of both Claude and local sympy.
 
 "No counterexample found" from *one* source is absence-of-disproof, not evidence
-of truth. Two independent failures-to-disprove are stronger, but still not a proof.
-Use search_dual() to run all configured methods and get a combined, structured result.
+of truth. Three independent failures-to-disprove are stronger, but still not a
+proof. Use search_ensemble() or the backwards-compatible search_dual() wrapper
+to run all configured methods and get a combined, structured result.
 """
 
 from __future__ import annotations
 
+import concurrent.futures
+import hashlib
+import json
 import logging
 import math
 import re
+import time
+from pathlib import Path
 from typing import Any
 
 import anthropic
@@ -41,6 +47,22 @@ except (
 
 logger = logging.getLogger(__name__)
 
+BACKEND_TIMEOUT_SECONDS = 15.0
+SOURCE_BY_METHOD = {
+    "llm": "claude",
+    "symbolic": "sympy",
+    "wolfram": "wolfram_alpha",
+}
+METHOD_RESULT_KEYS = {
+    "claude": "llm_result",
+    "sympy": "symbolic_result",
+    "wolfram_alpha": "wolfram_result",
+}
+VALID_SOURCES = {"claude", "sympy", "wolfram_alpha"}
+CONSENSUS_COUNTEREXAMPLE_FOUND = "counterexample_found"
+CONSENSUS_UNREFUTED = "unrefuted"
+CONSENSUS_PARTIAL_FAILURE = "partial_failure"
+
 _SYSTEM_PROMPT = """\
 You are a mathematical expert. Given a conjecture, attempt to find a concrete
 counterexample that disproves it.
@@ -59,6 +81,289 @@ Respond in JSON with this schema:
   "reasoning": "your reasoning process"
 }
 """
+
+
+def _stable_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _method_timeout_result(source: str) -> dict[str, Any]:
+    method = {
+        "claude": "llm",
+        "sympy": "symbolic",
+        "wolfram_alpha": "wolfram",
+    }[source]
+    return {
+        "method": method,
+        "source": source,
+        "applicable": True,
+        "found": False,
+        "counterexample": None,
+        "reasoning": f"{source} counterexample search timed out after 15s",
+        "timed_out": True,
+        "error": "timeout",
+    }
+
+
+def _normalize_method_result(
+    result: dict[str, Any],
+    source: str,
+    conjecture: str,
+) -> dict[str, Any]:
+    normalized = dict(result)
+    normalized.setdefault(
+        "method", {"claude": "llm", "sympy": "symbolic"}.get(source, "wolfram")
+    )
+    normalized["source"] = source
+    normalized.setdefault("applicable", True)
+    normalized.setdefault("found", False)
+    normalized.setdefault("counterexample", None)
+    normalized.setdefault("reasoning", "")
+
+    if normalized.get("found") and normalized.get("counterexample"):
+        verified = LocalCounterexampleVerifier.verify(
+            conjecture, str(normalized["counterexample"])
+        )
+        if verified["verified"]:
+            normalized["verified_locally"] = True
+        else:
+            original_reasoning = str(normalized.get("reasoning", ""))
+            normalized["found"] = False
+            normalized["counterexample"] = None
+            normalized["verified_locally"] = False
+            normalized["rejected_counterexample"] = verified["candidate"]
+            normalized["reasoning"] = (
+                f"{original_reasoning} Candidate rejected by local verification: "
+                f"{verified['reason']}"
+            ).strip()
+
+    return normalized
+
+
+class LocalCounterexampleVerifier:
+    """Conservative local verifier for discovered one-variable integer candidates."""
+
+    _ASSIGNMENT = re.compile(r"\b(?P<var>[a-z])\s*=\s*(?P<value>-?\d+)\b")
+
+    @classmethod
+    def verify(cls, conjecture: str, candidate: str) -> dict[str, Any]:
+        assignment = cls._extract_assignment(candidate)
+        if assignment is None:
+            return {
+                "verified": False,
+                "candidate": candidate,
+                "reason": "could not extract an integer assignment from candidate",
+            }
+
+        var_name, value = assignment
+        parser = _SymbolicClaimParser()
+        parsed = parser.parse(conjecture.strip())
+        if not parsed["applicable"]:
+            return {
+                "verified": False,
+                "candidate": candidate,
+                "reason": parsed["reasoning"],
+            }
+        if parsed["var_name"] != var_name:
+            return {
+                "verified": False,
+                "candidate": candidate,
+                "reason": (
+                    f"candidate assigns '{var_name}', but conjecture quantifies "
+                    f"'{parsed['var_name']}'"
+                ),
+            }
+        if value not in parsed["domain"]:
+            return {
+                "verified": False,
+                "candidate": candidate,
+                "reason": f"candidate value {value} is outside the parsed domain",
+            }
+
+        v = SymbolicCounterexampleFinder._eval_int(parsed["expr"], parsed["var"], value)
+        if v is None:
+            return {
+                "verified": False,
+                "candidate": candidate,
+                "reason": "could not evaluate conjecture expression at candidate",
+            }
+
+        satisfies = parser.satisfies_claim(v, parsed)
+        if satisfies:
+            return {
+                "verified": False,
+                "candidate": candidate,
+                "reason": (
+                    f"candidate evaluates to {v}, which satisfies the parsed claim"
+                ),
+            }
+        return {
+            "verified": True,
+            "candidate": candidate,
+            "reason": f"candidate evaluates to {v}, violating the parsed claim",
+        }
+
+    @classmethod
+    def _extract_assignment(cls, candidate: str) -> tuple[str, int] | None:
+        match = cls._ASSIGNMENT.search(candidate)
+        if not match:
+            return None
+        return match.group("var"), int(match.group("value"))
+
+
+class _SymbolicClaimParser:
+    """Shared parser for symbolic search and local counterexample verification."""
+
+    def parse(self, conjecture: str) -> dict[str, Any]:
+        univ_m = SymbolicCounterexampleFinder._UNIV_INT.search(conjecture)
+        if not univ_m:
+            return SymbolicCounterexampleFinder._not_applicable(
+                "No universal integer quantifier detected "
+                "(e.g. 'for all integers n', 'for every natural number n')"
+            )
+
+        var_name = univ_m.group("var")
+        pre_text = conjecture[: univ_m.end()].lower()
+        natural_hints = ("natural", "positive", "non-negative", "nonnegative", "whole")
+        domain = (
+            SymbolicCounterexampleFinder._NAT_RANGE
+            if any(h in pre_text for h in natural_hints)
+            else SymbolicCounterexampleFinder._INT_RANGE
+        )
+
+        snippet = conjecture[univ_m.end() :].lstrip(", \t")
+        snippet = re.sub(
+            r"^" + re.escape(var_name) + r"\s*(?:>=?|<=?|[≥≤])\s*-?\d+\s*,\s*",
+            "",
+            snippet,
+            flags=re.IGNORECASE,
+        )
+
+        is_m = re.search(r"\b(?:is|are)\b", snippet, re.IGNORECASE)
+        if not is_m:
+            return SymbolicCounterexampleFinder._not_applicable(
+                "Could not locate 'is/are' predicate after the quantifier"
+            )
+
+        expr_raw = snippet[: is_m.start()].strip().strip(",").strip()
+        expr_raw = re.sub(
+            r"^(?:the\s+)?(?:expression\s+|quantity\s+|sum\s+|product\s+|value(?:\s+of)?\s+)?",
+            "",
+            expr_raw,
+            flags=re.IGNORECASE,
+        ).strip()
+        if not expr_raw or var_name.lower() not in expr_raw.lower():
+            return SymbolicCounterexampleFinder._not_applicable(
+                f"Could not extract a mathematical expression containing '{var_name}' "
+                "before the predicate"
+            )
+
+        expr_py = expr_raw.replace("^", "**")
+        expr_py = re.sub(
+            r"(\d)(" + re.escape(var_name) + r")",
+            r"\1*\2",
+            expr_py,
+            flags=re.IGNORECASE,
+        )
+
+        try:
+            from sympy import Symbol
+            from sympy.parsing.sympy_parser import (
+                implicit_multiplication_application,
+                parse_expr,
+                standard_transformations,
+            )
+
+            var = Symbol(var_name)
+            transforms = standard_transformations + (
+                implicit_multiplication_application,
+            )
+            expr = parse_expr(
+                expr_py, local_dict={var_name: var}, transformations=transforms
+            )
+        except Exception as exc:
+            return SymbolicCounterexampleFinder._not_applicable(
+                f"Could not parse '{expr_py}' as a sympy expression: {exc}"
+            )
+
+        claim_text = snippet[is_m.end() :].strip()
+        claim: dict[str, Any] | None = None
+        if m := re.search(r"\bdivisible\s+by\s+(\d+)", claim_text, re.IGNORECASE):
+            claim = {"type": "congruence", "modulus": int(m.group(1)), "remainder": 0}
+        elif re.search(r"\beven\b", claim_text, re.IGNORECASE):
+            claim = {"type": "congruence", "modulus": 2, "remainder": 0}
+        elif re.search(r"\bodd\b", claim_text, re.IGNORECASE):
+            claim = {"type": "congruence", "modulus": 2, "remainder": 1}
+        elif re.search(r"\bprime\b", claim_text, re.IGNORECASE):
+            claim = {"type": "prime"}
+        elif re.search(r"perfect\s+square", claim_text, re.IGNORECASE):
+            claim = {"type": "perfect_square"}
+
+        if claim is None:
+            return SymbolicCounterexampleFinder._not_applicable(
+                f"Claim type not in supported set: '{claim_text[:60]}'. "
+                "Supported: divisible by N, even, odd, prime, perfect square."
+            )
+
+        return {
+            "method": "symbolic",
+            "applicable": True,
+            "found": False,
+            "counterexample": None,
+            "reasoning": "",
+            "var_name": var_name,
+            "var": var,
+            "expr": expr,
+            "domain": domain,
+            "claim": claim,
+        }
+
+    @staticmethod
+    def satisfies_claim(value: int, parsed: dict[str, Any]) -> bool:
+        claim = parsed["claim"]
+        if claim["type"] == "congruence":
+            return value % claim["modulus"] == claim["remainder"]
+        if claim["type"] == "prime":
+            import sympy
+
+            return value >= 2 and bool(sympy.isprime(value))
+        if claim["type"] == "perfect_square":
+            return value >= 0 and math.isqrt(value) ** 2 == value
+        raise ValueError(f"Unsupported claim type: {claim['type']}")
+
+
+class WolframQueryCache:
+    """Tiny JSON-file cache for Wolfram Alpha query responses."""
+
+    def __init__(self, ttl_seconds: int, cache_dir: Path | None = None) -> None:
+        self._ttl_seconds = ttl_seconds
+        self._cache_dir = cache_dir or Path(".cache") / "wolfram"
+
+    def get(self, statement_hash: str, wolfram_query: str) -> Any | None:
+        path = self._path(statement_hash, wolfram_query)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            created_at = float(data.get("created_at", 0))
+            if self._ttl_seconds <= 0 or time.time() - created_at > self._ttl_seconds:
+                return None
+            return data.get("value")
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            return None
+
+    def set(self, statement_hash: str, wolfram_query: str, value: Any) -> None:
+        path = self._path(statement_hash, wolfram_query)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps({"created_at": time.time(), "value": value}),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            logger.debug("Could not write Wolfram cache entry %s: %s", path, exc)
+
+    def _path(self, statement_hash: str, wolfram_query: str) -> Path:
+        cache_key = _stable_hash(f"{statement_hash}:{wolfram_query}")
+        return self._cache_dir / f"{cache_key}.json"
 
 
 # ---------------------------------------------------------------------------
@@ -535,14 +840,20 @@ class WolframCounterexampleFinder:
             return self._not_applicable("wolframalpha package is not installed")
 
         query = self._build_query(conjecture, subfield)
-
-        try:
-            client = wolframalpha.Client(self._settings.wolfram_app_id)
-            response = client.query(query)
-            pod_texts = self._extract_pod_texts(response)
-        except Exception as exc:
-            logger.debug("Wolfram Alpha counterexample search failed: %s", exc)
-            return self._not_applicable(f"Wolfram Alpha query failed: {exc}")
+        statement_hash = _stable_hash(conjecture)
+        cache = WolframQueryCache(self._settings.wolfram_cache_ttl_seconds)
+        cached_pod_texts = cache.get(statement_hash, query)
+        if cached_pod_texts is not None:
+            pod_texts = [(str(title), str(text)) for title, text in cached_pod_texts]
+        else:
+            try:
+                client = wolframalpha.Client(self._settings.wolfram_app_id)
+                response = client.query(query)
+                pod_texts = self._extract_pod_texts(response)
+                cache.set(statement_hash, query, pod_texts)
+            except Exception as exc:
+                logger.debug("Wolfram Alpha counterexample search failed: %s", exc)
+                return self._not_applicable(f"Wolfram Alpha query failed: {exc}")
 
         if not pod_texts:
             return self._not_applicable("Wolfram Alpha returned no readable pod text")
@@ -682,16 +993,106 @@ class WolframCounterexampleFinder:
 
 
 # ---------------------------------------------------------------------------
-# Combined dual search
+# Combined ensemble search
 # ---------------------------------------------------------------------------
 
 
-def search_dual(
+def _run_backend_searches(
+    conjecture: str,
+    subfield: str,
+    settings: Settings | None,
+) -> dict[str, dict[str, Any]]:
+    callables = {
+        "claude": lambda: CounterexampleFinder(settings).search(conjecture, subfield),
+        "sympy": lambda: SymbolicCounterexampleFinder().search(conjecture, subfield),
+        "wolfram_alpha": lambda: WolframCounterexampleFinder(settings).search(
+            conjecture, subfield
+        ),
+    }
+    results: dict[str, dict[str, Any]] = {}
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(callables))
+    futures = {executor.submit(search): source for source, search in callables.items()}
+    deadline = time.monotonic() + BACKEND_TIMEOUT_SECONDS
+
+    try:
+        for future, source in futures.items():
+            remaining = max(0.0, deadline - time.monotonic())
+            try:
+                raw_result = future.result(timeout=remaining)
+            except concurrent.futures.TimeoutError:
+                results[source] = _method_timeout_result(source)
+            except Exception as exc:
+                logger.error("%s counterexample search failed: %s", source, exc)
+                results[source] = {
+                    "method": {
+                        "claude": "llm",
+                        "sympy": "symbolic",
+                        "wolfram_alpha": "wolfram",
+                    }[source],
+                    "source": source,
+                    "applicable": True,
+                    "found": False,
+                    "counterexample": None,
+                    "reasoning": f"{source} search error: {exc}",
+                    "error": str(exc),
+                }
+            else:
+                results[source] = _normalize_method_result(
+                    raw_result, source, conjecture
+                )
+    finally:
+        for future in futures:
+            if not future.done():
+                future.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
+
+    for source in callables:
+        results.setdefault(source, _method_timeout_result(source))
+    return results
+
+
+def _consensus(method_results: list[dict[str, Any]]) -> str:
+    if any(result.get("found", False) for result in method_results):
+        return CONSENSUS_COUNTEREXAMPLE_FOUND
+    if any(result.get("timed_out") or result.get("error") for result in method_results):
+        return CONSENSUS_PARTIAL_FAILURE
+    return CONSENSUS_UNREFUTED
+
+
+def _disagreement(methods_by_source: dict[str, dict[str, Any]]) -> dict[str, bool]:
+    return {
+        "claude_found": bool(methods_by_source["claude"].get("found", False)),
+        "sympy_found": bool(methods_by_source["sympy"].get("found", False)),
+        "wolfram_found": bool(methods_by_source["wolfram_alpha"].get("found", False)),
+    }
+
+
+def _aggregate_reasoning(method_results: list[tuple[str, dict[str, Any]]]) -> str:
+    found_results = [
+        (label, result) for label, result in method_results if result.get("found")
+    ]
+    if found_results:
+        return "; ".join(
+            f"{label}: {result.get('counterexample') or result.get('reasoning', '')}"
+            for label, result in found_results
+        )
+
+    summaries = [
+        f"{label}: {str(result.get('reasoning', ''))[:150]}"
+        for label, result in method_results
+    ]
+    return (
+        "No configured/applicable method found a locally verified counterexample. "
+        + " | ".join(summaries)
+    )
+
+
+def search_ensemble(
     conjecture: str,
     subfield: str = "",
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Run LLM, symbolic, and Wolfram counterexample searches independently.
+    """Run Claude, SymPy, and Wolfram counterexample searches as an ensemble.
 
     Returns a combined dict that is a strict superset of the old single-method
     format, so existing callers reading only {found, counterexample, reasoning}
@@ -722,40 +1123,25 @@ def search_dual(
                 "counterexample": ...,
                 "reasoning": str,
             },
+            "methods_attempted": 3,
+            "methods_applicable": int,
+            "methods_found_counterexample": int,
+            "consensus": "counterexample_found" | "unrefuted" | "partial_failure",
+            "method_disagreement": {
+                "claude_found": bool,
+                "sympy_found": bool,
+                "wolfram_found": bool,
+            },
         }
     """
     conjecture = conjecture.strip()
     if not conjecture:
         raise ValueError("conjecture must be non-empty")
 
-    # LLM search
-    llm_finder = CounterexampleFinder(settings)
-    try:
-        llm_raw = llm_finder.search(conjecture, subfield)
-        llm_result: dict[str, Any] = {
-            "method": "llm",
-            "applicable": True,
-            "found": llm_raw["found"],
-            "counterexample": llm_raw.get("counterexample"),
-            "reasoning": llm_raw.get("reasoning", ""),
-        }
-    except Exception as exc:
-        logger.error("LLM counterexample search failed: %s", exc)
-        llm_result = {
-            "method": "llm",
-            "applicable": True,
-            "found": False,
-            "counterexample": None,
-            "reasoning": f"LLM search error: {exc}",
-        }
-
-    # Symbolic search (independent: different method, different failure modes)
-    sym_finder = SymbolicCounterexampleFinder()
-    sym_result = sym_finder.search(conjecture, subfield)
-
-    # Wolfram Alpha search (independent external engine, optional configuration)
-    wolfram_finder = WolframCounterexampleFinder(settings)
-    wolfram_result = wolfram_finder.search(conjecture, subfield)
+    methods_by_source = _run_backend_searches(conjecture, subfield, settings)
+    llm_result = methods_by_source["claude"]
+    sym_result = methods_by_source["sympy"]
+    wolfram_result = methods_by_source["wolfram_alpha"]
 
     method_results = [
         ("LLM", llm_result),
@@ -763,46 +1149,46 @@ def search_dual(
         ("Wolfram", wolfram_result),
     ]
 
-    # Aggregate: found = True if any method found one
-    found = any(result["found"] for _, result in method_results)
+    found = any(result.get("found", False) for _, result in method_results)
     counterexample: str | None = next(
         (
             result.get("counterexample")
             for _, result in method_results
-            if result["found"] and result.get("counterexample")
+            if result.get("found") and result.get("counterexample")
         ),
         None,
     )
 
-    if found:
-        sources = []
-        for label, result in method_results:
-            if result["found"]:
-                sources.append(
-                    f"{label}: {result.get('counterexample') or result.get('reasoning', '')}"
-                )
-        reasoning = "; ".join(sources)
-    else:
-        no_counterexample_summaries = [
-            f"{label}: {result.get('reasoning', '')[:150]}"
-            for label, result in method_results
-            if result.get("applicable", True)
-        ]
-        unavailable_summaries = [
-            f"{label}: {result.get('reasoning', '')[:150]}"
-            for label, result in method_results
-            if not result.get("applicable", True)
-        ]
-        reasoning = (
-            "No configured/applicable method found a counterexample. "
-            + " | ".join(no_counterexample_summaries + unavailable_summaries)
-        )
+    method_result_dicts = [result for _, result in method_results]
+    disagreement = _disagreement(methods_by_source)
+    if len(set(disagreement.values())) > 1:
+        logger.info("Counterexample backend disagreement: %s", disagreement)
+
+    consensus = _consensus(method_result_dicts)
 
     return {
         "found": found,
         "counterexample": counterexample,
-        "reasoning": reasoning,
+        "reasoning": _aggregate_reasoning(method_results),
         "llm_result": llm_result,
         "symbolic_result": sym_result,
         "wolfram_result": wolfram_result,
+        "methods_attempted": len(method_results),
+        "methods_applicable": sum(
+            1 for result in method_result_dicts if result.get("applicable", True)
+        ),
+        "methods_found_counterexample": sum(
+            1 for result in method_result_dicts if result.get("found", False)
+        ),
+        "consensus": consensus,
+        "method_disagreement": disagreement,
     }
+
+
+def search_dual(
+    conjecture: str,
+    subfield: str = "",
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Backward-compatible wrapper for the three-method ensemble search."""
+    return search_ensemble(conjecture, subfield, settings)

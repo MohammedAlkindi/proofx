@@ -41,7 +41,9 @@ def _text(el: ET.Element | None) -> str:
     return (el.text or "").strip() if el is not None else ""
 
 
-async def fetch_context_papers(domain: str, max_results: int = 4) -> list[dict[str, Any]]:
+async def fetch_context_papers(
+    domain: str, max_results: int = 4
+) -> list[dict[str, Any]]:
     """Return recent arXiv abstracts relevant to *domain*.
 
     Falls back gracefully to an empty list on any network or parse error so the
@@ -84,7 +86,9 @@ def format_papers_for_prompt(papers: list[dict[str, Any]]) -> str:
     """Render paper list as a compact prompt snippet."""
     if not papers:
         return ""
-    lines = ["Recent arXiv work in this area (for context — do NOT merely restate these):"]
+    lines = [
+        "Recent arXiv work in this area (for context — do NOT merely restate these):"
+    ]
     for p in papers:
-        lines.append(f'• [{p["id"]}] {p["title"]}: {p["abstract"]}')
+        lines.append(f"• [{p['id']}] {p['title']}: {p['abstract']}")
     return "\n".join(lines)

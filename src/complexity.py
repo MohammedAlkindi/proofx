@@ -12,7 +12,12 @@ import logging
 from typing import Any
 
 import anthropic
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.settings import Settings
 
@@ -55,7 +60,9 @@ class ComplexityEstimator:
         self._client = anthropic.Anthropic(api_key=self._settings.anthropic_api_key)
 
     @retry(
-        retry=retry_if_exception_type((anthropic.RateLimitError, anthropic.APIConnectionError)),
+        retry=retry_if_exception_type(
+            (anthropic.RateLimitError, anthropic.APIConnectionError)
+        ),
         wait=wait_exponential(multiplier=1, min=2, max=30),
         stop=stop_after_attempt(3),
         reraise=True,
@@ -84,7 +91,9 @@ class ComplexityEstimator:
             raw = response.content[0].text.strip()  # type: ignore[union-attr]
             if raw.startswith("```"):
                 lines = raw.splitlines()
-                raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+                raw = "\n".join(
+                    lines[1:-1] if lines[-1].strip() == "```" else lines[1:]
+                )
             data: dict[str, Any] = json.loads(raw)
             f = int(data.get("formalizability", 3))
             p = int(data.get("proof_difficulty", 3))

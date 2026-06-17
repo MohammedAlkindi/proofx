@@ -49,6 +49,7 @@ async def init_db(database_url: str) -> None:
 
     # Enable WAL mode for SQLite (much better concurrent read performance)
     if "sqlite" in database_url:
+
         @event.listens_for(_engine.sync_engine, "connect")
         def set_sqlite_pragma(dbapi_connection: Any, _: Any) -> None:
             cursor = dbapi_connection.cursor()
@@ -83,8 +84,12 @@ def _utc_now() -> datetime:
 class ExperimentRow(Base):
     __tablename__ = "experiments"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now)
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utc_now
+    )
     domain: Mapped[str] = mapped_column(String(200))
     subfield: Mapped[str] = mapped_column(String(200), default="")
     conjecture: Mapped[str] = mapped_column(Text)
@@ -111,9 +116,13 @@ class ExperimentRow(Base):
 class AnnotationRow(Base):
     __tablename__ = "annotations"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     experiment_id: Mapped[str] = mapped_column(String(36), index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utc_now
+    )
     interesting: Mapped[bool] = mapped_column(Boolean, default=False)
     notes: Mapped[str] = mapped_column(Text, default="")
     correct_proof: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -123,12 +132,20 @@ class AnnotationRow(Base):
 class JobRow(Base):
     __tablename__ = "jobs"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, onupdate=_utc_now)
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utc_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utc_now, onupdate=_utc_now
+    )
     domain: Mapped[str] = mapped_column(String(200))
     n: Mapped[int] = mapped_column(Integer, default=1)
-    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|running|done|error
+    status: Mapped[str] = mapped_column(
+        String(20), default="pending"
+    )  # pending|running|done|error
     celery_task_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     result: Mapped[Any] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

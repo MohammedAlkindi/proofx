@@ -6,7 +6,6 @@ works without Redis in dev mode.
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
@@ -34,7 +33,9 @@ class FailureRegistry:
                 self._redis.ping()
                 logger.info("FailureRegistry: using Redis at %s", redis_url)
             except Exception as exc:
-                logger.warning("FailureRegistry: Redis unavailable (%s), using local dict", exc)
+                logger.warning(
+                    "FailureRegistry: Redis unavailable (%s), using local dict", exc
+                )
                 self._redis = None
 
     # ------------------------------------------------------------------

@@ -34,8 +34,9 @@ def _setup_otel() -> None:
         return
     try:
         from opentelemetry import trace
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter,
+        )
         from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
@@ -48,7 +49,9 @@ def _setup_otel() -> None:
         trace.set_tracer_provider(provider)
 
         HTTPXClientInstrumentor().instrument()
-        logger.info("OpenTelemetry configured — exporting to %s", settings.otel_endpoint)
+        logger.info(
+            "OpenTelemetry configured — exporting to %s", settings.otel_endpoint
+        )
     except ImportError as exc:
         logger.warning("OpenTelemetry packages not available: %s", exc)
     except Exception as exc:
@@ -68,6 +71,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialise database
     try:
         from src.db import init_db
+
         await init_db(settings.database_url)
         logger.info("Database initialised: %s", settings.database_url)
     except Exception as exc:
@@ -76,8 +80,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Warm up the Lean sandbox in the background so the first request isn't slow
     try:
         from src.lean_sandbox import get_sandbox
+
         sandbox = get_sandbox(settings.lean_sandbox_dir, settings.lean_timeout)
         import asyncio
+
         asyncio.create_task(_warm_sandbox(sandbox))
     except Exception as exc:
         logger.warning("Could not schedule Lean sandbox warmup: %s", exc)
@@ -117,6 +123,7 @@ app = FastAPI(
 if settings.otel_endpoint:
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
         FastAPIInstrumentor.instrument_app(app)
     except Exception:
         pass

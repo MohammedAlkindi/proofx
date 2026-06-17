@@ -98,7 +98,9 @@ class LeanSandbox:
         # Download / update Mathlib only if the cache doesn't exist yet
         lake_dir = self._workspace / ".lake"
         if not lake_dir.exists():
-            logger.info("LeanSandbox: running `lake update` — this takes several minutes the first time")
+            logger.info(
+                "LeanSandbox: running `lake update` — this takes several minutes the first time"
+            )
             result = subprocess.run(
                 ["lake", "update"],
                 cwd=str(self._workspace),
@@ -136,7 +138,9 @@ class LeanSandbox:
 _sandbox_instance: LeanSandbox | None = None
 
 
-def get_sandbox(workspace_dir: str = ".lean_sandbox", timeout: int = 120) -> LeanSandbox:
+def get_sandbox(
+    workspace_dir: str = ".lean_sandbox", timeout: int = 120
+) -> LeanSandbox:
     """Return (or create) the process-level singleton sandbox.
 
     The workspace directory is suffixed with the current PID so parallel

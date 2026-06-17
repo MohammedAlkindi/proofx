@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field(..., alias="ANTHROPIC_API_KEY")
     claude_model: str = Field("claude-sonnet-4-20250514", alias="CLAUDE_MODEL")
     wolfram_app_id: str = Field("", alias="WOLFRAM_APP_ID")
+    wolfram_cache_ttl_seconds: int = Field(86400, alias="WOLFRAM_CACHE_TTL_SECONDS")
     database_url: str = Field("sqlite+aiosqlite:///./germinal.db", alias="DATABASE_URL")
     redis_url: str = Field("redis://localhost:6379/0", alias="REDIS_URL")
     lean_timeout: int = Field(120, alias="LEAN_TIMEOUT")

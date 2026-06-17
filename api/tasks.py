@@ -153,7 +153,7 @@ def run_pipeline_task(
                         failure_registry.record_failure(
                             conjecture.get("subfield", ""), "verify"
                         )
-                        # Run independent counterexample searches.
+                        # Run the counterexample ensemble.
                         # Multiple independent failures-to-disprove are more informative than one.
                         try:
                             cx_result = search_dual(
@@ -163,7 +163,7 @@ def run_pipeline_task(
                             )
                         except Exception as cx_exc:
                             logger.warning(
-                                "Dual counterexample search failed: %s", cx_exc
+                                "Counterexample ensemble search failed: %s", cx_exc
                             )
                             cx_result = {
                                 "found": False,

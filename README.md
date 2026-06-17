@@ -58,9 +58,11 @@ AI-powered mathematical conjecture explorer — generate candidate hypotheses vi
 │                   │                                                  │
 │                   ▼                                                  │
 │          ┌──────────────────┐                                        │
-│          │ CounterexSearch  │  Two independent methods in parallel:  │
-│          │                  │  1. LLM-based (Claude)                 │
-│          │                  │  2. Symbolic/sympy brute-force         │
+│          │ CounterexSearch  │  Three independent methods as an       │
+│          │                  │  ensemble with local candidate checks: │
+│          │                  │  1. Claude-based search                │
+│          │                  │  2. Symbolic SymPy search              │
+│          │                  │  3. Wolfram Alpha search               │
 │          └────────┬─────────┘                                        │
 │                   │ unrefuted (not proved, not disproved)            │
 │                   ▼                                                  │
@@ -101,7 +103,7 @@ docker-compose up --build
 | Novelty Checker | `src/novelty.py` | Jaccard similarity filter — rejects near-duplicate conjectures before they enter the pipeline |
 | Formalizer | `src/formalizer.py` | Claude → Lean 4; `lake build` validation; repair loop feeds compiler errors back for up to N retries |
 | Verifier | `src/verifier.py` | Races 7 automation tactics against Claude tactic proofs; only counts success if `lake build` passes |
-| Counterexample Finder | `src/counterexample.py` | Two independent methods: LLM-based (Claude) + symbolic/sympy brute-force; `search_dual()` runs both |
+| Counterexample Finder | `src/counterexample.py` | Three independent methods: Claude-based search + symbolic SymPy search + Wolfram Alpha search; `search_ensemble()` runs the ensemble and `search_dual()` remains as a backwards-compatible wrapper |
 | arXiv Client | `src/arxiv_client.py` | Fetches recent paper abstracts to ground conjecture generation in current literature |
 | Mathlib4 RAG | `src/mathlib_rag.py` | Curated Mathlib4 declaration index; injects relevant lemma signatures into formalization prompts |
 | Lean Sandbox | `src/lean_sandbox.py` | Persistent Lean 4 + Mathlib4 environment; all `lake build` calls go through here |
@@ -111,7 +113,7 @@ docker-compose up --build
 
 ## What "unrefuted" means
 
-When a conjecture is neither proved nor disproved, Germinal labels it **unrefuted** — not "promising" or "likely true". Two independent counterexample methods (LLM + symbolic) both failing to find a disproof is a stronger signal than one, but it is still absence-of-disproof, not a proof. The status reflects that.
+When a conjecture is neither proved nor disproved, Germinal labels it **unrefuted** — not "promising" or "likely true". Three independent counterexample methods (Claude-based search, symbolic SymPy search, and Wolfram Alpha search) all failing to find a locally verified disproof is a stronger signal than one, but it is still absence-of-disproof, not a proof. The status reflects that.
 
 ## API Reference
 

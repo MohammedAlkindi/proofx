@@ -12,7 +12,7 @@ export interface ExperimentSummary {
   duration_ms: number;
   novelty_score?: number;
   proof_strategy?: string;
-  // Present only when the dual counterexample search has been run (new records).
+  // Present only when the ensemble counterexample search has been run (new records).
   // null/undefined means "never checked" (proved conjectures or pre-dual records).
   counterexample_checked?: boolean | null;
   counterexample_found?: boolean | null;
@@ -119,7 +119,7 @@ function StatusBadge({
   counterexampleChecked?: boolean | null;
   counterexampleFound?: boolean | null;
 }) {
-  // "unrefuted": dual search ran, is lean-valid, but neither method found a counterexample.
+  // "unrefuted": ensemble search ran, is lean-valid, but no method found a counterexample.
   // Distinct from "sorry" (not yet checked) — absence of disproof ≠ evidence of truth.
   const label: StatusLabel = proved
     ? "proved"

@@ -84,7 +84,9 @@ class Verifier:
     # Public API
     # ------------------------------------------------------------------
 
-    def verify(self, lean_code: str, strategy: str = "claude_standard") -> dict[str, Any]:
+    def verify(
+        self, lean_code: str, strategy: str = "claude_standard"
+    ) -> dict[str, Any]:
         """Synchronous wrapper around verify_async for backward compatibility."""
         return asyncio.run(self.verify_async(lean_code, strategy))
 
@@ -104,10 +106,14 @@ class Verifier:
         if not lean_code:
             raise ValueError("lean_code must be a non-empty string")
 
-        sandbox = get_sandbox(self._settings.lean_sandbox_dir, self._settings.lean_timeout)
+        sandbox = get_sandbox(
+            self._settings.lean_sandbox_dir, self._settings.lean_timeout
+        )
         await sandbox.ensure_ready()
 
-        logger.info("Starting proof verification (strategy=%s, max=%d)", strategy, _MAX_ATTEMPTS)
+        logger.info(
+            "Starting proof verification (strategy=%s, max=%d)", strategy, _MAX_ATTEMPTS
+        )
 
         attempts: list[dict[str, Any]] = []
 
@@ -127,36 +133,54 @@ class Verifier:
         previous_errors: list[str] = []
 
         for attempt_num in range(1, _MAX_ATTEMPTS + 1):
-            logger.info("Claude proof attempt %d/%d (extended=%s)", attempt_num, _MAX_ATTEMPTS, use_extended)
+            logger.info(
+                "Claude proof attempt %d/%d (extended=%s)",
+                attempt_num,
+                _MAX_ATTEMPTS,
+                use_extended,
+            )
 
             try:
                 candidate = await asyncio.to_thread(
                     self._call_api, lean_code, previous_errors, use_extended
                 )
             except Exception as exc:
-                logger.error("Claude API call failed on attempt %d: %s", attempt_num, exc)
-                attempts.append({"attempt": attempt_num, "lean_code": "", "error": str(exc), "success": False})
+                logger.error(
+                    "Claude API call failed on attempt %d: %s", attempt_num, exc
+                )
+                attempts.append(
+                    {
+                        "attempt": attempt_num,
+                        "lean_code": "",
+                        "error": str(exc),
+                        "success": False,
+                    }
+                )
                 previous_errors.append(str(exc))
                 continue
 
             if _uses_sorry(candidate):
                 logger.warning("Attempt %d uses sorry — skipping", attempt_num)
-                attempts.append({
-                    "attempt": attempt_num,
-                    "lean_code": candidate,
-                    "error": "Proof uses sorry (incomplete)",
-                    "success": False,
-                })
+                attempts.append(
+                    {
+                        "attempt": attempt_num,
+                        "lean_code": candidate,
+                        "error": "Proof uses sorry (incomplete)",
+                        "success": False,
+                    }
+                )
                 previous_errors.append("Model responded with sorry — proof incomplete")
                 continue
 
             success, error_log = await sandbox.build(candidate)
-            attempts.append({
-                "attempt": attempt_num,
-                "lean_code": candidate,
-                "error": "" if success else error_log,
-                "success": success,
-            })
+            attempts.append(
+                {
+                    "attempt": attempt_num,
+                    "lean_code": candidate,
+                    "error": "" if success else error_log,
+                    "success": success,
+                }
+            )
 
             if success:
                 logger.info("Proof succeeded on attempt %d", attempt_num)
@@ -184,7 +208,9 @@ class Verifier:
     ) -> dict[str, Any] | None:
         """Try all quick tactics concurrently; return on first success."""
         tasks = {
-            asyncio.create_task(sandbox.build(_inject_tactic(lean_code, tactic))): tactic
+            asyncio.create_task(
+                sandbox.build(_inject_tactic(lean_code, tactic))
+            ): tactic
             for tactic in _AUTO_TACTICS
             if _uses_sorry(lean_code)
         }
@@ -194,7 +220,9 @@ class Verifier:
         pending = set(tasks)
         done_tasks: set[asyncio.Task[Any]] = set()
         try:
-            done_tasks, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            done_tasks, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED
+            )
         except Exception:
             pass
 
@@ -206,12 +234,14 @@ class Verifier:
                 success, error_log = False, str(exc)
 
             proof_code = _inject_tactic(lean_code, tactic)
-            attempts.append({
-                "attempt": f"auto:{tactic}",
-                "lean_code": proof_code,
-                "error": "" if success else error_log,
-                "success": success,
-            })
+            attempts.append(
+                {
+                    "attempt": f"auto:{tactic}",
+                    "lean_code": proof_code,
+                    "error": "" if success else error_log,
+                    "success": success,
+                }
+            )
 
             if success:
                 for p in pending:
@@ -230,7 +260,9 @@ class Verifier:
         return None
 
     @retry(
-        retry=retry_if_exception_type((anthropic.RateLimitError, anthropic.APIConnectionError)),
+        retry=retry_if_exception_type(
+            (anthropic.RateLimitError, anthropic.APIConnectionError)
+        ),
         wait=wait_exponential(multiplier=1, min=2, max=60),
         stop=stop_after_attempt(5),
         reraise=True,
@@ -258,13 +290,18 @@ class Verifier:
 
         if previous_errors:
             error_context = "\n\n".join(
-                f"Attempt {i+1} failed:\n{err}" for i, err in enumerate(previous_errors)
+                f"Attempt {i + 1} failed:\n{err}"
+                for i, err in enumerate(previous_errors)
             )
-            messages.append({"role": "assistant", "content": "I'll try a different approach."})
-            messages.append({
-                "role": "user",
-                "content": f"Those didn't work. Errors:\n{error_context}\nPlease try again.",
-            })
+            messages.append(
+                {"role": "assistant", "content": "I'll try a different approach."}
+            )
+            messages.append(
+                {
+                    "role": "user",
+                    "content": f"Those didn't work. Errors:\n{error_context}\nPlease try again.",
+                }
+            )
 
         kwargs: dict[str, Any] = {
             "model": self._settings.claude_model,

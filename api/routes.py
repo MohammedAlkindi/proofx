@@ -5,12 +5,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import textwrap
-import time
 import uuid
 from typing import Annotated, Any, AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import PlainTextResponse
 from sse_starlette.sse import EventSourceResponse
 
 from api.models import (
@@ -103,14 +102,13 @@ async def generate_conjectures(
     logger.info("POST /generate domain=%r n=%d stream=%s", body.domain, body.n, stream)
 
     if stream:
-        from src.arxiv_client import fetch_context_papers, format_papers_for_prompt
+        from src.arxiv_client import fetch_context_papers
 
         async def sse_generator() -> AsyncGenerator[dict[str, Any], None]:
             try:
                 papers = await fetch_context_papers(
                     body.domain, settings.arxiv_max_results
                 )
-                arxiv_str = format_papers_for_prompt(papers)
                 conjectures = await asyncio.to_thread(
                     generator.generate,
                     body.domain,
@@ -368,7 +366,7 @@ async def list_experiments(
     summaries = []
     for exp in experiments:
         cx = exp.get("counterexample_result") or {}
-        # Method-result keys are only present in records written by search_dual().
+        # Method-result keys are only present in records written by ensemble search.
         # Their presence is the reliable signal that a counterexample check ran.
         cx_checked = isinstance(cx, dict) and (
             "llm_result" in cx or "symbolic_result" in cx or "wolfram_result" in cx
@@ -650,11 +648,11 @@ async def find_counterexample(
     snapshot: Annotated[SnapshotManager, Depends(get_snapshot)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> CounterexampleResponse:
-    """Run dual (LLM + symbolic) counterexample search for an unproved conjecture.
+    """Run ensemble counterexample search for an unproved conjecture.
 
-    Both methods run independently; both results are persisted.  The response
-    carries per-method detail so the frontend can render them separately and
-    flag any disagreement between them.
+    Claude, SymPy, and Wolfram run independently; all results are persisted.
+    The response carries per-method detail so the frontend can render them
+    separately and flag any disagreement between them.
     """
     exp = snapshot.get_experiment(experiment_id)
     if exp is None:
@@ -673,7 +671,7 @@ async def find_counterexample(
         logger.exception("Dual counterexample search failed for %s", experiment_id)
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # Persist full dual result to DB
+    # Persist full ensemble result to DB
     try:
         from sqlalchemy import update as sa_update
 
@@ -694,10 +692,12 @@ async def find_counterexample(
             return None
         return MethodResult(
             method=d.get("method", ""),
+            source=d.get("source"),
             applicable=bool(d.get("applicable", True)),
             found=bool(d.get("found", False)),
             counterexample=d.get("counterexample"),
             reasoning=str(d.get("reasoning", "")),
+            verified_locally=d.get("verified_locally"),
         )
 
     return CounterexampleResponse(
@@ -708,6 +708,11 @@ async def find_counterexample(
         llm_result=_to_method_result(result.get("llm_result")),
         symbolic_result=_to_method_result(result.get("symbolic_result")),
         wolfram_result=_to_method_result(result.get("wolfram_result")),
+        methods_attempted=result.get("methods_attempted"),
+        methods_applicable=result.get("methods_applicable"),
+        methods_found_counterexample=result.get("methods_found_counterexample"),
+        consensus=result.get("consensus"),
+        method_disagreement=result.get("method_disagreement"),
     )
 
 
@@ -741,10 +746,12 @@ async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
                 return None
             return MethodResult(
                 method=d.get("method", ""),
+                source=d.get("source"),
                 applicable=bool(d.get("applicable", True)),
                 found=bool(d.get("found", False)),
                 counterexample=d.get("counterexample"),
                 reasoning=str(d.get("reasoning", "")),
+                verified_locally=d.get("verified_locally"),
             )
 
         return CounterexampleResponse(
@@ -755,6 +762,11 @@ async def get_counterexample(experiment_id: str) -> CounterexampleResponse:
             llm_result=_to_method_result(result.get("llm_result")),
             symbolic_result=_to_method_result(result.get("symbolic_result")),
             wolfram_result=_to_method_result(result.get("wolfram_result")),
+            methods_attempted=result.get("methods_attempted"),
+            methods_applicable=result.get("methods_applicable"),
+            methods_found_counterexample=result.get("methods_found_counterexample"),
+            consensus=result.get("consensus"),
+            method_disagreement=result.get("method_disagreement"),
         )
     except HTTPException:
         raise

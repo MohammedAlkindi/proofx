@@ -13,7 +13,7 @@ This is a HackMIT differentiator project alongside ProofX. Treat correctness and
 1. `src/conjecture_generator.py` — Codex proposes N conjectures for a domain. Self-reported confidence score, no independent check.
 2. `src/formalizer.py` — translates conjecture to Lean 4, validates with `lake build` against a persistent Mathlib4 sandbox (`src/lean_sandbox.py`). Has a repair loop: failed builds feed the compiler error back to Codex for up to `formalize_repair_attempts` (default 3) retries.
 3. `src/verifier.py` — races 7 quick automation tactics (`decide`, `norm_num`, `ring`, `omega`, `simp_all`, `aesop`, `tauto`) against Codex-generated tactic proofs. Only counts success if `lake build` actually passes.
-4. `src/counterexample.py` — on verify failure, runs **two independent searches**: LLM-based (Codex) and symbolic (SymPy/CAS). Both signals are preserved and returned; neither replaces the other.
+4. `src/counterexample.py` — on verify failure, runs **three independent methods**: Claude-based search, symbolic SymPy search, and Wolfram Alpha search. All discovered candidates are verified locally before acceptance; all signals are preserved and returned.
 5. `src/snapshot.py` — commits every experiment to the `experiments` git branch with full metadata. `_commit_to_branch` swaps HEAD via `symbolic_ref`; a `threading.Lock()` serializes concurrent calls so Celery's `--concurrency=2` threads never race on that swap.
 6. `src/complexity.py` — pre-pipeline complexity estimate that routes proof strategy (quick_tactics / claude_standard / extended_thinking / human_review).
 7. `src/novelty.py` — Jaccard similarity filter to reject near-duplicate conjectures before they enter the pipeline.
@@ -28,7 +28,7 @@ Any schema change must update both write paths. Frontend TypeScript interfaces a
 
 ## Known gap — do not paper over this
 
-The pipeline only validates that Lean code **typechecks**, not that the underlying claim is true. A false-but-well-typed conjecture sails through formalization. If it then fails to be proved AND both counterexample methods return no counterexample, the system has no way to distinguish "genuinely open problem" from "false statement neither method can disprove."
+The pipeline only validates that Lean code **typechecks**, not that the underlying claim is true. A false-but-well-typed conjecture sails through formalization. If it then fails to be proved AND all three counterexample methods return no locally verified counterexample, the system has no way to distinguish "genuinely open problem" from "false statement no method can disprove."
 
 Do not collapse "unproved and unrefuted" into a status that visually implies the conjecture is credible or promising. It is an unknown, not a result. Do not paper over this in docs, UI copy, or API response labels.
 

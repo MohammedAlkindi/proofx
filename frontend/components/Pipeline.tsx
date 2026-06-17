@@ -15,7 +15,7 @@ export interface PipelineResult {
   proof_strategy?: string;
   novelty_score?: number;
   complexity?: { formalizability?: number; proof_difficulty?: number; recommended_strategy?: string };
-  // Present when dual counterexample search ran during the pipeline.
+  // Present when ensemble counterexample search ran during the pipeline.
   counterexample_checked?: boolean;
   counterexample_found?: boolean;
 }
@@ -353,7 +353,7 @@ function NoveltyBar({ score }: { score: number }) {
 
 /* ─── Result card ────────────────────────────────────────────────────────── */
 function ResultCard({ result }: { result: PipelineResult }) {
-  // "unrefuted": dual search ran, lean-valid, but neither method found a counterexample.
+  // "unrefuted": ensemble search ran, lean-valid, but no method found a counterexample.
   // Distinct from "sorry" (unchecked open conjecture) — absence of disproof ≠ truth.
   const badge: "proved" | "unrefuted" | "sorry" | "error" = result.proved
     ? "proved"

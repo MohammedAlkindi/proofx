@@ -131,7 +131,7 @@ class ExperimentSummary(BaseModel):
     duration_ms: int
     novelty_score: float = 1.0
     proof_strategy: str = "claude_standard"
-    # Populated when dual counterexample search has been run for this experiment.
+    # Populated when ensemble counterexample search has been run for this experiment.
     # None means the search has never been run (e.g. proved conjectures, or old records).
     counterexample_checked: bool | None = None
     counterexample_found: bool | None = None
@@ -190,10 +190,12 @@ class MethodResult(BaseModel):
     """Result from a single counterexample-search method."""
 
     method: str  # "llm", "symbolic", or "wolfram"
+    source: str | None = None  # "claude", "sympy", or "wolfram_alpha"
     applicable: bool = True  # False when a method is out-of-scope or unavailable
     found: bool
     counterexample: str | None = None
     reasoning: str
+    verified_locally: bool | None = None
 
 
 class CounterexampleResponse(BaseModel):
@@ -206,6 +208,11 @@ class CounterexampleResponse(BaseModel):
     llm_result: MethodResult | None = None
     symbolic_result: MethodResult | None = None
     wolfram_result: MethodResult | None = None
+    methods_attempted: int | None = None
+    methods_applicable: int | None = None
+    methods_found_counterexample: int | None = None
+    consensus: str | None = None
+    method_disagreement: dict[str, bool] | None = None
 
 
 # ---------------------------------------------------------------------------
