@@ -20,6 +20,12 @@ function statusColor(item: ExperimentItem): string {
   return "var(--danger)";
 }
 
+function statusLabel(item: ExperimentItem): string {
+  if (item.proved) return "proved";
+  if (item.is_valid) return "open";
+  return "invalid";
+}
+
 function relativeTime(iso: string): string {
   try {
     const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -33,16 +39,16 @@ function relativeTime(iso: string): string {
 }
 
 const sidebar: CSSProperties = {
-  width: 240,
-  position: "fixed",
-  top: 48,
-  bottom: 0,
-  left: 0,
-  borderRight: "1px solid var(--border-s)",
   background: "var(--bg-page)",
+  borderRight: "1px solid var(--border-s)",
+  bottom: 0,
   display: "flex",
   flexDirection: "column",
+  left: 0,
   overflowY: "auto",
+  position: "fixed",
+  top: 56,
+  width: 260,
   zIndex: 90,
 };
 
@@ -50,115 +56,91 @@ export default function Sidebar({ refreshKey = 0 }: { refreshKey?: number }) {
   const router = useRouter();
   const activeId = router.query.id as string | undefined;
 
-  const { data: experiments } = useSWR<ExperimentItem[]>(
+  const { data: experiments, isLoading } = useSWR<ExperimentItem[]>(
     `${API}/api/v1/experiments?_r=${refreshKey}`,
     fetcher,
     { refreshInterval: 15000, revalidateOnFocus: false }
   );
 
+  const recent = [...(experiments ?? [])].reverse().slice(0, 80);
+
   return (
-    <aside style={sidebar}>
-      {/* New experiment button */}
-      <div style={{ padding: "12px 12px 8px" }}>
+    <aside className="app-sidebar" style={sidebar}>
+      <div style={{ padding: "16px 14px 12px" }}>
         <Link
           href="/"
-          style={{
-            display: "block",
-            width: "100%",
-            padding: "7px 0",
-            background: "var(--accent)",
-            color: "#fff",
-            borderRadius: 6,
-            textDecoration: "none",
-            fontSize: 13,
-            fontWeight: 500,
-            textAlign: "center",
-            transition: "background 150ms",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-h)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
+          className="primary-button"
+          style={{ height: 36, textDecoration: "none", width: "100%" }}
         >
-          + New Experiment
+          New experiment
         </Link>
       </div>
 
-      {/* Divider */}
-      <div style={{ height: 1, background: "var(--border-s)", margin: "0 12px" }} />
-
-      {/* Section label */}
-      <div
-        style={{
-          padding: "10px 16px 4px",
-          fontSize: 10,
-          fontWeight: 500,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--t-tertiary)",
-        }}
-      >
-        History
+      <div style={{ borderTop: "1px solid var(--border-s)", padding: "13px 14px 8px" }}>
+        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}>
+          <span className="label">Recent</span>
+          {experiments && (
+            <span className="mono muted" style={{ fontSize: 10 }}>
+              {experiments.length}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* List */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        {!experiments || experiments.length === 0 ? (
-          <div style={{ padding: "8px 16px", fontSize: 12, color: "var(--t-tertiary)" }}>
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 16 }}>
+        {isLoading ? (
+          <div className="muted" style={{ fontSize: 12, padding: "8px 16px" }}>
+            Loading experiments...
+          </div>
+        ) : recent.length === 0 ? (
+          <div className="muted" style={{ fontSize: 12, lineHeight: 1.6, padding: "8px 16px" }}>
             No experiments yet.
           </div>
         ) : (
-          [...experiments].reverse().map((exp) => {
+          recent.map((exp) => {
             const active = activeId === exp.id;
             return (
               <Link
-                key={exp.id}
                 href={`/experiments/${exp.id}`}
+                key={exp.id}
                 style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                  padding: "8px 16px 8px 14px",
-                  textDecoration: "none",
                   background: active ? "var(--bg-hover)" : "transparent",
-                  borderLeft: active
-                    ? "2px solid var(--accent)"
-                    : "2px solid transparent",
-                  transition: "background 100ms",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.background = "var(--bg-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.background = "transparent";
+                  borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
+                  display: "flex",
+                  gap: 10,
+                  padding: "9px 14px 9px 12px",
+                  textDecoration: "none",
                 }}
               >
-                {/* Status dot */}
-                <div
+                <span
+                  aria-label={statusLabel(exp)}
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
                     background: statusColor(exp),
-                    marginTop: 5,
+                    borderRadius: 999,
                     flexShrink: 0,
+                    height: 7,
+                    marginTop: 6,
+                    width: 7,
                   }}
                 />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div
+                <span style={{ minWidth: 0 }}>
+                  <span
                     style={{
+                      color: active ? "var(--t-primary)" : "var(--t-secondary)",
+                      display: "block",
                       fontSize: 12,
-                      color: "var(--t-primary)",
-                      fontWeight: active ? 500 : 400,
+                      fontWeight: active ? 600 : 500,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     }}
                   >
                     {exp.domain}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--t-tertiary)", marginTop: 1 }}>
-                    {relativeTime(exp.timestamp)}
-                  </div>
-                </div>
+                  </span>
+                  <span className="mono muted" style={{ display: "block", fontSize: 10, marginTop: 2 }}>
+                    {relativeTime(exp.timestamp)} / {exp.id.slice(0, 8)}
+                  </span>
+                </span>
               </Link>
             );
           })

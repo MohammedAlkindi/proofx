@@ -1,5 +1,6 @@
-import { useState, CSSProperties, ReactNode } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSettings } from "../context/SettingsContext";
 
 export interface ExperimentSummary {
   id: string;
@@ -12,14 +13,20 @@ export interface ExperimentSummary {
   duration_ms: number;
   novelty_score?: number;
   proof_strategy?: string;
-  // Present only when the ensemble counterexample search has been run (new records).
-  // null/undefined means "never checked" (proved conjectures or pre-dual records).
   counterexample_checked?: boolean | null;
   counterexample_found?: boolean | null;
 }
 
 type SortKey = keyof Pick<ExperimentSummary, "timestamp" | "domain" | "duration_ms" | "proved">;
 type StatusFilter = "all" | "proved" | "open" | "invalid";
+type StatusLabel = "proved" | "unrefuted" | "sorry" | "error";
+
+const tabs: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "proved", label: "Proved" },
+  { key: "open", label: "Open" },
+  { key: "invalid", label: "Invalid" },
+];
 
 function fmtDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -39,6 +46,16 @@ function fmtTime(iso: string): string {
   }
 }
 
+function statusLabel(exp: ExperimentSummary): StatusLabel {
+  return exp.proved
+    ? "proved"
+    : exp.is_valid && exp.counterexample_checked && !exp.counterexample_found
+    ? "unrefuted"
+    : exp.is_valid
+    ? "sorry"
+    : "error";
+}
+
 function Highlight({ text, query }: { text: string; query: string }): ReactNode {
   if (!query) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
@@ -46,147 +63,86 @@ function Highlight({ text, query }: { text: string; query: string }): ReactNode 
   return (
     <>
       {text.slice(0, idx)}
-      <mark
-        style={{
-          background: "rgba(124,58,237,0.2)",
-          color: "var(--accent)",
-          borderRadius: 2,
-          padding: "0 1px",
-        }}
-      >
-        {text.slice(idx, idx + query.length)}
-      </mark>
+      <mark>{text.slice(idx, idx + query.length)}</mark>
       {text.slice(idx + query.length)}
     </>
   );
 }
 
-function NoveltyBar({ score }: { score: number }) {
-  const pct = Math.max(0, Math.min(1, score)) * 100;
-  const color =
-    score >= 0.7 ? "var(--success)" : score >= 0.4 ? "var(--warning)" : "var(--danger)";
+function StatusBadge({ status }: { status: StatusLabel }) {
+  const styles: Record<StatusLabel, { bg: string; color: string; border: string }> = {
+    proved: { bg: "rgba(15,143,103,0.1)", color: "var(--success)", border: "rgba(15,143,103,0.24)" },
+    unrefuted: { bg: "rgba(37,99,235,0.1)", color: "var(--info)", border: "rgba(37,99,235,0.24)" },
+    sorry: { bg: "rgba(183,121,31,0.1)", color: "var(--warning)", border: "rgba(183,121,31,0.24)" },
+    error: { bg: "rgba(194,65,61,0.1)", color: "var(--danger)", border: "rgba(194,65,61,0.24)" },
+  };
+  const style = styles[status];
   return (
-    <div
+    <span
+      className="mono"
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 5,
+        background: style.bg,
+        border: `1px solid ${style.border}`,
+        borderRadius: 4,
+        color: style.color,
+        display: "inline-flex",
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.05em",
+        padding: "2px 7px",
+        textTransform: "uppercase",
       }}
     >
+      {status}
+    </span>
+  );
+}
+
+function NoveltyBar({ score }: { score: number }) {
+  const pct = Math.max(0, Math.min(1, score)) * 100;
+  const color = score >= 0.7 ? "var(--success)" : score >= 0.4 ? "var(--warning)" : "var(--danger)";
+  return (
+    <div style={{ alignItems: "center", display: "flex", gap: 6 }}>
       <div
         style={{
-          width: 40,
-          height: 3,
-          borderRadius: 2,
           background: "var(--border-s)",
+          borderRadius: 999,
+          flex: 1,
+          height: 4,
+          minWidth: 46,
           overflow: "hidden",
-          flexShrink: 0,
         }}
       >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: color,
-            borderRadius: 2,
-            transition: "width 300ms ease",
-          }}
-        />
+        <div style={{ background: color, height: "100%", width: `${pct}%` }} />
       </div>
-      <span
-        style={{
-          fontFamily: "JetBrains Mono, monospace",
-          fontSize: 10,
-          color,
-        }}
-      >
+      <span className="mono" style={{ color, fontSize: 10 }}>
         {pct.toFixed(0)}%
       </span>
     </div>
   );
 }
 
-type StatusLabel = "proved" | "unrefuted" | "sorry" | "error";
-
-function StatusBadge({
-  proved,
-  isValid,
-  counterexampleChecked,
-  counterexampleFound,
-}: {
-  proved: boolean;
-  isValid: boolean;
-  counterexampleChecked?: boolean | null;
-  counterexampleFound?: boolean | null;
-}) {
-  // "unrefuted": ensemble search ran, is lean-valid, but no method found a counterexample.
-  // Distinct from "sorry" (not yet checked) — absence of disproof ≠ evidence of truth.
-  const label: StatusLabel = proved
-    ? "proved"
-    : isValid && counterexampleChecked && !counterexampleFound
-    ? "unrefuted"
-    : isValid
-    ? "sorry"
-    : "error";
-
-  const colors: Record<StatusLabel, CSSProperties> = {
-    proved:    { background: "rgba(16,185,129,0.1)", color: "var(--success)", border: "1px solid rgba(16,185,129,0.2)" },
-    unrefuted: { background: "rgba(59,130,246,0.1)", color: "#3b82f6",        border: "1px solid rgba(59,130,246,0.2)" },
-    sorry:     { background: "rgba(245,158,11,0.1)", color: "var(--warning)", border: "1px solid rgba(245,158,11,0.2)" },
-    error:     { background: "rgba(239,68,68,0.1)",  color: "var(--danger)",  border: "1px solid rgba(239,68,68,0.2)" },
-  };
-  return (
-    <span
-      style={{
-        ...colors[label],
-        fontFamily: "JetBrains Mono, monospace",
-        fontSize: 10,
-        fontWeight: 600,
-        padding: "2px 7px",
-        borderRadius: 4,
-        letterSpacing: "0.05em",
-        textTransform: "uppercase",
-        display: "inline-block",
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
 function SortArrow({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active)
-    return <span style={{ color: "var(--t-tertiary)", marginLeft: 4, opacity: 0.4 }}>↕</span>;
   return (
-    <span style={{ color: "var(--accent)", marginLeft: 4 }}>
-      {dir === "asc" ? "↑" : "↓"}
+    <span style={{ color: active ? "var(--accent)" : "var(--t-tertiary)", marginLeft: 5 }}>
+      {active ? (dir === "asc" ? "up" : "down") : ""}
     </span>
   );
 }
 
-const thStyle: CSSProperties = {
-  padding: "8px 12px",
-  textAlign: "left",
-  fontSize: 10,
-  fontWeight: 600,
-  letterSpacing: "0.07em",
-  textTransform: "uppercase",
-  color: "var(--t-tertiary)",
-  whiteSpace: "nowrap",
-  userSelect: "none",
-  cursor: "pointer",
-  borderBottom: "1px solid var(--border-s)",
+const thStyle = {
   background: "var(--bg-input)",
+  borderBottom: "1px solid var(--border-s)",
+  color: "var(--t-tertiary)",
+  cursor: "pointer",
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  padding: "9px 12px",
+  textAlign: "left" as const,
+  textTransform: "uppercase" as const,
+  whiteSpace: "nowrap" as const,
 };
-
-const thStaticStyle: CSSProperties = { ...thStyle, cursor: "default" };
-
-const STATUS_TABS: { key: StatusFilter; label: string }[] = [
-  { key: "all",     label: "All" },
-  { key: "proved",  label: "Proved" },
-  { key: "open",    label: "Open" },
-  { key: "invalid", label: "Invalid" },
-];
 
 export default function ExperimentTable({
   experiments,
@@ -195,294 +151,276 @@ export default function ExperimentTable({
   experiments: ExperimentSummary[];
   loading: boolean;
 }) {
+  const { settings } = useSettings();
   const [sortKey, setSortKey] = useState<SortKey>("timestamp");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
+  const counts = useMemo<Record<StatusFilter, number>>(
+    () => ({
+      all: experiments.length,
+      proved: experiments.filter((exp) => exp.proved).length,
+      open: experiments.filter((exp) => !exp.proved && exp.is_valid).length,
+      invalid: experiments.filter((exp) => !exp.is_valid).length,
+    }),
+    [experiments]
+  );
+
+  const sorted = useMemo(() => {
+    return [...experiments]
+      .filter((exp) => {
+        if (statusFilter === "proved") return exp.proved;
+        if (statusFilter === "open") return !exp.proved && exp.is_valid;
+        if (statusFilter === "invalid") return !exp.is_valid;
+        return true;
+      })
+      .filter((exp) => {
+        if (!filter) return true;
+        const q = filter.toLowerCase();
+        return exp.domain.toLowerCase().includes(q) || exp.conjecture.toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
+        const multiplier = sortDir === "asc" ? 1 : -1;
+        if (sortKey === "timestamp") return multiplier * a.timestamp.localeCompare(b.timestamp);
+        if (sortKey === "domain") return multiplier * a.domain.localeCompare(b.domain);
+        if (sortKey === "duration_ms") return multiplier * (a.duration_ms - b.duration_ms);
+        return multiplier * (Number(a.proved) - Number(b.proved));
+      });
+  }, [experiments, filter, sortDir, sortKey, statusFilter]);
+
   const handleSort = (key: SortKey) => {
-    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
+    if (key === sortKey) {
+      setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
   };
 
-  // Counts for tabs
-  const counts: Record<StatusFilter, number> = {
-    all:     experiments.length,
-    proved:  experiments.filter((e) => e.proved).length,
-    open:    experiments.filter((e) => !e.proved && e.is_valid).length,
-    invalid: experiments.filter((e) => !e.is_valid).length,
-  };
-
-  const sorted = [...experiments]
-    .filter((e) => {
-      // Status filter
-      if (statusFilter === "proved")  return e.proved;
-      if (statusFilter === "open")    return !e.proved && e.is_valid;
-      if (statusFilter === "invalid") return !e.is_valid;
-      return true;
-    })
-    .filter((e) => {
-      if (!filter) return true;
-      const q = filter.toLowerCase();
-      return e.domain.toLowerCase().includes(q) || e.conjecture.toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      const m = sortDir === "asc" ? 1 : -1;
-      if (sortKey === "timestamp")   return m * a.timestamp.localeCompare(b.timestamp);
-      if (sortKey === "domain")      return m * a.domain.localeCompare(b.domain);
-      if (sortKey === "duration_ms") return m * (a.duration_ms - b.duration_ms);
-      if (sortKey === "proved")      return m * (Number(a.proved) - Number(b.proved));
-      return 0;
-    });
+  const showCards = settings.defaultExperimentView === "cards";
 
   return (
-    <div>
-      {/* Header row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 12,
-          flexWrap: "wrap",
-          gap: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--t-primary)", letterSpacing: "-0.01em" }}>
-            Experiments
-          </span>
-          <span style={{ fontSize: 12, color: "var(--t-tertiary)", fontFamily: "JetBrains Mono, monospace" }}>
-            {sorted.length}
-          </span>
+    <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
+        <div>
+          <span className="label">Archive</span>
+          <div className="mono muted" style={{ fontSize: 11, marginTop: 3 }}>
+            {sorted.length} visible / {experiments.length} total
+          </div>
         </div>
         <input
+          className="control"
+          onChange={(event) => setFilter(event.target.value)}
+          placeholder="Filter domain or conjecture"
+          style={{ fontSize: 12, height: 34, padding: "0 11px", width: 240 }}
           type="search"
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter…"
-          style={{
-            padding: "5px 10px",
-            fontSize: 12,
-            borderRadius: 6,
-            border: "1px solid var(--border-s)",
-            background: "var(--bg-input)",
-            color: "var(--t-primary)",
-            outline: "none",
-            width: 200,
-            transition: "border-color 150ms",
-          }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-          onBlur={(e)  => (e.currentTarget.style.borderColor = "var(--border-s)")}
         />
       </div>
 
-      {/* Status filter tabs */}
       <div
         style={{
-          display: "flex",
-          gap: 2,
-          marginBottom: 14,
           background: "var(--bg-input)",
+          border: "1px solid var(--border-s)",
           borderRadius: 7,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 3,
           padding: 3,
           width: "fit-content",
         }}
       >
-        {STATUS_TABS.map(({ key, label }) => {
-          const active = statusFilter === key;
+        {tabs.map((tab) => {
+          const active = statusFilter === tab.key;
           return (
             <button
-              key={key}
-              onClick={() => setStatusFilter(key)}
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
               style={{
-                padding: "4px 12px",
-                fontSize: 11,
-                fontWeight: active ? 600 : 400,
-                borderRadius: 5,
-                border: "none",
+                alignItems: "center",
                 background: active ? "var(--bg-card)" : "transparent",
+                border: "none",
+                borderRadius: 5,
                 color: active ? "var(--t-primary)" : "var(--t-tertiary)",
                 cursor: "pointer",
-                fontFamily: "inherit",
                 display: "flex",
-                alignItems: "center",
-                gap: 5,
-                boxShadow: active ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
-                transition: "background 150ms, color 150ms",
+                fontSize: 11,
+                fontWeight: active ? 700 : 500,
+                gap: 6,
+                height: 28,
+                padding: "0 11px",
               }}
             >
-              {label}
-              <span
-                style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: 10,
-                  color: active ? "var(--accent)" : "var(--t-tertiary)",
-                  opacity: 0.8,
-                }}
-              >
-                {counts[key]}
+              {tab.label}
+              <span className="mono" style={{ color: active ? "var(--accent)" : "var(--t-tertiary)", fontSize: 10 }}>
+                {counts[tab.key]}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Table */}
       {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
-          <div
+        <div className="panel" style={{ alignItems: "center", display: "flex", justifyContent: "center", minHeight: 220 }}>
+          <span
+            className="anim-spin"
             style={{
-              width: 24,
-              height: 24,
-              borderRadius: "50%",
               border: "2px solid var(--accent)",
+              borderRadius: "50%",
               borderTopColor: "transparent",
-              animation: "spin 0.8s linear infinite",
+              height: 24,
+              width: 24,
             }}
           />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : sorted.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "64px 0",
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-          }}
-        >
-          <span style={{ fontSize: 13, color: "var(--t-tertiary)" }}>
+        <div className="panel" style={{ padding: "56px 24px", textAlign: "center" }}>
+          <p style={{ color: "var(--t-primary)", fontSize: 14, fontWeight: 700, margin: 0 }}>
+            {filter || statusFilter !== "all" ? "No matching experiments" : "No experiments yet"}
+          </p>
+          <p style={{ color: "var(--t-tertiary)", fontSize: 13, margin: "6px 0 0" }}>
             {filter || statusFilter !== "all"
-              ? "No experiments match your filter."
-              : "No experiments yet."}
-          </span>
-          {!filter && statusFilter === "all" && (
-            <span style={{ fontSize: 12, color: "var(--border-a)" }}>
-              Run your first pipeline above.
-            </span>
-          )}
+              ? "Adjust the filter or status tabs."
+              : "Run a pipeline to create the first reproducible snapshot."}
+          </p>
+        </div>
+      ) : showCards ? (
+        <div style={{ display: "grid", gap: "var(--density-gap)", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+          {sorted.map((exp, rowIdx) => {
+            const status = statusLabel(exp);
+            return (
+              <Link
+                className="panel anim-row-in"
+                href={`/experiments/${exp.id}`}
+                key={exp.id}
+                style={{
+                  animationDelay: `${Math.min(rowIdx * 25, 160)}ms`,
+                  color: "inherit",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  minHeight: 184,
+                  padding: "var(--density-pad)",
+                  textDecoration: "none",
+                }}
+              >
+                <div style={{ alignItems: "center", display: "flex", gap: 10, justifyContent: "space-between" }}>
+                  <span className="label" style={{ color: "var(--accent)" }}>
+                    <Highlight query={filter} text={exp.domain} />
+                  </span>
+                  <StatusBadge status={status} />
+                </div>
+                <p style={{ color: "var(--t-primary)", fontSize: 13, lineHeight: 1.65, margin: 0 }}>
+                  <Highlight query={filter} text={exp.conjecture} />
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: "auto" }}>
+                  {settings.showTechnicalDetail && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      <span className="mono muted" style={{ fontSize: 10 }}>
+                        {fmtTime(exp.timestamp)}
+                      </span>
+                      <span className="mono muted" style={{ fontSize: 10 }}>
+                        {fmtDuration(exp.duration_ms)}
+                      </span>
+                      <span className="mono muted" style={{ fontSize: 10 }}>
+                        {exp.id.slice(0, 8)}
+                      </span>
+                    </div>
+                  )}
+                  <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    {typeof exp.novelty_score === "number" && settings.showTechnicalDetail ? (
+                      <div style={{ minWidth: 100 }}>
+                        <NoveltyBar score={exp.novelty_score} />
+                      </div>
+                    ) : (
+                      <span className="mono muted" style={{ fontSize: 10 }}>
+                        {status}
+                      </span>
+                    )}
+                    <span style={{ color: "var(--accent)", fontSize: 12, fontWeight: 700 }}>View</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       ) : (
-        <div style={{ border: "1px solid var(--border-s)", borderRadius: 8, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="panel" style={{ overflow: "auto" }}>
+          <table style={{ borderCollapse: "collapse", minWidth: 760, width: "100%" }}>
             <thead>
               <tr>
-                <th style={thStyle} onClick={() => handleSort("timestamp")}>
+                <th onClick={() => handleSort("timestamp")} style={thStyle}>
                   Time <SortArrow active={sortKey === "timestamp"} dir={sortDir} />
                 </th>
-                <th style={thStyle} onClick={() => handleSort("domain")}>
+                <th onClick={() => handleSort("domain")} style={thStyle}>
                   Domain <SortArrow active={sortKey === "domain"} dir={sortDir} />
                 </th>
-                <th style={thStaticStyle}>Conjecture</th>
-                <th style={thStyle} onClick={() => handleSort("proved")}>
+                <th style={{ ...thStyle, cursor: "default" }}>Conjecture</th>
+                <th onClick={() => handleSort("proved")} style={thStyle}>
                   Status <SortArrow active={sortKey === "proved"} dir={sortDir} />
                 </th>
-                <th style={thStaticStyle}>Novelty</th>
-                <th style={thStyle} onClick={() => handleSort("duration_ms")}>
-                  Duration <SortArrow active={sortKey === "duration_ms"} dir={sortDir} />
-                </th>
-                <th style={{ ...thStaticStyle, width: 60 }} />
+                {settings.showTechnicalDetail && <th style={{ ...thStyle, cursor: "default" }}>Novelty</th>}
+                {settings.showTechnicalDetail && (
+                  <th onClick={() => handleSort("duration_ms")} style={thStyle}>
+                    Duration <SortArrow active={sortKey === "duration_ms"} dir={sortDir} />
+                  </th>
+                )}
+                <th style={{ ...thStyle, cursor: "default", width: 64 }} />
               </tr>
             </thead>
             <tbody>
-              {sorted.map((exp, rowIdx) => (
-                <tr
-                  key={exp.id}
-                  className="anim-row-in"
-                  style={{
-                    borderTop: rowIdx === 0 ? "none" : "1px solid var(--border-s)",
-                    transition: "background 100ms",
-                    animationDelay: `${Math.min(rowIdx * 30, 200)}ms`,
-                  }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background = "var(--bg-input)")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background = "transparent")
-                  }
-                >
-                  <td
+              {sorted.map((exp, rowIdx) => {
+                const status = statusLabel(exp);
+                return (
+                  <tr
+                    className="anim-row-in"
+                    key={exp.id}
                     style={{
-                      padding: "9px 12px",
-                      fontFamily: "JetBrains Mono, monospace",
-                      fontSize: 11,
-                      color: "var(--t-tertiary)",
-                      whiteSpace: "nowrap",
+                      animationDelay: `${Math.min(rowIdx * 20, 140)}ms`,
+                      borderTop: rowIdx === 0 ? "none" : "1px solid var(--border-s)",
                     }}
                   >
-                    {fmtTime(exp.timestamp)}
-                  </td>
-                  <td
-                    style={{
-                      padding: "9px 12px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "var(--t-primary)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <Highlight text={exp.domain} query={filter} />
-                  </td>
-                  <td
-                    style={{
-                      padding: "9px 12px",
-                      fontSize: 12,
-                      color: "var(--t-secondary)",
-                      maxWidth: 260,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <Highlight text={exp.conjecture} query={filter} />
-                  </td>
-                  <td style={{ padding: "9px 12px" }}>
-                    <StatusBadge
-                      proved={exp.proved}
-                      isValid={exp.is_valid}
-                      counterexampleChecked={exp.counterexample_checked}
-                      counterexampleFound={exp.counterexample_found}
-                    />
-                  </td>
-                  <td style={{ padding: "9px 12px" }}>
-                    {typeof exp.novelty_score === "number" ? (
-                      <NoveltyBar score={exp.novelty_score} />
-                    ) : (
-                      <span style={{ fontSize: 10, color: "var(--border-a)" }}>—</span>
+                    <td className="mono muted" style={{ fontSize: 11, padding: "var(--density-row) 12px", whiteSpace: "nowrap" }}>
+                      {fmtTime(exp.timestamp)}
+                    </td>
+                    <td style={{ color: "var(--t-primary)", fontSize: 12, fontWeight: 700, padding: "var(--density-row) 12px", whiteSpace: "nowrap" }}>
+                      <Highlight query={filter} text={exp.domain} />
+                    </td>
+                    <td style={{ color: "var(--t-secondary)", fontSize: 12, maxWidth: 360, overflow: "hidden", padding: "var(--density-row) 12px", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <Highlight query={filter} text={exp.conjecture} />
+                    </td>
+                    <td style={{ padding: "var(--density-row) 12px" }}>
+                      <StatusBadge status={status} />
+                    </td>
+                    {settings.showTechnicalDetail && (
+                      <td style={{ padding: "var(--density-row) 12px" }}>
+                        {typeof exp.novelty_score === "number" ? (
+                          <NoveltyBar score={exp.novelty_score} />
+                        ) : (
+                          <span className="mono muted" style={{ fontSize: 10 }}>
+                            -
+                          </span>
+                        )}
+                      </td>
                     )}
-                  </td>
-                  <td
-                    style={{
-                      padding: "9px 12px",
-                      fontFamily: "JetBrains Mono, monospace",
-                      fontSize: 11,
-                      color: "var(--t-tertiary)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {fmtDuration(exp.duration_ms)}
-                  </td>
-                  <td style={{ padding: "9px 12px" }}>
-                    <Link
-                      href={`/experiments/${exp.id}`}
-                      style={{
-                        fontSize: 11,
-                        color: "var(--accent)",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      View →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+                    {settings.showTechnicalDetail && (
+                      <td className="mono muted" style={{ fontSize: 11, padding: "var(--density-row) 12px", whiteSpace: "nowrap" }}>
+                        {fmtDuration(exp.duration_ms)}
+                      </td>
+                    )}
+                    <td style={{ padding: "var(--density-row) 12px" }}>
+                      <Link href={`/experiments/${exp.id}`} style={{ color: "var(--accent)", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }

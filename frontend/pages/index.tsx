@@ -1,51 +1,44 @@
-import { useState, useCallback, useEffect, useRef, CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import Pipeline, { Stage, PipelineResponse } from "../components/Pipeline";
+import Pipeline, { PipelineResponse, Stage } from "../components/Pipeline";
 import ExperimentTable, { ExperimentSummary } from "../components/ExperimentTable";
 import StatsBar from "../components/StatsBar";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const DOMAINS = [
+const domains = [
   "number theory",
   "graph theory",
-  "algebraic topology",
   "combinatorics",
-  "analytic number theory",
   "group theory",
   "Ramsey theory",
-  "additive combinatorics",
-  "knot theory",
   "elliptic curves",
+  "additive combinatorics",
+  "algebraic topology",
 ];
-
-const sectionLabel: CSSProperties = {
-  fontSize: 10,
-  fontWeight: 500,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: "var(--t-tertiary)",
-  marginBottom: 8,
-  display: "block",
-};
 
 interface HomeProps {
   onSidebarBump?: () => void;
 }
 
+function formatElapsed(seconds: number) {
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
 export default function Home({ onSidebarBump }: HomeProps) {
-  const [domain, setDomain]     = useState("");
-  const [n, setN]               = useState(1);
-  const [stage, setStage]       = useState<Stage>("idle");
+  const [domain, setDomain] = useState("");
+  const [n, setN] = useState(1);
+  const [stage, setStage] = useState<Stage>("idle");
   const [response, setResponse] = useState<PipelineResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [jobId, setJobId]       = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [elapsed, setElapsed]   = useState(0);
-  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTime  = useRef<number>(0);
+  const [elapsed, setElapsed] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTime = useRef<number>(0);
 
   const { data: experiments, isLoading } = useSWR<ExperimentSummary[]>(
     `${API}/api/v1/experiments?_r=${refreshKey}`,
@@ -55,54 +48,54 @@ export default function Home({ onSidebarBump }: HomeProps) {
 
   const running = stage === "generating" || stage === "formalizing" || stage === "verifying";
 
-  // ── Elapsed timer ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (running) {
-      timerRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startTime.current) / 1000));
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
+    if (!running) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
       setElapsed(0);
+      return;
     }
+
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime.current) / 1000));
+    }, 1000);
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [running]);
 
-  // ── Job polling ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!jobId) return;
 
     const poll = async () => {
       try {
-        const res  = await fetch(`${API}/api/v1/jobs/${jobId}`);
+        const res = await fetch(`${API}/api/v1/jobs/${jobId}`);
         const data = await res.json();
 
         if (data.status === "running") {
           setStage("verifying");
         } else if (data.status === "done") {
-          clearInterval(pollRef.current!);
+          if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setResponse(data.result);
           setStage("done");
-          setRefreshKey((k) => k + 1);
+          setRefreshKey((key) => key + 1);
           onSidebarBump?.();
         } else if (data.status === "error") {
-          clearInterval(pollRef.current!);
+          if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setErrorMsg(data.error ?? "Pipeline failed");
           setStage("error");
         }
       } catch {
-        // transient network error — keep polling
+        // Keep polling through transient API/network failures.
       }
     };
 
     pollRef.current = setInterval(poll, 2000);
+    void poll();
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
@@ -110,6 +103,7 @@ export default function Home({ onSidebarBump }: HomeProps) {
 
   const handleRun = useCallback(async () => {
     if (!domain.trim() || running) return;
+
     startTime.current = Date.now();
     setStage("generating");
     setResponse(null);
@@ -117,7 +111,7 @@ export default function Home({ onSidebarBump }: HomeProps) {
     setJobId(null);
 
     try {
-      setTimeout(() => setStage("formalizing"), 1500);
+      setTimeout(() => setStage("formalizing"), 1200);
 
       const res = await fetch(`${API}/api/v1/pipeline`, {
         method: "POST",
@@ -140,10 +134,8 @@ export default function Home({ onSidebarBump }: HomeProps) {
   }, [domain, n, running]);
 
   const handleReset = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = null;
     setStage("idle");
     setResponse(null);
     setErrorMsg("");
@@ -151,247 +143,152 @@ export default function Home({ onSidebarBump }: HomeProps) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-
-      {/* ── Stats banner ── */}
-      <StatsBar />
-
-      {/* ── Configuration panel ── */}
-      <section>
-        <div
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-s)",
-            borderRadius: 10,
-            padding: 24,
-          }}
-        >
-          <h2
+    <div style={{ display: "flex", flexDirection: "column", gap: "calc(var(--density-gap) * 1.4)" }}>
+      <section style={{ display: "grid", gap: "var(--density-gap)", gridTemplateColumns: "minmax(0, 1.25fr) minmax(260px, 0.75fr)" }}>
+        <div>
+          <span className="label">Research pipeline</span>
+          <h1
             style={{
-              fontSize: 15,
-              fontWeight: 600,
               color: "var(--t-primary)",
-              letterSpacing: "-0.01em",
-              marginBottom: 20,
+              fontSize: 30,
+              fontWeight: 700,
+              letterSpacing: 0,
+              lineHeight: 1.15,
+              margin: "8px 0 0",
             }}
           >
-            New Experiment
-          </h2>
+            Generate, formalize, verify, and snapshot mathematical conjectures.
+          </h1>
+          <p style={{ color: "var(--t-secondary)", fontSize: 14, lineHeight: 1.7, margin: "12px 0 0", maxWidth: 690 }}>
+            Germinal treats unproved and unrefuted claims as unknowns. Lean typechecking,
+            automated proof attempts, and counterexample searches remain visible as separate signals.
+          </p>
+        </div>
+        <StatsBar />
+      </section>
 
-          {/* Domain */}
-          <span style={sectionLabel}>Domain</span>
-          <input
-            type="text"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleRun()}
-            placeholder="e.g. number theory, elliptic curves, graph theory…"
-            disabled={running}
-            style={{
-              width: "100%",
-              padding: "9px 12px",
-              fontSize: 13,
-              background: "var(--bg-input)",
-              border: "1px solid var(--border-s)",
-              borderRadius: 6,
-              color: "var(--t-primary)",
-              outline: "none",
-              transition: "border-color 150ms",
-              fontFamily: "inherit",
-              opacity: running ? 0.6 : 1,
-            }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-            onBlur={(e)  => (e.currentTarget.style.borderColor = "var(--border-s)")}
-          />
-
-          {/* Pills */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-            {DOMAINS.map((d) => {
-              const selected = domain === d;
-              return (
-                <button
-                  key={d}
-                  onClick={() => setDomain(d)}
-                  disabled={running}
-                  style={{
-                    padding: "3px 10px",
-                    fontSize: 11,
-                    borderRadius: 4,
-                    border: `1px solid ${selected ? "var(--accent)" : "var(--border-s)"}`,
-                    background: selected ? "rgba(124,58,237,0.1)" : "var(--bg-input)",
-                    color: selected ? "var(--accent)" : "var(--t-secondary)",
-                    cursor: running ? "default" : "pointer",
-                    opacity: running ? 0.4 : 1,
-                    transition: "border-color 150ms, background 150ms, color 150ms",
-                    fontFamily: "inherit",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!running && !selected) {
-                      e.currentTarget.style.borderColor = "var(--accent)";
-                      e.currentTarget.style.color = "var(--accent)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selected) {
-                      e.currentTarget.style.borderColor = "var(--border-s)";
-                      e.currentTarget.style.color = "var(--t-secondary)";
-                    }
-                  }}
-                >
-                  {d}
-                </button>
-              );
-            })}
+      <section className="panel" style={{ padding: "var(--density-pad)" }}>
+        <div style={{ display: "grid", gap: "var(--density-gap)", gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+          <div>
+            <label className="label" htmlFor="domain">
+              Domain
+            </label>
+            <input
+              className="control"
+              disabled={running}
+              id="domain"
+              onChange={(event) => setDomain(event.target.value)}
+              onKeyDown={(event) => event.key === "Enter" && handleRun()}
+              placeholder="number theory, graph theory, elliptic curves"
+              style={{
+                display: "block",
+                fontSize: 14,
+                height: 42,
+                marginTop: 8,
+                opacity: running ? 0.65 : 1,
+                padding: "0 13px",
+                width: "100%",
+              }}
+              type="text"
+              value={domain}
+            />
           </div>
 
-          {/* Count selector */}
-          <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 2 }}>
-            <span style={{ fontSize: 13, color: "var(--t-secondary)" }}>Generate [</span>
-            {[1, 2, 3].map((v, i) => (
-              <span key={v} style={{ display: "flex", alignItems: "center" }}>
-                {i > 0 && (
-                  <span style={{ fontSize: 13, color: "var(--t-tertiary)", margin: "0 1px" }}>|</span>
-                )}
+          <div style={{ minWidth: 180 }}>
+            <span className="label">Conjectures</span>
+            <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+              {[1, 2, 3].map((value) => (
                 <button
-                  onClick={() => setN(v)}
+                  className={n === value ? "primary-button" : "secondary-button"}
                   disabled={running}
-                  style={{
-                    fontSize: 13,
-                    fontFamily: "JetBrains Mono, monospace",
-                    fontWeight: n === v ? 500 : 400,
-                    color: n === v ? "var(--accent)" : "var(--t-tertiary)",
-                    background: "none",
-                    border: "none",
-                    cursor: running ? "default" : "pointer",
-                    padding: "0 5px",
-                    opacity: running ? 0.5 : 1,
-                    transition: "color 150ms",
-                  }}
+                  key={value}
+                  onClick={() => setN(value)}
+                  style={{ height: 42, width: 48 }}
                 >
-                  {v}
+                  {value}
                 </button>
-              </span>
-            ))}
-            <span style={{ fontSize: 13, color: "var(--t-secondary)" }}>] conjectures</span>
+              ))}
+            </div>
           </div>
+        </div>
 
-          {/* Job ID + elapsed indicator */}
-          <div style={{ marginTop: 10, display: "flex", gap: 16, alignItems: "center" }}>
-            {jobId && (
-              <div
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
+          {domains.map((item) => {
+            const selected = domain === item;
+            return (
+              <button
+                key={item}
+                disabled={running}
+                onClick={() => setDomain(item)}
                 style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: 10,
-                  color: "var(--t-tertiary)",
+                  background: selected ? "var(--accent-bg)" : "var(--bg-input)",
+                  border: `1px solid ${selected ? "var(--accent)" : "var(--border-s)"}`,
+                  borderRadius: 999,
+                  color: selected ? "var(--accent)" : "var(--t-secondary)",
+                  cursor: running ? "default" : "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  opacity: running ? 0.55 : 1,
+                  padding: "5px 10px",
                 }}
               >
-                job: <span style={{ color: "var(--accent)" }}>{jobId.slice(0, 16)}…</span>
-              </div>
+                {item}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ alignItems: "center", display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+          <button
+            className="primary-button"
+            disabled={running || !domain.trim()}
+            onClick={handleRun}
+            style={{ height: 38, minWidth: 154, padding: "0 16px" }}
+          >
+            {running && (
+              <span
+                className="anim-spin"
+                style={{
+                  border: "2px solid rgba(255,255,255,0.35)",
+                  borderRadius: "50%",
+                  borderTopColor: "#fff",
+                  height: 14,
+                  marginRight: 8,
+                  width: 14,
+                }}
+              />
+            )}
+            {running ? "Running" : "Run pipeline"}
+          </button>
+
+          {(stage === "done" || stage === "error") && (
+            <button className="secondary-button" onClick={handleReset} style={{ height: 38, padding: "0 14px" }}>
+              Reset
+            </button>
+          )}
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            {jobId && (
+              <span className="mono muted" style={{ fontSize: 11 }}>
+                job {jobId.slice(0, 12)}
+              </span>
             )}
             {running && elapsed > 0 && (
-              <div
-                style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: 10,
-                  color: "var(--t-tertiary)",
-                }}
-              >
-                elapsed:{" "}
-                <span style={{ color: elapsed > 60 ? "var(--warning)" : "var(--accent)" }}>
-                  {elapsed >= 60
-                    ? `${Math.floor(elapsed / 60)}m${elapsed % 60}s`
-                    : `${elapsed}s`}
-                </span>
-              </div>
+              <span className="mono" style={{ color: elapsed > 60 ? "var(--warning)" : "var(--accent)", fontSize: 11 }}>
+                elapsed {formatElapsed(elapsed)}
+              </span>
             )}
           </div>
-
-          {/* Action buttons */}
-          <div style={{ marginTop: 18, display: "flex", gap: 8 }}>
-            <button
-              onClick={handleRun}
-              disabled={running || !domain.trim()}
-              style={{
-                flex: 1,
-                height: 36,
-                background: running || !domain.trim() ? "var(--bg-hover)" : "var(--accent)",
-                color: running || !domain.trim() ? "var(--t-tertiary)" : "#fff",
-                border: "none",
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: running || !domain.trim() ? "not-allowed" : "pointer",
-                transition: "background 150ms, transform 100ms",
-                fontFamily: "inherit",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-              onMouseEnter={(e) => {
-                if (!running && domain.trim()) {
-                  e.currentTarget.style.background = "var(--accent-h)";
-                  e.currentTarget.style.transform = "scale(0.99)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!running && domain.trim()) {
-                  e.currentTarget.style.background = "var(--accent)";
-                  e.currentTarget.style.transform = "scale(1)";
-                }
-              }}
-            >
-              {running && (
-                <span
-                  style={{
-                    width: 13,
-                    height: 13,
-                    borderRadius: "50%",
-                    border: "2px solid rgba(255,255,255,0.3)",
-                    borderTopColor: "#fff",
-                    display: "inline-block",
-                    animation: "spin 0.8s linear infinite",
-                  }}
-                />
-              )}
-              {running ? "Running pipeline…" : "Run Pipeline"}
-            </button>
-
-            {(stage === "done" || stage === "error") && (
-              <button
-                onClick={handleReset}
-                style={{
-                  padding: "0 14px",
-                  height: 36,
-                  background: "var(--bg-input)",
-                  border: "1px solid var(--border-s)",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: "var(--t-secondary)",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  transition: "border-color 150ms",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-a)")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-s)")}
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-          {stage !== "idle" && (
-            <Pipeline stage={stage} response={response} errorMsg={errorMsg} />
-          )}
         </div>
+
+        {stage !== "idle" && (
+          <div style={{ marginTop: "var(--density-gap)" }}>
+            <Pipeline stage={stage} response={response} errorMsg={errorMsg} />
+          </div>
+        )}
       </section>
 
-      {/* ── Experiments table ── */}
-      <section>
-        <ExperimentTable experiments={experiments ?? []} loading={isLoading} />
-      </section>
+      <ExperimentTable experiments={experiments ?? []} loading={isLoading} />
     </div>
   );
 }

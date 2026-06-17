@@ -1,170 +1,162 @@
-import { ReactNode, CSSProperties, createContext, useContext } from "react";
+import { CSSProperties, ReactNode, createContext, useContext } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import Sidebar from "./Sidebar";
+import { ThemePreference, useSettings } from "../context/SettingsContext";
 
-/* ─── Context for bumping the sidebar refresh ─── */
 export const SidebarBumpContext = createContext<() => void>(() => {});
 export const useSidebarBump = () => useContext(SidebarBumpContext);
 
 interface LayoutProps {
   children: ReactNode;
-  dark: boolean;
-  toggleDark: () => void;
   sidebarRefreshKey: number;
   onSidebarBump: () => void;
   onOpenPalette: () => void;
 }
 
-const S: Record<string, CSSProperties> = {
-  shell: {
-    minHeight: "100vh",
-  },
-  header: {
-    height: 48,
-    borderBottom: "1px solid var(--border-s)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 20px 0 16px",
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    background: "var(--bg-page)",
-  },
-  headerLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  wordmark: {
-    fontWeight: 600,
-    fontSize: 15,
-    color: "var(--t-primary)",
-    textDecoration: "none",
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    fontFamily: "JetBrains Mono, Fira Code, monospace",
-    fontSize: 11,
-    color: "var(--t-tertiary)",
-  },
-  headerRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  body: {
-    display: "flex",
-    paddingTop: 48,
-  },
-  main: {
-    flex: 1,
-    marginLeft: 240,
-    padding: "40px 48px",
-    minHeight: "calc(100vh - 48px)",
-  },
-  inner: {
-    maxWidth: 860,
-    margin: "0 auto",
-  },
+const header: CSSProperties = {
+  alignItems: "center",
+  background: "color-mix(in srgb, var(--bg-page) 92%, transparent)",
+  backdropFilter: "blur(12px)",
+  borderBottom: "1px solid var(--border-s)",
+  display: "flex",
+  height: 56,
+  justifyContent: "space-between",
+  left: 0,
+  padding: "0 22px",
+  position: "fixed",
+  right: 0,
+  top: 0,
+  zIndex: 100,
 };
 
-const kbBtnBase: CSSProperties = {
-  display: "flex",
+const navLinkBase: CSSProperties = {
   alignItems: "center",
-  gap: 6,
-  padding: "4px 10px",
   borderRadius: 6,
-  border: "1px solid var(--border-s)",
-  background: "var(--bg-input)",
-  cursor: "pointer",
-  fontSize: 11,
-  color: "var(--t-tertiary)",
-  fontFamily: "JetBrains Mono, Fira Code, monospace",
-  transition: "border-color 150ms, color 150ms",
+  display: "inline-flex",
+  fontSize: 12,
+  fontWeight: 600,
+  gap: 7,
+  height: 32,
+  padding: "0 10px",
+  textDecoration: "none",
 };
 
-const iconBtnBase: CSSProperties = {
-  width: 30,
-  height: 30,
-  display: "flex",
+const iconButton: CSSProperties = {
   alignItems: "center",
-  justifyContent: "center",
-  borderRadius: 6,
-  border: "1px solid var(--border-s)",
   background: "var(--bg-input)",
-  cursor: "pointer",
-  fontSize: 13,
+  border: "1px solid var(--border-s)",
+  borderRadius: 6,
   color: "var(--t-secondary)",
-  transition: "border-color 150ms",
+  cursor: "pointer",
+  display: "inline-flex",
+  height: 32,
+  justifyContent: "center",
+  width: 32,
 };
+
+function themeLabel(theme: ThemePreference, resolvedTheme: "light" | "dark") {
+  if (theme === "system") return resolvedTheme === "dark" ? "System dark" : "System light";
+  return theme === "dark" ? "Dark" : "Light";
+}
 
 export default function Layout({
   children,
-  dark,
-  toggleDark,
   sidebarRefreshKey,
   onSidebarBump,
   onOpenPalette,
 }: LayoutProps) {
+  const router = useRouter();
+  const { settings, resolvedTheme, updateSettings } = useSettings();
+
+  const cycleTheme = () => {
+    const next: ThemePreference =
+      settings.theme === "system" ? "light" : settings.theme === "light" ? "dark" : "system";
+    updateSettings({ theme: next });
+  };
+
+  const settingsActive = router.pathname === "/settings";
+
   return (
     <SidebarBumpContext.Provider value={onSidebarBump}>
-      <div style={S.shell}>
-        {/* ── Header ── */}
-        <header style={S.header}>
-          <div style={S.headerLeft}>
-            <Link href="/" style={S.wordmark}>
-              Germinal
+      <div style={{ minHeight: "100vh" }}>
+        <header style={header}>
+          <div style={{ alignItems: "center", display: "flex", gap: 18, minWidth: 0 }}>
+            <Link
+              href="/"
+              style={{
+                alignItems: "baseline",
+                display: "inline-flex",
+                gap: 9,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ color: "var(--t-primary)", fontSize: 16, fontWeight: 700 }}>
+                Germinal
+              </span>
+              <span className="mono" style={{ color: "var(--t-tertiary)", fontSize: 11 }}>
+                conjecture engine
+              </span>
             </Link>
-            <span style={S.subtitle}>conjecture engine</span>
           </div>
 
-          <div style={S.headerRight}>
-            {/* ⌘K search trigger */}
+          <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
             <button
-              onClick={onOpenPalette}
               aria-label="Open command palette"
-              style={kbBtnBase}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.style.color = "var(--accent)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-s)";
-                e.currentTarget.style.color = "var(--t-tertiary)";
-              }}
+              className="secondary-button"
+              onClick={onOpenPalette}
+              style={{ ...navLinkBase, color: "var(--t-secondary)" }}
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M9 9l2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-              <span>⌘K</span>
+              <span aria-hidden="true">Search</span>
+              <kbd
+                className="mono"
+                style={{
+                  border: "1px solid var(--border-s)",
+                  borderRadius: 4,
+                  color: "var(--t-tertiary)",
+                  fontSize: 10,
+                  padding: "1px 5px",
+                }}
+              >
+                Ctrl K
+              </kbd>
             </button>
 
-            {/* Theme toggle */}
-            <button
-              onClick={toggleDark}
-              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-              style={iconBtnBase}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.borderColor = "var(--border-a)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor = "var(--border-s)")
-              }
+            <Link
+              href="/settings"
+              style={{
+                ...navLinkBase,
+                background: settingsActive ? "var(--accent-bg)" : "transparent",
+                color: settingsActive ? "var(--accent)" : "var(--t-secondary)",
+              }}
             >
-              {dark ? "☀" : "☽"}
+              Settings
+            </Link>
+
+            <button
+              aria-label={`Theme: ${themeLabel(settings.theme, resolvedTheme)}`}
+              onClick={cycleTheme}
+              style={iconButton}
+              title={`Theme: ${themeLabel(settings.theme, resolvedTheme)}`}
+            >
+              {resolvedTheme === "dark" ? "D" : "L"}
             </button>
           </div>
         </header>
 
-        {/* ── Sidebar + Main ── */}
-        <div style={S.body}>
+        <div style={{ display: "flex", paddingTop: 56 }}>
           <Sidebar refreshKey={sidebarRefreshKey} />
-          <main style={S.main}>
-            <div style={S.inner}>{children}</div>
+          <main
+            className="app-main"
+            style={{
+              flex: 1,
+              marginLeft: 260,
+              minHeight: "calc(100vh - 56px)",
+              padding: "var(--page-pad)",
+            }}
+          >
+            <div style={{ margin: "0 auto", maxWidth: "var(--content-max)" }}>{children}</div>
           </main>
         </div>
       </div>

@@ -193,7 +193,7 @@ export default function CommandPalette({ open, onClose }: Props) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search experiments by domain, conjecture, or ID…"
+            placeholder="Search experiments by domain, conjecture, or ID..."
             style={{
               flex: 1,
               background: "none",
@@ -311,8 +311,8 @@ export default function CommandPalette({ open, onClose }: Props) {
         >
           {(
             [
-              ["↑↓", "navigate"],
-              ["↵", "open"],
+              ["up/down", "navigate"],
+              ["enter", "open"],
               ["esc", "close"],
             ] as [string, string][]
           ).map(([key, label]) => (

@@ -4,6 +4,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { CodeBlock } from "../../components/Pipeline";
 import MathDisplay from "../../components/MathDisplay";
+import { useSettings } from "../../context/SettingsContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -160,7 +161,7 @@ function ExportButton({ id, fmt, label }: { id: string; fmt: string; label: stri
       onMouseEnter={(e) => !loading && (e.currentTarget.style.borderColor = "var(--accent)")}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-s)")}
     >
-      {loading ? "…" : label}
+      {loading ? "..." : label}
     </button>
   );
 }
@@ -233,7 +234,7 @@ function AnnotationForm({ experimentId }: { experimentId: string }) {
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Any observations, references, or ideas…"
+          placeholder="Any observations, references, or ideas..."
           rows={3}
           style={{
             width: "100%",
@@ -257,7 +258,7 @@ function AnnotationForm({ experimentId }: { experimentId: string }) {
         <textarea
           value={proof}
           onChange={(e) => setProof(e.target.value)}
-          placeholder="Paste a correct Lean 4 proof if you have one…"
+          placeholder="Paste a correct Lean 4 proof if you have one..."
           rows={4}
           style={{
             width: "100%",
@@ -291,11 +292,11 @@ function AnnotationForm({ experimentId }: { experimentId: string }) {
             transition: "background 150ms",
           }}
         >
-          {saving ? "Saving…" : "Save annotation"}
+          {saving ? "Saving..." : "Save annotation"}
         </button>
         {saved && (
           <span style={{ fontSize: 12, color: "var(--success)", fontFamily: "JetBrains Mono, monospace" }}>
-            Saved ✓
+            Saved
           </span>
         )}
       </div>
@@ -399,7 +400,7 @@ function LeanEditor({ initialCode }: { initialCode: string }) {
                 border: `1px solid ${result.proved ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
               }}
             >
-              {result.proved ? "proved ✓" : "failed ✗"}
+              {result.proved ? "proved" : "failed"}
             </span>
           )}
           <button
@@ -434,7 +435,7 @@ function LeanEditor({ initialCode }: { initialCode: string }) {
                 }}
               />
             )}
-            {verifying ? "Verifying…" : "Re-verify"}
+            {verifying ? "Verifying..." : "Re-verify"}
           </button>
         </div>
       </div>
@@ -543,7 +544,7 @@ function MethodResultCard({ result }: { result: MethodResult }) {
   return (
     <div
       style={{
-        padding: "8px 12px",
+        padding: "10px 12px",
         borderRadius: 6,
         border: `1px solid ${result.found ? "rgba(239,68,68,0.25)" : "rgba(100,116,139,0.25)"}`,
         background: result.found ? "rgba(239,68,68,0.05)" : "var(--bg-input)",
@@ -674,7 +675,7 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
           onMouseEnter={(e) => !searching && (e.currentTarget.style.borderColor = "var(--accent)")}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-s)")}
         >
-          {searching ? "Searching…" : "Search"}
+          {searching ? "Searching..." : "Search"}
         </button>
       </div>
 
@@ -721,7 +722,7 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
               }}
             >
               <span style={{ fontSize: 12, fontWeight: 600, color: "var(--warning)" }}>
-                ⚠ Methods disagree — inspect both results carefully before drawing conclusions
+                Methods disagree - inspect both results carefully before drawing conclusions
               </span>
             </div>
           )}
@@ -729,8 +730,8 @@ function CounterexamplePanel({ experimentId, isProved }: { experimentId: string;
           {/* Per-method results (new format) */}
           {hasMethodResults ? (
             <>
-              <span style={{ fontSize: 10, color: "var(--t-tertiary)", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                Per-method results
+              <span className="label">
+                Method comparison
               </span>
               {methodResults.map((methodResult) => (
                 <MethodResultCard key={methodResult.method} result={methodResult} />
@@ -805,7 +806,7 @@ function LineagePanel({ experimentId }: { experimentId: string }) {
         throw new Error(err.detail ?? res.statusText);
       }
       const data = await res.json();
-      setDeriveMsg(`Pipeline started — job ${data.job_id.slice(0, 8)}…`);
+      setDeriveMsg(`Pipeline started - job ${data.job_id.slice(0, 8)}`);
     } catch (e: unknown) {
       setDeriveMsg(e instanceof Error ? e.message : String(e));
     } finally {
@@ -838,7 +839,7 @@ function LineagePanel({ experimentId }: { experimentId: string }) {
       </span>
 
       {isLoading && (
-        <span style={{ fontSize: 12, color: "var(--t-tertiary)" }}>Loading…</span>
+        <span style={{ fontSize: 12, color: "var(--t-tertiary)" }}>Loading...</span>
       )}
 
       {/* Parent */}
@@ -944,7 +945,7 @@ function LineagePanel({ experimentId }: { experimentId: string }) {
               transition: "background 150ms",
             }}
           >
-            {deriving ? "Deriving…" : "Derive"}
+            {deriving ? "Deriving..." : "Derive"}
           </button>
         </div>
 
@@ -1024,6 +1025,7 @@ function LineageCard({ node }: { node: LineageNode }) {
 export default function ExperimentDetailPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { settings } = useSettings();
 
   const { data, isLoading, error } = useSWR<ExperimentDetail>(
     id ? `${API}/api/v1/experiments/${id}` : null,
@@ -1053,7 +1055,7 @@ export default function ExperimentDetailPage() {
       <div style={{ textAlign: "center", padding: "64px 0", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
         <span style={{ fontSize: 13, color: "var(--t-tertiary)" }}>Experiment not found.</span>
         <Link href="/" style={{ fontSize: 12, color: "var(--accent)", textDecoration: "none" }}>
-          ← Back to explorer
+          Back to explorer
         </Link>
       </div>
     );
@@ -1072,17 +1074,17 @@ export default function ExperimentDetailPage() {
   const isUnrefuted = !data.proved && cxChecked && !cxFound;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--density-gap)" }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Link href="/" style={{ fontSize: 12, color: "var(--accent)", textDecoration: "none" }}>
-          ← Experiments
+          Experiments
         </Link>
         <span style={{ color: "var(--t-tertiary)", fontSize: 12 }}>/</span>
         <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "var(--t-tertiary)" }}>
-          {data.id.slice(0, 20)}…
+          {data.id.slice(0, 20)}
         </span>
       </div>
 
@@ -1117,15 +1119,15 @@ export default function ExperimentDetailPage() {
 
         {/* Export buttons */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <ExportButton id={data.id} fmt="lean" label="↓ .lean" />
-          <ExportButton id={data.id} fmt="latex" label="↓ .tex" />
-          <Badge ok={data.is_valid} trueLabel="lean ✓" falseLabel="lean ✗" />
+          <ExportButton id={data.id} fmt="lean" label=".lean" />
+          <ExportButton id={data.id} fmt="latex" label=".tex" />
+          <Badge ok={data.is_valid} trueLabel="lean ok" falseLabel="lean fail" />
           <Badge ok={data.proved} trueLabel="proved" falseLabel={isUnrefuted ? "unrefuted" : "open"} />
         </div>
       </div>
 
       {/* Split panel */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16 }}>
+      <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "minmax(280px, 0.9fr) minmax(0, 1.35fr)", gap: "var(--density-gap)" }}>
         {/* Left: conjecture + metadata + counterexample + lineage + annotation */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Conjecture with KaTeX rendering */}
@@ -1161,6 +1163,7 @@ export default function ExperimentDetailPage() {
               background: "var(--bg-card)",
               border: "1px solid var(--border-s)",
               borderRadius: 8,
+              display: settings.showTechnicalDetail ? "block" : "none",
               padding: "4px 16px 8px",
             }}
           >

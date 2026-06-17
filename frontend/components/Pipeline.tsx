@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
+import { useSettings } from "../context/SettingsContext";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 export type Stage = "idle" | "generating" | "formalizing" | "verifying" | "done" | "error";
@@ -353,8 +354,9 @@ function NoveltyBar({ score }: { score: number }) {
 
 /* ─── Result card ────────────────────────────────────────────────────────── */
 function ResultCard({ result }: { result: PipelineResult }) {
+  const { settings } = useSettings();
   // "unrefuted": ensemble search ran, lean-valid, but no method found a counterexample.
-  // Distinct from "sorry" (unchecked open conjecture) — absence of disproof ≠ truth.
+  // Distinct from "sorry" (unchecked open conjecture): absence of disproof is not truth.
   const badge: "proved" | "unrefuted" | "sorry" | "error" = result.proved
     ? "proved"
     : result.is_valid && result.counterexample_checked && !result.counterexample_found
@@ -402,29 +404,31 @@ function ResultCard({ result }: { result: PipelineResult }) {
           </p>
 
           {/* Meta chips */}
-          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
-              {result.duration_ms.toLocaleString()}ms
-            </span>
-            {result.git_sha && (
+          {settings.showTechnicalDetail && (
+            <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
-                sha: <span style={{ color: "var(--accent)" }}>{result.git_sha.slice(0, 8)}</span>
+                {result.duration_ms.toLocaleString()}ms
               </span>
-            )}
-            {result.proof_strategy && (
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
-                strategy: <span style={{ color: "var(--accent)" }}>{result.proof_strategy}</span>
-              </span>
-            )}
-            {result.complexity?.recommended_strategy && (
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
-                rec: <span style={{ color: "var(--accent)" }}>{result.complexity.recommended_strategy}</span>
-              </span>
-            )}
-          </div>
+              {result.git_sha && (
+                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
+                  sha: <span style={{ color: "var(--accent)" }}>{result.git_sha.slice(0, 8)}</span>
+                </span>
+              )}
+              {result.proof_strategy && (
+                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
+                  strategy: <span style={{ color: "var(--accent)" }}>{result.proof_strategy}</span>
+                </span>
+              )}
+              {result.complexity?.recommended_strategy && (
+                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--t-tertiary)" }}>
+                  rec: <span style={{ color: "var(--accent)" }}>{result.complexity.recommended_strategy}</span>
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Novelty bar */}
-          {typeof result.novelty_score === "number" && (
+          {settings.showTechnicalDetail && typeof result.novelty_score === "number" && (
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 10, color: "var(--t-tertiary)", flexShrink: 0 }}>novelty</span>
               <div style={{ flex: 1, maxWidth: 120 }}>
@@ -434,7 +438,7 @@ function ResultCard({ result }: { result: PipelineResult }) {
           )}
 
           {/* Complexity badges */}
-          {result.complexity && (
+          {settings.showTechnicalDetail && result.complexity && (
             <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
               {typeof result.complexity.formalizability === "number" && (
                 <span
@@ -503,7 +507,7 @@ function ResultCard({ result }: { result: PipelineResult }) {
               color: result.is_valid ? "var(--success)" : "var(--danger)",
             }}
           >
-            lean {result.is_valid ? "✓" : "✗"}
+            lean {result.is_valid ? "ok" : "fail"}
           </span>
         </div>
       </div>
@@ -526,7 +530,7 @@ function ResultCard({ result }: { result: PipelineResult }) {
             color: "var(--t-tertiary)",
           }}
         >
-          {result.experiment_id.slice(0, 16)}…
+          {result.experiment_id.slice(0, 16)}
         </span>
         <Link
           href={`/experiments/${result.experiment_id}`}
@@ -537,7 +541,7 @@ function ResultCard({ result }: { result: PipelineResult }) {
             fontWeight: 500,
           }}
         >
-          View detail →
+          View detail
         </Link>
       </div>
     </div>
@@ -596,7 +600,7 @@ export default function Pipeline({ stage, response, errorMsg }: PipelineProps) {
                 color: "var(--t-tertiary)",
               }}
             >
-              Results — {response.domain}
+              Results - {response.domain}
             </span>
             <span
               style={{
