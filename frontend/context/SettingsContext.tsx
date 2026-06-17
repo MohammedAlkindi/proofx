@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -50,6 +51,17 @@ const accents: Record<AccentPreference, { accent: string; hover: string; bg: str
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
 
+function sameSettings(a: GerminalSettings, b: GerminalSettings): boolean {
+  return (
+    a.theme === b.theme &&
+    a.density === b.density &&
+    a.accent === b.accent &&
+    a.showTechnicalDetail === b.showTechnicalDetail &&
+    a.defaultExperimentView === b.defaultExperimentView &&
+    a.animationsEnabled === b.animationsEnabled
+  );
+}
+
 function parseStoredSettings(raw: string | null): GerminalSettings {
   if (!raw) return defaultSettings;
 
@@ -88,12 +100,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<GerminalSettings>(defaultSettings);
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">("light");
   const [hydrated, setHydrated] = useState(false);
+  const lastStoredSettings = useRef<string | null>(null);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const syncSystemTheme = () => setSystemTheme(media.matches ? "dark" : "light");
+    const storedSettings = localStorage.getItem(STORAGE_KEY);
+    const parsedSettings = parseStoredSettings(storedSettings);
 
-    setSettings(parseStoredSettings(localStorage.getItem(STORAGE_KEY)));
+    lastStoredSettings.current = storedSettings ?? JSON.stringify(defaultSettings);
+    setSettings((current) => (sameSettings(current, parsedSettings) ? current : parsedSettings));
     syncSystemTheme();
     setHydrated(true);
 
@@ -116,19 +132,33 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--accent", accent.accent);
     root.style.setProperty("--accent-h", accent.hover);
     root.style.setProperty("--accent-bg", accent.bg);
-  }, [resolvedTheme, settings]);
+  }, [
+    resolvedTheme,
+    settings.accent,
+    settings.animationsEnabled,
+    settings.density,
+    settings.showTechnicalDetail,
+    settings.theme,
+  ]);
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    const serialized = JSON.stringify(settings);
+    if (serialized === lastStoredSettings.current) return;
+
+    localStorage.setItem(STORAGE_KEY, serialized);
+    lastStoredSettings.current = serialized;
   }, [hydrated, settings]);
 
   const updateSettings = useCallback((patch: Partial<GerminalSettings>) => {
-    setSettings((current) => ({ ...current, ...patch }));
+    setSettings((current) => {
+      const next = { ...current, ...patch };
+      return sameSettings(current, next) ? current : next;
+    });
   }, []);
 
   const resetSettings = useCallback(() => {
-    setSettings(defaultSettings);
+    setSettings((current) => (sameSettings(current, defaultSettings) ? current : defaultSettings));
   }, []);
 
   const value = useMemo(

@@ -68,6 +68,8 @@ function Divider() {
 export default function StatsBar() {
   const { data } = useSWR<StatsResponse>(`${API}/api/v1/stats`, fetcher, {
     refreshInterval: 30000,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
     revalidateOnFocus: false,
   });
 

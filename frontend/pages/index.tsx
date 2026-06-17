@@ -6,6 +6,8 @@ import StatsBar from "../components/StatsBar";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const JOB_POLL_INTERVAL_MS = 2000;
+const MAX_JOB_POLLS = 180;
 
 const domains = [
   "number theory",
@@ -38,7 +40,20 @@ export default function Home({ onSidebarBump }: HomeProps) {
   const [elapsed, setElapsed] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const formalizeHintRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollAttemptsRef = useRef(0);
   const startTime = useRef<number>(0);
+
+  const clearPoll = useCallback(() => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = null;
+    pollAttemptsRef.current = 0;
+  }, []);
+
+  const clearFormalizeHint = useCallback(() => {
+    if (formalizeHintRef.current) clearTimeout(formalizeHintRef.current);
+    formalizeHintRef.current = null;
+  }, []);
 
   const { data: experiments, isLoading } = useSWR<ExperimentSummary[]>(
     `${API}/api/v1/experiments?_r=${refreshKey}`,
@@ -62,29 +77,39 @@ export default function Home({ onSidebarBump }: HomeProps) {
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
     };
   }, [running]);
 
   useEffect(() => {
     if (!jobId) return;
+    let cancelled = false;
 
     const poll = async () => {
+      pollAttemptsRef.current += 1;
+      if (pollAttemptsRef.current > MAX_JOB_POLLS) {
+        clearPoll();
+        if (cancelled) return;
+        setErrorMsg("Pipeline polling timed out. The job may still be running on the API.");
+        setStage("error");
+        return;
+      }
+
       try {
         const res = await fetch(`${API}/api/v1/jobs/${jobId}`);
         const data = await res.json();
+        if (cancelled) return;
 
         if (data.status === "running") {
           setStage("verifying");
         } else if (data.status === "done") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          pollRef.current = null;
+          clearPoll();
           setResponse(data.result);
           setStage("done");
           setRefreshKey((key) => key + 1);
           onSidebarBump?.();
         } else if (data.status === "error") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          pollRef.current = null;
+          clearPoll();
           setErrorMsg(data.error ?? "Pipeline failed");
           setStage("error");
         }
@@ -93,17 +118,21 @@ export default function Home({ onSidebarBump }: HomeProps) {
       }
     };
 
-    pollRef.current = setInterval(poll, 2000);
+    clearPoll();
+    pollRef.current = setInterval(poll, JOB_POLL_INTERVAL_MS);
     void poll();
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      cancelled = true;
+      clearPoll();
     };
-  }, [jobId, onSidebarBump]);
+  }, [clearPoll, jobId, onSidebarBump]);
 
   const handleRun = useCallback(async () => {
     if (!domain.trim() || running) return;
 
+    clearFormalizeHint();
+    clearPoll();
     startTime.current = Date.now();
     setStage("generating");
     setResponse(null);
@@ -111,7 +140,10 @@ export default function Home({ onSidebarBump }: HomeProps) {
     setJobId(null);
 
     try {
-      setTimeout(() => setStage("formalizing"), 1200);
+      formalizeHintRef.current = setTimeout(() => {
+        setStage((current) => (current === "generating" ? "formalizing" : current));
+        formalizeHintRef.current = null;
+      }, 1200);
 
       const res = await fetch(`${API}/api/v1/pipeline`, {
         method: "POST",
@@ -125,17 +157,19 @@ export default function Home({ onSidebarBump }: HomeProps) {
       }
 
       const data = await res.json();
+      clearFormalizeHint();
       setJobId(data.job_id);
       setStage("verifying");
     } catch (err: unknown) {
+      clearFormalizeHint();
       setErrorMsg(err instanceof Error ? err.message : String(err));
       setStage("error");
     }
-  }, [domain, n, running]);
+  }, [clearFormalizeHint, clearPoll, domain, n, running]);
 
   const handleReset = () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = null;
+    clearFormalizeHint();
+    clearPoll();
     setStage("idle");
     setResponse(null);
     setErrorMsg("");

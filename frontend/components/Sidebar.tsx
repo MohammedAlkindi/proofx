@@ -59,7 +59,12 @@ export default function Sidebar({ refreshKey = 0 }: { refreshKey?: number }) {
   const { data: experiments, isLoading } = useSWR<ExperimentItem[]>(
     `${API}/api/v1/experiments?_r=${refreshKey}`,
     fetcher,
-    { refreshInterval: 15000, revalidateOnFocus: false }
+    {
+      refreshInterval: 15000,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
+      revalidateOnFocus: false,
+    }
   );
 
   const recent = [...(experiments ?? [])].reverse().slice(0, 80);

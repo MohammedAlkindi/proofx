@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 
@@ -74,7 +74,7 @@ export default function CommandPalette({ open, onClose }: Props) {
     { revalidateOnFocus: false }
   );
 
-  const filtered = (experiments ?? []).filter((e) => {
+  const filtered = useMemo(() => (experiments ?? []).filter((e) => {
     if (!query) return true;
     const q = query.toLowerCase();
     return (
@@ -82,7 +82,7 @@ export default function CommandPalette({ open, onClose }: Props) {
       e.conjecture.toLowerCase().includes(q) ||
       e.id.toLowerCase().includes(q)
     );
-  });
+  }), [experiments, query]);
 
   const navigate = useCallback(
     (id: string) => {
@@ -97,7 +97,8 @@ export default function CommandPalette({ open, onClose }: Props) {
     if (open) {
       setQuery("");
       setActiveIdx(0);
-      setTimeout(() => inputRef.current?.focus(), 30);
+      const focusTimer = setTimeout(() => inputRef.current?.focus(), 30);
+      return () => clearTimeout(focusTimer);
     }
   }, [open]);
 
@@ -110,7 +111,7 @@ export default function CommandPalette({ open, onClose }: Props) {
         onClose();
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        setActiveIdx((i) => Math.min(i + 1, filtered.length - 1));
+        setActiveIdx((i) => Math.min(i + 1, Math.max(filtered.length - 1, 0)));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIdx((i) => Math.max(i - 1, 0));
