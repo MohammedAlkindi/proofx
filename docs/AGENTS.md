@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Note**: This file is the original context document written for Codex-based workflows. It predates the current Claude-based implementation. For the current developer guide, see [CLAUDE.md](../CLAUDE.md) in the repo root.
+
 Context for Codex working in this repo. Read this before touching anything.
 
 ## What this is
