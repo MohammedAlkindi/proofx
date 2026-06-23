@@ -119,15 +119,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Instrument FastAPI after the app is created
-if settings.otel_endpoint:
-    try:
-        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
-        FastAPIInstrumentor.instrument_app(app)
-    except Exception:
-        pass
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
