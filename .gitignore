@@ -54,3 +54,6 @@ dist/
 /frontend/
 packages/germinal/frontend/.next/
 packages/germinal/frontend/tsconfig.tsbuildinfo
+
+.vercel
+.env*

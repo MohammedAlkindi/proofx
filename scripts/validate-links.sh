@@ -13,15 +13,15 @@ while IFS= read -r file; do
     path=${clean#/}
     [ -z "$path" ] && path="index.html"
 
-    if [[ "$path" != *.* ]] && [ -e "public/$path.html" ]; then
+    if [[ "$path" != *.* ]] && [ -e "src/$path.html" ]; then
       continue
     fi
 
-    if [ ! -e "$path" ] && [ ! -e "public/$path" ]; then
+    if [ ! -e "$path" ] && [ ! -e "src/$path" ]; then
       echo "Missing target in $file -> $href"
       missing=1
     fi
   done < <(rg -o 'href="[^"]+"' "$file")
-done < <(rg --files -g '*.html' public | rg '^public/[^/]+\\.html$')
+done < <(rg --files -g '*.html' src | rg '^src/[^/]+\\.html$')
 
 exit $missing

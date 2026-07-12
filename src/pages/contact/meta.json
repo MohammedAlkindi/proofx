@@ -1,0 +1,12 @@
+{
+  "title": "Contact | ProofX",
+  "description": "Contact ProofX for research review, code questions, and collaboration around reproducible number-theory experiments.",
+  "canonical_path": "/contact",
+  "og_title": "Contact | ProofX",
+  "og_description": "Research review, code questions, and collaboration around reproducible number-theory experiments.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": null,
+  "footer_active": "contact",
+  "body_class": "section"
+}

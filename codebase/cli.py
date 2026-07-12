@@ -56,9 +56,13 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
     import json
 
-    from codebase.FalsificationEngine.FalsificationEngine import _SIEVE_LIMIT, FalsificationEngine
+    from codebase.FalsificationEngine.FalsificationEngine import (
+        _SIEVE_LIMIT,
+        FalsificationEngine,
+        json_default,
+    )
 
-    sieve = getattr(args, "sieve_limit", _SIEVE_LIMIT)
+    sieve = args.sieve_limit if getattr(args, "sieve_limit", None) is not None else _SIEVE_LIMIT
     min_score = getattr(args, "min_score", 0.0)
     engine = FalsificationEngine(sieve_limit=sieve)
     result = engine.run(budget=args.budget, seed=args.seed, target=args.target, min_score=min_score)
@@ -101,6 +105,7 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
                     "near_miss_score": e.near_miss_score,
                     "strategy": e.strategy,
                     "features": e.features,
+                    "details": e.details,
                 }
                 for e in result.get(key, [])[: args.top_k]
             ]
@@ -116,7 +121,7 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
         }
         p = Path(args.output_json)
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        p.write_text(json.dumps(out, indent=2, default=json_default), encoding="utf-8")
         print(f"  JSON summary: {args.output_json}")
 
     return 0

@@ -1,0 +1,205 @@
+<!-- GENERATED FILE — edit src/pages/<slug>/ or src/components/, then run scripts/build.sh. Do not hand-edit this file. -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0a14" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
+  <meta name="description" content="GoldbachX counts prime-pair decompositions and ranks sparse even-number candidates for bounded search runs." />
+  <link rel="canonical" href="https://www.proofx.org/goldbachx" />
+
+  <title>GoldbachX | ProofX</title>
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="stylesheet" href="/styles.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </noscript>
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="GoldbachX | ProofX" />
+  <meta property="og:description" content="Prime-pair decomposition, partition counts, and bounded Goldbach search ledgers." />
+  <meta property="og:url" content="https://www.proofx.org/goldbachx" />
+  <meta property="og:site_name" content="ProofX" />
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="GoldbachX | ProofX" />
+  <meta name="twitter:description" content="Prime-pair decomposition, partition counts, and bounded Goldbach search ledgers." />
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "ProofX",
+    "url": "https://www.proofx.org/",
+    "logo": "https://www.proofx.org/assets/icons/favicon-32x32.png",
+    "sameAs": [
+      "https://github.com/MohammedAlkindi/ProofX"
+    ]
+  }
+  </script>
+  <script src="/monitoring.js"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
+
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <a id="top"></a>
+
+  <header class="nav" role="banner">
+    <div class="container nav__inner">
+      <a class="brand" href="/index.html" aria-label="ProofX home">
+        <img class="brand__mark" src="/assets/icons/favicon-32x32.png" alt="ProofX logo" width="36" height="36">
+        <span class="brand__text">ProofX</span>
+      </a>
+
+      <button class="nav__toggle" aria-expanded="false" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav__links" role="navigation" aria-label="Primary">
+        <a href="/index.html">Home</a>
+        <a href="/collatzx.html">CollatzX</a>
+        <a href="/goldbachx.html" aria-current="page">GoldbachX</a>
+        <a href="/riemannx.html">RiemannX</a>
+        <a href="/results.html">Results</a>
+        <a href="/research.html">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section hero">
+      <div class="container hero__wrap">
+        <h1 class="hero__h1">GoldbachX</h1>
+        <p class="hero__sub">
+          GoldbachX counts prime-pair decompositions for even numbers and helps rank sparse candidate families for bounded counterexample search.
+        </p>
+        <div class="hero__actions btn-row">
+          <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/codebase/GoldbachX" target="_blank" rel="noopener">Source</a>
+          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/goldbach.md" target="_blank" rel="noopener">Method Notes</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="section" aria-labelledby="goldbach-demo-title">
+      <div class="container card">
+        <h2 id="goldbach-demo-title">Browser Decomposer</h2>
+        <p class="muted">Enter an even number >= 4, capped at 100,000, to list prime-pair decompositions in your browser.</p>
+        <div class="demo-controls">
+          <input id="goldbach-input" type="number" min="4" max="100000" step="2" value="28"
+                 placeholder="Even integer >= 4"
+                 class="demo-input"
+                 aria-label="Even number for Goldbach decomposition">
+          <button id="goldbach-run" class="btn btn--primary btn--pill">Decompose</button>
+        </div>
+        <div id="goldbach-result" class="demo-output" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+      <div class="container">
+        <h2 id="capabilities-title">What It Computes</h2>
+        <div class="grid grid--3">
+          <article class="card">
+            <h3>Partitions</h3>
+            <p>Counts prime pairs `(p, q)` for even inputs where `p + q = n` and `p <= q`.</p>
+          </article>
+          <article class="card">
+            <h3>Deficits</h3>
+            <p>Compares observed partition counts with Hardy-Littlewood-style predictions for ranking.</p>
+          </article>
+          <article class="card">
+            <h3>Families</h3>
+            <p>Explores sparse residue and factor families as candidates for closer inspection.</p>
+          </article>
+        </div>
+        <p class="muted" style="margin-top:1rem;">A decomposition for one input is evidence about that input only. It is not a proof of Goldbach's conjecture.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__inner">
+      <span class="muted">&copy; 2025&ndash;2026 ProofX</span>
+      <nav class="footer__links" aria-label="Footer">
+        <a href="/research.html">Research</a>
+        <a href="/results.html">Results</a>
+        <a href="/roadmap.html">Roadmap</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/contribute.html">Contribute</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
+      <a class="to-top" href="#top" aria-label="Back to top">&uarr;</a>
+    </div>
+  </footer>
+
+  <script>
+(function () {
+  var inp = document.getElementById('goldbach-input');
+  var btn = document.getElementById('goldbach-run');
+  var out = document.getElementById('goldbach-result');
+
+  function sieve(limit) {
+    var isPrime = new Uint8Array(limit + 1).fill(1);
+    isPrime[0] = isPrime[1] = 0;
+    for (var i = 2; i * i <= limit; i++) {
+      if (isPrime[i]) for (var j = i * i; j <= limit; j += i) isPrime[j] = 0;
+    }
+    return isPrime;
+  }
+
+  function decompose(n) {
+    var isPrime = sieve(n);
+    var pairs = [];
+    for (var p = 2; p <= Math.floor(n / 2); p++) {
+      if (isPrime[p] && isPrime[n - p]) pairs.push([p, n - p]);
+    }
+    return pairs;
+  }
+
+  function run() {
+    var n = parseInt(inp.value, 10);
+    if (!n || n < 4 || n % 2 !== 0) {
+      out.textContent = 'Please enter an even integer >= 4.';
+      out.style.display = 'block';
+      return;
+    }
+    if (n > 100000) {
+      out.textContent = 'Please enter a value <= 100,000 for in-browser computation.';
+      out.style.display = 'block';
+      return;
+    }
+    var pairs = decompose(n);
+    var lines = [
+      'Input          : ' + n.toLocaleString(),
+      'Decompositions : ' + pairs.length,
+      ''
+    ];
+    var show = pairs.length <= 20 ? pairs : pairs.slice(0, 20);
+    show.forEach(function (p, i) {
+      lines.push('  ' + (i + 1) + '.  ' + p[0] + ' + ' + p[1]);
+    });
+    if (pairs.length > 20) lines.push('  ... and ' + (pairs.length - 20) + ' more pairs');
+    out.textContent = lines.join('\n');
+    out.style.display = 'block';
+  }
+
+  btn.addEventListener('click', run);
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+}());
+  </script>
+  <script src="/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "title": "RiemannX | ProofX",
+  "description": "RiemannX contains numerical diagnostics for zeta zeros, prime-counting approximations, and related search ledgers.",
+  "canonical_path": "/riemannx",
+  "og_title": "RiemannX | ProofX",
+  "og_description": "Numerical Riemann-adjacent diagnostics and bounded prime inspectors.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": "riemannx",
+  "footer_active": null,
+  "body_class": null
+}

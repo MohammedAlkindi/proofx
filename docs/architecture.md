@@ -13,9 +13,7 @@ operating rules.
 | `ProofX.lean`, `lakefile.lean`, `lake-manifest.json`, `lean-toolchain` | Lean package entry points | Build with `lake build`; toolchain and manifest are pinned at the root. |
 | `tests/` | Root test suite | Covers the Python toolkit; coverage is configured in `pyproject.toml`. |
 | `docs/` | Maintainer and research documentation | Explains methods, assumptions, and publication standards. |
-| `public/` | Static site output | Deployed pages and static assets. Keep public claims aligned with docs. |
-| `src/` | Static site source fragments | Component, script, and CSS authoring files used by the site workflow. |
-| `assets/` | Tracked media | Images and PDFs referenced by the site. |
+| `src/` | Static research site | Source inputs under `components/`, `pages/`, `scripts/`, and `static/`; deployable HTML and assets at the `src/` root, built by `scripts/build_site.py`. |
 | `packages/germinal/` | Vendored sibling project | Separate Lean 4 conjecture-generation and proof-attempt system. |
 | `findings/`, `legacy/` | Ignored local archives | Historical/pitch material; do not re-track or reorganize during code cleanup. |
 
@@ -29,7 +27,7 @@ The root should stay readable:
 - Keep Lean entry points at the root (`ProofX.lean`, `lakefile.lean`, `lean-toolchain`) and Lean modules under `ProofX/`.
 - Keep the old Germinal project under `packages/germinal/`; do not restore its old root-level `api/`, `frontend/`, `src/`, or `tests/` layout.
 - Keep local caches, virtual environments, coverage outputs, and run ledgers out of git. Use `scripts/cleanup.ps1 -Deep` on Windows or `./scripts/cleanup.sh --deep` on Unix shells when the Explorer tree gets noisy.
-- Keep `public/` as deployable static output and `src/` as site source fragments unless a dedicated site build migration is planned.
+- Keep `src/` as the single static-site tree: source subdirectories plus reproducible deploy output at the `src/` root.
 
 ## Data Flow
 
@@ -136,12 +134,12 @@ copy claim.
 
 ## Static Site
 
-The site in `public/` should be modest:
+The site source under `src/` should be modest:
 
 - Prefer "search", "rank", "inspect", "record", and "replay".
 - Avoid "prove", "certify", "validate", and "verify" unless a specific checker
   and scope are named.
 - Do not hard-code benchmark figures without a linked reproducible run.
-- Keep `public/styles.css` stable unless the task is explicitly design work.
+- Keep `src/static/styles.css` stable unless the task is explicitly design work.
 
-Run `scripts/validate-links.sh` after changing public pages.
+Run `scripts/build.sh` and `scripts/validate-links.sh` after changing site files.

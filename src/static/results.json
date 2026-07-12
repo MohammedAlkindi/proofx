@@ -1,0 +1,346 @@
+{
+  "seed": 42,
+  "budget": 500,
+  "target": "both",
+  "stats": {
+    "collatz_evaluated": 250,
+    "goldbach_evaluated": 250,
+    "riemann_evaluated": 0,
+    "total_evaluated": 500,
+    "collatz_max_near_miss": 0.5058557333793884,
+    "goldbach_max_near_miss": 0.775795474555694,
+    "riemann_max_near_miss": 0.0,
+    "seed": 42,
+    "elapsed_s": 6.899
+  },
+  "top_collatz": [
+    {
+      "candidate": 1021,
+      "near_miss_score": 0.5058557333793884,
+      "strategy": "inverse_tree_beam_search",
+      "features": {
+        "length": 50.0,
+        "max_value": 13120.0,
+        "min_value": 1.0,
+        "mean_value": 1413.92,
+        "median_value": 270.0,
+        "std_dev": 2507.5260623969593,
+        "skewness": 2.8021125421055344,
+        "kurtosis": 8.626316702711598,
+        "entropy": 5.64385618970259,
+        "parity_ratio": 0.32,
+        "even_streak_max": 6.0,
+        "odd_streak_max": 1.0,
+        "growth_rate": -0.0015866102538576404,
+        "volatility": 1.1675547206943684,
+        "autocorrelation": 0.6207016653138996,
+        "hurst_exponent": 0.837126622906782,
+        "lyapunov_exponent": 0.10343059294765757,
+        "prime_factors_count": 102.0,
+        "distinct_primes": 16.0,
+        "prime_multiplicity": 1.3823529411764706,
+        "is_power_of_two": 0.1,
+        "log2_ratio": -0.203995247977098,
+        "modular_pattern": 0.8694805775266472,
+        "binary_density": 0.5588428793428794,
+        "binary_transitions": 0.5241272061272062,
+        "binary_entropy": 0.8915693910295505,
+        "gcd_with_max": 525.32,
+        "lcm_with_max": 5085836.8,
+        "divisor_count": 7.14
+      },
+      "details": {
+        "stopping_time": 49,
+        "max_value": 13120,
+        "sequence_length": 50,
+        "converged": 1,
+        "cycle_detected": 0,
+        "computation_time_s": 3.7499936297535896e-05,
+        "expected_stopping_time": 19.991534301755603
+      }
+    },
+    {
+      "candidate": 67107754,
+      "near_miss_score": 0.47698808943068044,
+      "strategy": "inverse_tree_beam_search",
+      "features": {
+        "length": 141.0,
+        "max_value": 100661632.0,
+        "min_value": 1.0,
+        "mean_value": 2538722.0921985814,
+        "median_value": 252227.0,
+        "std_dev": 11392876.351511557,
+        "skewness": 6.5423480570472785,
+        "kurtosis": 46.04283845710812,
+        "entropy": 7.139551352195373,
+        "parity_ratio": 0.3191489361702128,
+        "even_streak_max": 10.0,
+        "odd_streak_max": 1.0,
+        "growth_rate": -0.0047619046436396225,
+        "volatility": 1.1665975625385459,
+        "autocorrelation": 0.6387495120427593,
+        "hurst_exponent": 0.8190223511327754,
+        "lyapunov_exponent": -0.49406279398635344,
+        "prime_factors_count": 316.0,
+        "distinct_primes": 58.0,
+        "prime_multiplicity": 1.4367088607594938,
+        "is_power_of_two": 0.03546099290780142,
+        "log2_ratio": -0.18571411526578457,
+        "modular_pattern": 0.8534384182121687,
+        "binary_density": 0.545161131932384,
+        "binary_transitions": 0.4848578298456866,
+        "binary_entropy": 0.9285276172736325,
+        "gcd_with_max": 1422254.2765957448,
+        "lcm_with_max": 65983853981053.27,
+        "divisor_count": 8.26241134751773
+      },
+      "details": {
+        "stopping_time": 140,
+        "max_value": 100661632,
+        "sequence_length": 141,
+        "converged": 1,
+        "cycle_detected": 0,
+        "computation_time_s": 0.00011000002268701792,
+        "expected_stopping_time": 51.999952274419684
+      }
+    },
+    {
+      "candidate": 268431220,
+      "near_miss_score": 0.46534894733068155,
+      "strategy": "inverse_tree_beam_search",
+      "features": {
+        "length": 174.0,
+        "max_value": 268431220.0,
+        "min_value": 1.0,
+        "mean_value": 8286705.120689655,
+        "median_value": 28659.0,
+        "std_dev": 30963982.322618235,
+        "skewness": 5.70599195585426,
+        "kurtosis": 37.38254758144066,
+        "entropy": 7.442943495597698,
+        "parity_ratio": 0.3275862068965517,
+        "even_streak_max": 5.0,
+        "odd_streak_max": 1.0,
+        "growth_rate": -0.005780346799275439,
+        "volatility": 1.1741374649963703,
+        "autocorrelation": 0.5833385518250195,
+        "hurst_exponent": 0.7849745389451492,
+        "lyapunov_exponent": -0.09589402114578534,
+        "prime_factors_count": 413.0,
+        "distinct_primes": 62.0,
+        "prime_multiplicity": 1.261501210653753,
+        "is_power_of_two": 0.028735632183908046,
+        "log2_ratio": -0.16184957938506914,
+        "modular_pattern": 0.8545507856282337,
+        "binary_density": 0.5535269648555825,
+        "binary_transitions": 0.5025746245444754,
+        "binary_entropy": 0.9314747774847146,
+        "gcd_with_max": 2699746.614942529,
+        "lcm_with_max": 510751322223399.2,
+        "divisor_count": 8.597701149425287
+      },
+      "details": {
+        "stopping_time": 173,
+        "max_value": 268431220,
+        "sequence_length": 174,
+        "converged": 1,
+        "cycle_detected": 0,
+        "computation_time_s": 8.809997234493494e-05,
+        "expected_stopping_time": 55.99995446723392
+      }
+    },
+    {
+      "candidate": 895,
+      "near_miss_score": 0.45234777806585846,
+      "strategy": "inverse_tree_beam_search",
+      "features": {
+        "length": 99.0,
+        "max_value": 39364.0,
+        "min_value": 1.0,
+        "mean_value": 5631.484848484848,
+        "median_value": 2768.0,
+        "std_dev": 7571.373167643359,
+        "skewness": 2.0518361051862057,
+        "kurtosis": 4.583476329879465,
+        "entropy": 6.629356619936781,
+        "parity_ratio": 0.35353535353535354,
+        "even_streak_max": 7.0,
+        "odd_streak_max": 1.0,
+        "growth_rate": -0.00023174598566181884,
+        "volatility": 1.1993496339127554,
+        "autocorrelation": 0.5514700554421839,
+        "hurst_exponent": 0.5469010466446497,
+        "lyapunov_exponent": 0.30238249251446114,
+        "prime_factors_count": 211.0,
+        "distinct_primes": 32.0,
+        "prime_multiplicity": 1.3270142180094786,
+        "is_power_of_two": 0.050505050505050504,
+        "log2_ratio": -0.10005861094032263,
+        "modular_pattern": 0.8654808780987048,
+        "binary_density": 0.5668404126737462,
+        "binary_transitions": 0.4919457086123754,
+        "binary_entropy": 0.8833211265027403,
+        "gcd_with_max": 702.6161616161617,
+        "lcm_with_max": 85374551.75757575,
+        "divisor_count": 7.0
+      },
+      "details": {
+        "stopping_time": 98,
+        "max_value": 39364,
+        "sequence_length": 99,
+        "converged": 1,
+        "cycle_detected": 0,
+        "computation_time_s": 4.770001396536827e-05,
+        "expected_stopping_time": 19.611487744303236
+      }
+    },
+    {
+      "candidate": 703,
+      "near_miss_score": 0.440552237886427,
+      "strategy": "inverse_tree_beam_search",
+      "features": {
+        "length": 171.0,
+        "max_value": 250504.0,
+        "min_value": 1.0,
+        "mean_value": 25962.3918128655,
+        "median_value": 13211.0,
+        "std_dev": 35992.00830697406,
+        "skewness": 2.689890593430589,
+        "kurtosis": 10.09407581054476,
+        "entropy": 7.417852514639197,
+        "parity_ratio": 0.3684210526315789,
+        "even_streak_max": 6.0,
+        "odd_streak_max": 1.0,
+        "growth_rate": -1.6484414479233395e-05,
+        "volatility": 1.208024363730773,
+        "autocorrelation": 0.5626567138280392,
+        "hurst_exponent": 0.19990525783392576,
+        "lyapunov_exponent": 0.30241190135649176,
+        "prime_factors_count": 385.0,
+        "distinct_primes": 60.0,
+        "prime_multiplicity": 1.251948051948052,
+        "is_power_of_two": 0.029239766081871343,
+        "log2_ratio": -0.05563165222983844,
+        "modular_pattern": 0.8616834830591251,
+        "binary_density": 0.5395375760958837,
+        "binary_transitions": 0.5157220216430742,
+        "binary_entropy": 0.9494309735010427,
+        "gcd_with_max": 2749.3274853801167,
+        "lcm_with_max": 2909098557.1929827,
+        "divisor_count": 7.748538011695906
+      },
+      "details": {
+        "stopping_time": 170,
+        "max_value": 250504,
+        "sequence_length": 171,
+        "converged": 1,
+        "cycle_detected": 0,
+        "computation_time_s": 6.959994789212942e-05,
+        "expected_stopping_time": 18.91476175814507
+      }
+    }
+  ],
+  "top_goldbach": [
+    {
+      "candidate": 4,
+      "near_miss_score": 0.775795474555694,
+      "strategy": "hardy_littlewood_deficit_search",
+      "features": {
+        "actual_partitions": 1.0,
+        "expected_partitions": 4.122120977551374,
+        "deficit_ratio": 0.7574064406537576,
+        "structural_hardness": 0.88
+      },
+      "details": {
+        "actual_partitions": 1,
+        "expected_partitions": 4.1221,
+        "deficit_ratio": 0.757406,
+        "structural_hardness": 0.88,
+        "is_power_of_two": true,
+        "mod_6_residue": 4,
+        "mod_30_residue": 4
+      }
+    },
+    {
+      "candidate": 8,
+      "near_miss_score": 0.683739882839486,
+      "strategy": "hardy_littlewood_deficit_search",
+      "features": {
+        "actual_partitions": 1.0,
+        "expected_partitions": 2.8498614165787277,
+        "deficit_ratio": 0.6491057445170423,
+        "structural_hardness": 0.88
+      },
+      "details": {
+        "actual_partitions": 1,
+        "expected_partitions": 2.8499,
+        "deficit_ratio": 0.649106,
+        "structural_hardness": 0.88,
+        "is_power_of_two": true,
+        "mod_6_residue": 2,
+        "mod_30_residue": 8
+      }
+    },
+    {
+      "candidate": 128,
+      "near_miss_score": 0.6295774895165382,
+      "strategy": "hardy_littlewood_deficit_search",
+      "features": {
+        "actual_partitions": 3.0,
+        "expected_partitions": 7.235633150963733,
+        "deficit_ratio": 0.5853852817841626,
+        "structural_hardness": 0.88
+      },
+      "details": {
+        "actual_partitions": 3,
+        "expected_partitions": 7.2356,
+        "deficit_ratio": 0.585385,
+        "structural_hardness": 0.88,
+        "is_power_of_two": true,
+        "mod_6_residue": 2,
+        "mod_30_residue": 8
+      }
+    },
+    {
+      "candidate": 692,
+      "near_miss_score": 0.5449846735977659,
+      "strategy": "hardy_littlewood_deficit_search",
+      "features": {
+        "actual_partitions": 11.0,
+        "expected_partitions": 21.395130639867194,
+        "deficit_ratio": 0.4858643218797246,
+        "structural_hardness": 0.88
+      },
+      "details": {
+        "actual_partitions": 11,
+        "expected_partitions": 21.3951,
+        "deficit_ratio": 0.485864,
+        "structural_hardness": 0.88,
+        "is_power_of_two": false,
+        "mod_6_residue": 2,
+        "mod_30_residue": 2
+      }
+    },
+    {
+      "candidate": 35912,
+      "near_miss_score": 0.5441441633511155,
+      "strategy": "hardy_littlewood_deficit_search",
+      "features": {
+        "actual_partitions": 263.0,
+        "expected_partitions": 510.556172348718,
+        "deficit_ratio": 0.48487548629543,
+        "structural_hardness": 0.88
+      },
+      "details": {
+        "actual_partitions": 263,
+        "expected_partitions": 510.5562,
+        "deficit_ratio": 0.484875,
+        "structural_hardness": 0.88,
+        "is_power_of_two": false,
+        "mod_6_residue": 2,
+        "mod_30_residue": 2
+      }
+    }
+  ],
+  "top_riemann": []
+}

@@ -1,0 +1,141 @@
+    <section id="top" class="section hero" aria-labelledby="hero-title">
+      <div class="container hero__wrap">
+        <h1 id="hero-title" class="hero__h1" data-no-wrap>Directed search for mathematical counterexamples.</h1>
+        <p class="hero__sub">
+          ProofX is an open Python research toolkit for ranking candidates, running bounded experiments, and publishing replayable ledgers. It is a search system, not a proof system.
+        </p>
+
+        <div class="hero__actions" role="group" aria-label="Primary actions">
+          <a class="btn btn--primary btn--lg btn--pill" href="https://github.com/MohammedAlkindi/ProofX" target="_blank" rel="noopener">View Code</a>
+          <a class="btn btn--lg btn--pill" href="/research.html">Read Docs</a>
+          <a class="btn btn--lg btn--pill" href="/results.html">Inspect Results</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="scope" class="section" aria-labelledby="scope-title">
+      <div class="container card">
+        <h2 id="scope-title">Scope</h2>
+        <p>
+          A ProofX run evaluates a finite set of candidates under a fixed command, budget, seed, and code revision. If no counterexample is found, the result is reported as unrefuted at that budget.
+        </p>
+        <ul class="bullets bullets--tight">
+          <li><strong>It can</strong> rank candidates, compute features, and write an audit ledger.</li>
+          <li><strong>It can</strong> help compare search strategies and reproduce bounded runs.</li>
+          <li><strong>It cannot</strong> prove Collatz, Goldbach, the Riemann Hypothesis, or any open conjecture.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="workflow" class="section" aria-labelledby="workflow-title">
+      <div class="container card">
+        <h2 id="workflow-title">Research Workflow</h2>
+        <p class="muted">
+          The useful artifact is the ledger: every evaluated candidate, feature vector, near-miss score, strategy label, and seed.
+        </p>
+        <ul class="bullets bullets--tight">
+          <li>Run a directed search with a pinned command and seed.</li>
+          <li>Save the JSONL ledger, not only the top-k summary.</li>
+          <li>Inspect high-ranking candidates and failed assumptions manually.</li>
+          <li>Publish the command and limits next to any result table.</li>
+        </ul>
+        <div class="hero__actions" role="group" aria-label="Workflow links">
+          <a class="btn btn--primary btn--pill" href="/ledger-viewer.html">Open Ledger Viewer</a>
+          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/research-standards.md" target="_blank" rel="noopener">Claim Standards</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="engines" class="section" aria-labelledby="engines-title">
+      <div class="container">
+        <h2 id="engines-title">Engines</h2>
+        <div class="grid grid--3">
+          <article class="card engine">
+            <h3>CollatzX</h3>
+            <p>Computes Collatz trajectories, stopping-time features, parity ratios, and near-miss rankings for bounded runs.</p>
+            <a class="engine__link" href="/collatzx.html">Inspect CollatzX</a>
+          </article>
+
+          <article class="card engine">
+            <h3>GoldbachX</h3>
+            <p>Counts prime-pair partitions and ranks sparse even-number families by Hardy-Littlewood deficit.</p>
+            <a class="engine__link" href="/goldbachx.html">Inspect GoldbachX</a>
+          </article>
+
+          <article class="card engine">
+            <h3>RiemannX</h3>
+            <p>Runs numerical diagnostics around zeta zeros, prime-counting approximations, and Keiper-Li coefficients.</p>
+            <a class="engine__link" href="/riemannx.html">Inspect RiemannX</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="section" aria-labelledby="results-title">
+      <div class="container card">
+        <h2 id="results-title">Results</h2>
+        <p class="muted">
+          Result pages should be read as run summaries. A table can show what a specific configuration found; it does not certify a conjecture.
+        </p>
+        <ul class="bullets bullets--tight">
+          <li>Near-miss scores rank candidates inside a strategy.</li>
+          <li>Browser demos are small inspectors, capped for responsiveness.</li>
+          <li>Unsupported benchmark claims are intentionally avoided.</li>
+        </ul>
+        <div class="hero__actions" role="group" aria-label="Result links">
+          <a class="btn btn--primary btn--pill" href="/results.html">View Results</a>
+          <a class="btn btn--pill" href="/roadmap.html">Roadmap</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section" aria-labelledby="faq-title">
+      <div class="container">
+        <h2 id="faq-title">FAQ</h2>
+
+        <details class="card faq__item">
+          <summary class="faq__q">Does ProofX prove conjectures?</summary>
+          <p>No. ProofX runs bounded searches and records the results. A negative run means no counterexample was found under that configuration.</p>
+        </details>
+
+        <details class="card faq__item">
+          <summary class="faq__q">What should I trust?</summary>
+          <p>Trust the command, code revision, dependency environment, and ledger more than any summary sentence. Summaries are only views over run data.</p>
+        </details>
+
+        <details class="card faq__item">
+          <summary class="faq__q">Where does Lean 4 fit?</summary>
+          <p>The root ProofX repository now includes a small Lean 4 package for bounded certificates. Germinal remains a separate vendored Lean 4 project.</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="founder" class="section" aria-labelledby="founder-title">
+      <div class="container card card--row founder">
+        <div class="founder__bio">
+          <p class="kicker">Founder</p>
+          <h2 id="founder-title">Mohammed Alkindi</h2>
+          <p class="muted">
+            Building ProofX as a small, open research codebase for reproducible mathematical experiments and careful public reporting.
+          </p>
+          <ul class="bullets">
+            <li>Maintains directed-search engines for Collatz and Goldbach experiments.</li>
+            <li>Focuses on ledgers, replay, and explicit limitations.</li>
+            <li>Welcomes review from researchers and engineers interested in computational number theory.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section" aria-labelledby="contact-title">
+      <div class="container card card--row">
+        <div>
+          <h2 id="contact-title">Contact</h2>
+          <p class="muted">For research review, collaboration, or code questions.</p>
+        </div>
+        <div class="contact__actions" role="group" aria-label="Contact actions">
+          <a class="btn btn--primary btn--pill" href="mailto:alkindi.proofx@gmail.com?subject=ProofX%20Inquiry">Email</a>
+          <a class="btn btn--pill" href="https://www.linkedin.com/in/alkindi-network" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+    </section>

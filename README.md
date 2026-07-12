@@ -29,7 +29,7 @@ ProofX contains three kinds of material:
 | `codebase/` | Active Python research toolkit | Runs directed searches, computes features, writes ledgers, and exposes the CLI. |
 | `ProofX/` | Root Lean 4 certificate layer | Checks small bounded artifacts and status semantics. |
 | `docs/` | Maintainer and research documentation | Describes assumptions, algorithms, run semantics, and limitations. |
-| `public/` + `src/` | Static research site | Presents the project, demos, and result summaries without changing the engine behavior. |
+| `src/` | Static research site | Presents the project, demos, and result summaries without changing the engine behavior. |
 | `packages/germinal/` | Vendored sibling project | Separate Lean 4 conjecture-generation and proof-attempt system, synced by subtree. |
 
 `packages/germinal/` has its own README and operating rules. Keep ProofX-root
@@ -87,9 +87,7 @@ ProofX/
   lean-toolchain             Pinned Lean toolchain
   tests/                     Root pytest suite for ProofX codebase
   docs/                      Project documentation
-  public/                    Static site output
-  src/                       Static site source fragments, CSS, and scripts
-  assets/                    Site and paper assets
+  src/                       Static site: source subdirs + deploy output; served by Vercel
   packages/germinal/         Separate vendored Lean 4 project
 ```
 
@@ -185,7 +183,7 @@ python -m codebase.cli falsify \
     --output-json results/summary.json
 
 # 2. Inspect the ledger in the static viewer.
-open public/ledger-viewer.html
+open src/ledger-viewer.html
 
 # 3. Hand-label entries, then fit a calibrator.
 python -m codebase.cli calibrate fit \
@@ -215,6 +213,7 @@ ruff check .
 ruff format --check .
 mypy codebase
 lake build
+./scripts/build.sh
 ./scripts/validate-links.sh
 ```
 

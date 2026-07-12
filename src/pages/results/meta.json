@@ -1,0 +1,12 @@
+{
+  "title": "Run Results | ProofX",
+  "description": "ProofX result summaries, near-miss candidates, and reproducibility notes for bounded search runs.",
+  "canonical_path": "/results",
+  "og_title": "Run Results | ProofX",
+  "og_description": "Near-miss candidate summaries and reproducibility notes for bounded ProofX search runs.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": "results",
+  "footer_active": null,
+  "body_class": null
+}

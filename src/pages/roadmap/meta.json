@@ -1,0 +1,12 @@
+{
+  "title": "Roadmap | ProofX",
+  "description": "Concrete ProofX roadmap items for documentation, reproducibility, tests, and bounded search tooling.",
+  "canonical_path": "/roadmap",
+  "og_title": "Roadmap | ProofX",
+  "og_description": "Concrete roadmap items for documentation, reproducibility, tests, and bounded search tooling.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": null,
+  "footer_active": "roadmap",
+  "body_class": null
+}

@@ -1,0 +1,12 @@
+{
+  "title": "CollatzX | ProofX",
+  "description": "CollatzX computes bounded Collatz trajectories, stopping-time features, and near-miss rankings for reproducible search runs.",
+  "canonical_path": "/collatzx",
+  "og_title": "CollatzX | ProofX",
+  "og_description": "Bounded Collatz trajectory analysis and near-miss search ledgers.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": "collatzx",
+  "footer_active": null,
+  "body_class": null
+}

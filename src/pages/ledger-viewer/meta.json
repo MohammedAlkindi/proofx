@@ -1,0 +1,12 @@
+{
+  "title": "Ledger Viewer | ProofX",
+  "description": "Load a ProofX JSONL search ledger to sort, filter, inspect feature vectors, and export CSV in the browser.",
+  "canonical_path": "/ledger-viewer",
+  "og_title": "Ledger Viewer | ProofX",
+  "og_description": "Sort, filter, and inspect ProofX JSONL search ledgers directly in the browser.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": null,
+  "footer_active": null,
+  "body_class": null
+}

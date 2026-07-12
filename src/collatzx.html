@@ -1,0 +1,194 @@
+<!-- GENERATED FILE — edit src/pages/<slug>/ or src/components/, then run scripts/build.sh. Do not hand-edit this file. -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0a14" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
+  <meta name="description" content="CollatzX computes bounded Collatz trajectories, stopping-time features, and near-miss rankings for reproducible search runs." />
+  <link rel="canonical" href="https://www.proofx.org/collatzx" />
+
+  <title>CollatzX | ProofX</title>
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="stylesheet" href="/styles.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </noscript>
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CollatzX | ProofX" />
+  <meta property="og:description" content="Bounded Collatz trajectory analysis and near-miss search ledgers." />
+  <meta property="og:url" content="https://www.proofx.org/collatzx" />
+  <meta property="og:site_name" content="ProofX" />
+  <meta property="og:image" content="https://www.proofx.org/assets/og.png" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CollatzX | ProofX" />
+  <meta name="twitter:description" content="Bounded Collatz trajectory analysis and near-miss search ledgers." />
+  <meta name="twitter:image" content="https://www.proofx.org/assets/og.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "ProofX",
+    "url": "https://www.proofx.org/",
+    "logo": "https://www.proofx.org/assets/icons/favicon-32x32.png",
+    "sameAs": [
+      "https://github.com/MohammedAlkindi/ProofX"
+    ]
+  }
+  </script>
+  <script src="/monitoring.js"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
+
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <a id="top"></a>
+
+  <header class="nav" role="banner">
+    <div class="container nav__inner">
+      <a class="brand" href="/index.html" aria-label="ProofX home">
+        <img class="brand__mark" src="/assets/icons/favicon-32x32.png" alt="ProofX logo" width="36" height="36">
+        <span class="brand__text">ProofX</span>
+      </a>
+
+      <button class="nav__toggle" aria-expanded="false" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav__links" role="navigation" aria-label="Primary">
+        <a href="/index.html">Home</a>
+        <a href="/collatzx.html" aria-current="page">CollatzX</a>
+        <a href="/goldbachx.html">GoldbachX</a>
+        <a href="/riemannx.html">RiemannX</a>
+        <a href="/results.html">Results</a>
+        <a href="/research.html">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section hero">
+      <div class="container hero__wrap">
+        <h1 class="hero__h1">CollatzX</h1>
+        <p class="hero__sub">
+          CollatzX builds and inspects finite Collatz trajectories. It records stopping times, peak values, parity ratios, and other features used by ProofX's directed search.
+        </p>
+        <div class="hero__actions btn-row">
+          <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/codebase/CollatzX" target="_blank" rel="noopener">Source</a>
+          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/collatz.md" target="_blank" rel="noopener">Method Notes</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="section" aria-labelledby="collatz-demo-title">
+      <div class="container card">
+        <h2 id="collatz-demo-title">Browser Tracer</h2>
+        <p class="muted">Enter a positive integer to trace its sequence in the browser. This demo is capped for responsiveness and is not the full Python engine.</p>
+        <div class="demo-controls">
+          <input id="collatz-input" type="number" min="1" max="10000000" value="27"
+                 placeholder="Positive integer"
+                 class="demo-input"
+                 aria-label="Starting value for Collatz sequence">
+          <button id="collatz-run" class="btn btn--primary btn--pill">Trace</button>
+        </div>
+        <div id="collatz-result" class="demo-output" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+      <div class="container">
+        <h2 id="capabilities-title">What It Computes</h2>
+        <div class="grid grid--3">
+          <article class="card">
+            <h3>Trajectories</h3>
+            <p>Builds finite sequences from a starting value and records convergence, stopping time, and peak value.</p>
+          </article>
+          <article class="card">
+            <h3>Features</h3>
+            <p>Extracts parity, growth, entropy, and trend features used to rank candidates inside a run.</p>
+          </article>
+          <article class="card">
+            <h3>Ledgers</h3>
+            <p>Writes candidate-level records through the shared FalsificationEngine for later inspection and replay.</p>
+          </article>
+        </div>
+        <p class="muted" style="margin-top:1rem;">A completed trajectory is evidence about that input only. It is not a proof of the Collatz conjecture.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__inner">
+      <span class="muted">&copy; 2025&ndash;2026 ProofX</span>
+      <nav class="footer__links" aria-label="Footer">
+        <a href="/research.html">Research</a>
+        <a href="/results.html">Results</a>
+        <a href="/roadmap.html">Roadmap</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/contribute.html">Contribute</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
+      <a class="to-top" href="#top" aria-label="Back to top">&uarr;</a>
+    </div>
+  </footer>
+
+  <script>
+(function () {
+  var inp = document.getElementById('collatz-input');
+  var btn = document.getElementById('collatz-run');
+  var out = document.getElementById('collatz-result');
+
+  function trace(n) {
+    var seq = [n], cur = n, maxVal = n, steps = 0;
+    while (cur !== 1 && steps < 100000) {
+      cur = cur % 2 === 0 ? cur / 2 : 3 * cur + 1;
+      seq.push(cur);
+      if (cur > maxVal) maxVal = cur;
+      steps++;
+    }
+    return { seq: seq, steps: steps, maxVal: maxVal, converged: cur === 1 };
+  }
+
+  function run() {
+    var n = parseInt(inp.value, 10);
+    if (!n || n < 1 || !Number.isFinite(n)) {
+      out.textContent = 'Please enter a positive integer.';
+      out.style.display = 'block';
+      return;
+    }
+    var r = trace(n);
+    var preview = r.seq.length <= 20
+      ? r.seq.join(' -> ')
+      : r.seq.slice(0, 10).join(' -> ') + ' ... ' + r.seq.slice(-5).join(' -> ');
+    out.textContent = [
+      'Starting value : ' + n.toLocaleString(),
+      'Stopping time  : ' + r.steps + ' steps',
+      'Peak value     : ' + r.maxVal.toLocaleString(),
+      'Converged to 1 : ' + (r.converged ? 'yes' : 'limit reached (>100k steps)'),
+      '',
+      'Sequence (' + r.seq.length + ' values):',
+      preview
+    ].join('\n');
+    out.style.display = 'block';
+  }
+
+  btn.addEventListener('click', run);
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+}());
+  </script>
+  <script src="/nav.js"></script>
+</body>
+</html>

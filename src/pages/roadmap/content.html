@@ -1,0 +1,50 @@
+    <section class="section hero">
+      <div class="container hero__wrap">
+        <h1 class="hero__h1" data-no-wrap>Roadmap</h1>
+        <p class="hero__sub">
+          Near-term work is about making the repository easier to run, audit, and review. The goal is not bigger claims; it is clearer evidence.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="roadmap">
+      <div class="container">
+        <div class="grid grid--2">
+          <article class="card">
+            <h3>Make Checks Green</h3>
+            <ul class="bullets bullets--tight">
+              <li>Fix current pytest failures.</li>
+              <li>Bring coverage back to the configured gate or revise scope explicitly.</li>
+              <li>Reduce ruff and mypy noise in small, reviewable batches.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Improve Reproducibility</h3>
+            <ul class="bullets bullets--tight">
+              <li>Publish sample ledgers generated from documented commands.</li>
+              <li>Record commit SHA and dependency context in result summaries.</li>
+              <li>Keep browser demos visibly separate from engine runs.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Tighten Engine Docs</h3>
+            <ul class="bullets bullets--tight">
+              <li>Document input ranges and failure modes for each engine.</li>
+              <li>Keep score derivations aligned with code.</li>
+              <li>Add examples that show both successful and inconclusive runs.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Formal Boundary</h3>
+            <ul class="bullets bullets--tight">
+              <li>Maintain the root Lean package for bounded certificates.</li>
+              <li>Keep toolchains pinned before publishing formal artifacts.</li>
+              <li>Reject accepted proof artifacts that contain `sorry`.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>

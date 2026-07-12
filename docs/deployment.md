@@ -1,23 +1,39 @@
 # Deployment
 
-ProofX's public site is static. The deployed artifact is the `public/`
-directory. There is no server-rendered application in the root project.
+ProofX's public site is static. The deployed artifact lives under `src/` at the
+repository root: generated HTML pages, `nav.js`, and copied static assets sit
+alongside the site source subdirectories (`components/`, `pages/`, `scripts/`,
+`static/`). There is no server-rendered application in the root project, and
+Vercel has no configured build command — it serves the committed deploy files
+under `src/` as-is.
+
+Site sources live in `src/components/`, `src/pages/<slug>/`, `src/scripts/`,
+and `src/static/`. `scripts/build_site.py` (via `scripts/build.sh` /
+`scripts/build.ps1`) assembles those inputs into the deployable files at the
+`src/` root.
+
+Edit site sources under `src/components/`, `src/pages/`, `src/scripts/`, or
+`src/static/`, then rebuild. Do not hand-edit generated files such as
+`src/index.html` or `src/nav.js`; the next build overwrites them.
 
 ## Files In Scope
 
 | Path | Role |
 | --- | --- |
-| `public/*.html` | Deployed pages. |
-| `public/styles.css` | Shared deployed stylesheet. Preserve unless the task is visual design. |
-| `public/monitoring.js` | Client-side monitoring hook. |
-| `public/assets/` | Icons, PDFs, and other static assets. |
+| `src/components/_head.html`, `_nav.html`, `_footer.html` | Shared partials substituted into every generated page. |
+| `src/pages/<slug>/meta.json` + `content.html` [+ `script.js`] | Per-page source; `slug` matches the output filename. |
+| `src/scripts/nav.js` | Source for generated navigation behavior (`src/nav.js`). |
+| `src/static/` | Hand-authored static files copied to the `src/` deploy root. |
+| `src/*.html`, `src/nav.js`, `src/assets/`, etc. | Generated deploy artifact committed for Vercel. |
 | `vercel.json` | Static routing, redirects, and security headers. |
 
 ## Before Deploying
 
-Run the static checks that are available in the local environment:
+Rebuild the site from source, then run the static checks that are available
+in the local environment:
 
 ```bash
+./scripts/build.sh
 ./scripts/validate-links.sh
 ```
 

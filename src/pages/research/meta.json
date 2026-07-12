@@ -1,0 +1,12 @@
+{
+  "title": "Research | ProofX",
+  "description": "ProofX research notes, method documentation, and reproducibility standards for bounded number-theory experiments.",
+  "canonical_path": "/research",
+  "og_title": "Research | ProofX",
+  "og_description": "Method documentation and reproducibility standards for ProofX experiments.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": "research",
+  "footer_active": null,
+  "body_class": null
+}

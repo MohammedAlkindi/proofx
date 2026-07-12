@@ -1,0 +1,48 @@
+    <section class="section hero">
+      <div class="container hero__wrap">
+        <h1 class="hero__h1">GoldbachX</h1>
+        <p class="hero__sub">
+          GoldbachX counts prime-pair decompositions for even numbers and helps rank sparse candidate families for bounded counterexample search.
+        </p>
+        <div class="hero__actions btn-row">
+          <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/codebase/GoldbachX" target="_blank" rel="noopener">Source</a>
+          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/goldbach.md" target="_blank" rel="noopener">Method Notes</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="section" aria-labelledby="goldbach-demo-title">
+      <div class="container card">
+        <h2 id="goldbach-demo-title">Browser Decomposer</h2>
+        <p class="muted">Enter an even number >= 4, capped at 100,000, to list prime-pair decompositions in your browser.</p>
+        <div class="demo-controls">
+          <input id="goldbach-input" type="number" min="4" max="100000" step="2" value="28"
+                 placeholder="Even integer >= 4"
+                 class="demo-input"
+                 aria-label="Even number for Goldbach decomposition">
+          <button id="goldbach-run" class="btn btn--primary btn--pill">Decompose</button>
+        </div>
+        <div id="goldbach-result" class="demo-output" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+      <div class="container">
+        <h2 id="capabilities-title">What It Computes</h2>
+        <div class="grid grid--3">
+          <article class="card">
+            <h3>Partitions</h3>
+            <p>Counts prime pairs `(p, q)` for even inputs where `p + q = n` and `p <= q`.</p>
+          </article>
+          <article class="card">
+            <h3>Deficits</h3>
+            <p>Compares observed partition counts with Hardy-Littlewood-style predictions for ranking.</p>
+          </article>
+          <article class="card">
+            <h3>Families</h3>
+            <p>Explores sparse residue and factor families as candidates for closer inspection.</p>
+          </article>
+        </div>
+        <p class="muted" style="margin-top:1rem;">A decomposition for one input is evidence about that input only. It is not a proof of Goldbach's conjecture.</p>
+      </div>
+    </section>

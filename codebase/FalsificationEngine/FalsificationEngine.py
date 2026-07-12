@@ -90,6 +90,18 @@ _COLLATZ_ANCHORS: list[int] = [27, 703, 871, 6171, 77031, 837799, 8400511, 63728
 # Sieve limit for Goldbach partition computation.
 _SIEVE_LIMIT: int = 200_000
 
+
+def json_default(value: Any) -> Any:
+    """`json.dumps(default=...)` hook: unwrap numpy scalars to native Python types.
+
+    Feature vectors and scores flow through numpy, so ledger entries routinely
+    hold np.int64/np.float64 rather than int/float; the stdlib json encoder
+    rejects those outright.
+    """
+    if isinstance(value, np.generic):
+        return value.item()
+    raise TypeError(f"Object of type {value.__class__.__name__} is not JSON serializable")
+
 # ── Shared data structures ────────────────────────────────────────────────────
 
 
@@ -144,7 +156,7 @@ class FalsificationLedger:
         return len(self._entries)
 
     def to_jsonl(self) -> str:
-        return "\n".join(json.dumps(e.to_dict()) for e in self._entries)
+        return "\n".join(json.dumps(e.to_dict(), default=json_default) for e in self._entries)
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)

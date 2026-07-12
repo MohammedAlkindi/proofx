@@ -6,7 +6,7 @@ Context for Claude Code working in this repo. Read this before touching anything
 
 ProofX is three things sharing one repo:
 
-1. A static research site (`public/` + `src/`) deployed on Vercel, presenting conjecture-engine findings.
+1. A static research site (`src/`) deployed on Vercel, presenting conjecture-engine findings.
 2. A Python research toolkit (`codebase/`) of directed-search falsification engines for Collatz, Goldbach, and Riemann-hypothesis-adjacent experiments.
 3. A small root Lean 4 package (`ProofX.lean`, `lakefile.lean`, `ProofX/Certificates.lean`, `ProofX/Status.lean`) that kernel-checks bounded, finite certificates.
 
@@ -24,8 +24,7 @@ ProofX is three things sharing one repo:
 - `ProofX/` - root Lean 4 modules (`Certificates.lean`, `Status.lean`). Small and intentionally narrow; see `docs/lean4.md` before adding anything here.
 - `tests/` - pytest suite for the root Python toolkit.
 - `docs/` - architecture, deployment, content, changelog, Lean, MVP, and engine writeups.
-- `public/` + `src/` - static site output and source fragments. `scripts/build.sh` is currently a no-op; `scripts/validate-links.sh` checks links.
-- `assets/` - tracked images/PDFs referenced by the public site.
+- `src/` - static site. `src/components/` (shared head/nav/footer partials) and `src/pages/<slug>/` (per-page `meta.json` + `content.html` + optional `script.js`) are the source inputs; `scripts/build.sh` (`scripts/build_site.py`) generates deployable `src/*.html`, `src/nav.js`, and copies from `src/static/` into the `src/` root — never hand-edit generated files such as `src/index.html`; edit the matching source under `src/pages/`, `src/components/`, or `src/scripts/` and rebuild. Error pages, `styles.css`, `monitoring.js`, and `src/assets/` are authored under `src/static/` and copied on build. `scripts/validate-links.sh` checks links.
 - `packages/germinal/` - isolated old Germinal project. Do not re-expand it into the repository root.
 - `findings/`, `legacy/` - gitignored local business/pitch material and historical archives. Do not re-track, move, or delete their contents without being asked.
 
@@ -46,6 +45,7 @@ ruff format --check .
 mypy codebase
 lake build
 python -m codebase.cli falsify --budget 200 --seed 42 --target both
+./scripts/build.sh
 ./scripts/validate-links.sh
 ```
 

@@ -1,0 +1,12 @@
+{
+  "title": "GoldbachX | ProofX",
+  "description": "GoldbachX counts prime-pair decompositions and ranks sparse even-number candidates for bounded search runs.",
+  "canonical_path": "/goldbachx",
+  "og_title": "GoldbachX | ProofX",
+  "og_description": "Prime-pair decomposition, partition counts, and bounded Goldbach search ledgers.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": "goldbachx",
+  "footer_active": null,
+  "body_class": null
+}
