@@ -95,6 +95,12 @@ ProofX/
 
 See [docs/architecture.md](docs/architecture.md) for the fuller maintainer map.
 
+Local caches, virtual environments, generated run outputs, and old root-level
+scratch folders are intentionally ignored. On Windows, run
+`scripts/cleanup.ps1 -Deep`; on Unix shells, run `./scripts/cleanup.sh --deep`.
+Do not move the old Germinal tree back to the root: it belongs under
+`packages/germinal/`.
+
 ## Lean 4 Boundary
 
 The root Lean package checks small bounded certificates. Current examples cover
@@ -227,6 +233,7 @@ If a check is failing, note that explicitly in any published result or release.
 | [docs/engines/goldbach.md](docs/engines/goldbach.md) | GoldbachX sieve, partition, and deficit logic. |
 | [docs/deployment.md](docs/deployment.md) | Static site deployment and validation notes. |
 | [docs/content-strategy.md](docs/content-strategy.md) | Tone and site-copy guidance. |
+| [docs/mvp.md](docs/mvp.md) | Minimum viable tooling bar (CI, packaging, local checks) and current gap status. |
 
 ## License
 

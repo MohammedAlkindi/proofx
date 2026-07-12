@@ -24,6 +24,9 @@ Agent operating rules for this repo. Commit style and branch naming follow `~/Gi
 
 ## Before calling work done
 
+- Install/check the dev toolchain with `pip install -r requirements.txt -r requirements-dev.txt` when a clean environment is needed.
 - Run `pytest`, `ruff check .`, `ruff format --check .`, and `mypy codebase` — all four, not just tests. Never commit without them passing.
 - If you touched `docs/engines/*.md` scoring derivations, verify the corresponding code still asserts weights sum to 1.0.
 - If you touched the static site (`public/`, `src/`), run `./scripts/validate-links.sh`.
+- If you touched `ProofX/` (root Lean layer), run `lake build` and grep for `sorry|admit|axiom|unsafe` per `docs/lean4.md` before considering it done. If `lake`/`elan` are not on PATH locally, say so explicitly and rely on CI (`.github/workflows/lean.yml`) instead of claiming it builds.
+- Use `scripts/cleanup.ps1 -Deep` on Windows or `./scripts/cleanup.sh --deep` on Unix shells to remove local caches, coverage outputs, and old root-level scratch folders.

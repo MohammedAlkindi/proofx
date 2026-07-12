@@ -3,6 +3,11 @@ Thumbs.db
 node_modules/
 *.log
 
+# Secrets
+.env
+.env.*
+!.env.example
+
 # Claude Code project settings (local only)
 .claude/
 
@@ -16,15 +21,36 @@ __pycache__/
 
 # Test / coverage artifacts
 .coverage
+.coverage.*
 coverage.xml
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
 htmlcov/
 
 # Cache / log directories
 .cache/
 .logs/
+.uv-cache/
 .lake/
+
+# Build outputs
+build/
+dist/
+
+# Local run outputs
+/results/
+/reports/
+*.pkl
 
 # Business/pitch materials and legacy archives (not code)
 /findings/
 /legacy/
+
+# Generated frontend artifacts
+/frontend/
+packages/germinal/frontend/.next/
+packages/germinal/frontend/tsconfig.tsbuildinfo

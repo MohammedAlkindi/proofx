@@ -8,23 +8,27 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - `tests/` directory with unit tests for CollatzX, GoldbachX, and ReimannX engines
-- `pyproject.toml` with pytest, mypy, and ruff configuration
+- `pyproject.toml` with packaging metadata plus pytest, mypy, and ruff configuration
 - `.pre-commit-config.yaml` with ruff, mypy, and standard file hygiene hooks
-- `.github/ci.yml` — full CI pipeline: lint, type-check, test (Python 3.10/3.11), security audit
-- `.github/dependabot.yml` — automated weekly dependency updates for pip and GitHub Actions
-- `public/monitoring.js` — Sentry frontend error tracking (opt-in via `window.__SENTRY_DSN__`)
+- `.github/workflows/ci.yml` with lint, format, type-check, and test jobs for Python 3.13
+- `.github/workflows/lean.yml` with a Lake build for the root Lean package
+- `.github/dependabot.yml` with automated weekly dependency updates for pip and GitHub Actions
+- `requirements-dev.txt` for pytest, coverage, ruff, and mypy
+- `scripts/cleanup.ps1` and expanded `scripts/cleanup.sh` for local cache and scratch-folder cleanup
+- `packages/README.md` documenting Germinal as an isolated vendored package
+- `public/monitoring.js` for frontend error tracking (opt-in via `window.__SENTRY_DSN__`)
 - Sentry `<script>` tag injected into all main public pages
-- Pinned versions for all 19 Python dependencies in `requirements.txt`
+- Pinned versions for all runtime Python dependencies in `requirements.txt`
 
 ---
 
-## [0.3.0] — 2026-04-18
+## [0.3.0] - 2026-04-18
 
 ### Added
-- User-friendly auth/error pages (`auth-error.html`, HTTP 400–501)
+- User-friendly auth/error pages (`auth-error.html`, HTTP 400-501)
 - Consolidated markdown documentation under `/docs`
 
-## [0.2.0] — 2025-12-01
+## [0.2.0] - 2025-12-01
 
 ### Added
 - CollatzX engine: advanced analytics, bifurcation analysis, boundary detection, rare event detection
@@ -34,7 +38,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Migrated from single-file scripts to modular engine architecture
 
-## [0.1.0] — 2025-09-01
+## [0.1.0] - 2025-09-01
 
 ### Added
 - Initial ProofX static site deployed on Vercel

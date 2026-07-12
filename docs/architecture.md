@@ -17,9 +17,19 @@ operating rules.
 | `src/` | Static site source fragments | Component, script, and CSS authoring files used by the site workflow. |
 | `assets/` | Tracked media | Images and PDFs referenced by the site. |
 | `packages/germinal/` | Vendored sibling project | Separate Lean 4 conjecture-generation and proof-attempt system. |
+| `findings/`, `legacy/` | Ignored local archives | Historical/pitch material; do not re-track or reorganize during code cleanup. |
 
 ProofX root work should not casually edit Germinal. If a change needs both
 projects, keep the diffs and commit messages separate.
+
+## Root Hygiene
+
+The root should stay readable:
+
+- Keep Lean entry points at the root (`ProofX.lean`, `lakefile.lean`, `lean-toolchain`) and Lean modules under `ProofX/`.
+- Keep the old Germinal project under `packages/germinal/`; do not restore its old root-level `api/`, `frontend/`, `src/`, or `tests/` layout.
+- Keep local caches, virtual environments, coverage outputs, and run ledgers out of git. Use `scripts/cleanup.ps1 -Deep` on Windows or `./scripts/cleanup.sh --deep` on Unix shells when the Explorer tree gets noisy.
+- Keep `public/` as deployable static output and `src/` as site source fragments unless a dedicated site build migration is planned.
 
 ## Data Flow
 

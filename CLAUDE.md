@@ -4,49 +4,64 @@ Context for Claude Code working in this repo. Read this before touching anything
 
 ## What this is
 
-ProofX is two things sharing one repo:
+ProofX is three things sharing one repo:
 
 1. A static research site (`public/` + `src/`) deployed on Vercel, presenting conjecture-engine findings.
-2. A Python research toolkit (`codebase/`) of directed-search "falsification engines" that hunt for counterexamples to the Collatz, Goldbach, and Riemann-hypothesis-adjacent conjectures, rather than proving anything.
+2. A Python research toolkit (`codebase/`) of directed-search falsification engines for Collatz, Goldbach, and Riemann-hypothesis-adjacent experiments.
+3. A small root Lean 4 package (`ProofX.lean`, `lakefile.lean`, `ProofX/Certificates.lean`, `ProofX/Status.lean`) that kernel-checks bounded, finite certificates.
 
-`packages/germinal/` is a **separate project** (a sibling HackMIT effort — Claude-driven Lean 4 conjecture generation/proof) pulled in via `git subtree` from its own remote (`germinal-remote` → github.com/MohammedAlkindi/Germinal). It has its own `CLAUDE.md`; that file governs inside `packages/germinal/`, not this one.
+`packages/germinal/` is the old Germinal project preserved as a separate vendored package. It has its own `CLAUDE.md`; that file governs inside `packages/germinal/`, not this one. Germinal is not the same thing as the root `ProofX/` Lean package, so do not mix their toolchains, Lake state, or review boundaries.
 
 ## Architecture
 
-- `codebase/` — the research engines, each a self-contained package with its own `RESEARCH_LOG.md`:
-  - `FalsificationEngine/` — `FalsificationEngine.py` (orchestrator), `RiemannFalsifier.py`, `calibration.py`. Entry point for directed counterexample search.
-  - `CollatzX/` — Analytics, Bifurcation, Boundary, PrimeGraph, Processing, RareEvent.
-  - `GoldbachX/` — AlgebraicExtensions, GoldbachReasoner, MetaVariant, PartitionEnumerator, SequenceGenerator, SieveEngine.
-  - `ReimannX/` — ContourTruth, KeiperLi, PrimeEchos, TuringThreshold, ZeroProperties, ZetaMirror.
-  - `CrossEngineAnalysis/` — correlates near-miss candidates across engines.
-  - `cli.py` — unified CLI (`python -m codebase.cli <falsify|calibrate|correlate|riemann|collatz|goldbach>`).
-- `tests/` — pytest suite, one dir per engine (`test_falsification_engine/`, `test_collatzx/`, etc.).
-- `docs/` — `architecture.md`, `deployment.md`, `content-strategy.md`, `CHANGELOG.md`, and `engines/*.md` (design writeups per engine — read `docs/engines/falsification.md` before changing scoring logic, it derives every weight used).
-- `public/` + `src/` — the static site. `src/components/*.html` are shared partials, `src/scripts/*.js` build the ledger viewer and nav, `src/styles/` is plain CSS. `scripts/build.sh` is currently a no-op (static site, no build step); `scripts/validate-links.sh` checks links; `scripts/cleanup.sh` removes OS cruft.
-- `assets/` — images/PDFs referenced by the public site (tracked, unlike `findings/`).
-- `findings/`, `legacy/` — gitignored. Business/pitch material and a large historical archive; never add these back to tracking.
+- `codebase/` - the Python research engines, each a self-contained package with its own `RESEARCH_LOG.md`:
+  - `FalsificationEngine/` - orchestrator, Riemann falsifier, calibration, ledgers, and directed counterexample search.
+  - `CollatzX/` - analytics, bifurcation, boundary, graph, processing, and rare-event experiments.
+  - `GoldbachX/` - algebraic extensions, symbolic reasoning, variants, partition enumeration, sequence generation, and sieves.
+  - `ReimannX/` - contour, Keiper-Li, prime echo, threshold, zero-property, and zeta-mirror experiments. The path is currently misspelled; keep imports stable unless a task explicitly migrates it.
+  - `CrossEngineAnalysis/` - correlates near-miss candidates across engines.
+  - `cli.py` - unified CLI (`python -m codebase.cli <falsify|calibrate|correlate|riemann|collatz|goldbach>`).
+- `ProofX/` - root Lean 4 modules (`Certificates.lean`, `Status.lean`). Small and intentionally narrow; see `docs/lean4.md` before adding anything here.
+- `tests/` - pytest suite for the root Python toolkit.
+- `docs/` - architecture, deployment, content, changelog, Lean, MVP, and engine writeups.
+- `public/` + `src/` - static site output and source fragments. `scripts/build.sh` is currently a no-op; `scripts/validate-links.sh` checks links.
+- `assets/` - tracked images/PDFs referenced by the public site.
+- `packages/germinal/` - isolated old Germinal project. Do not re-expand it into the repository root.
+- `findings/`, `legacy/` - gitignored local business/pitch material and historical archives. Do not re-track, move, or delete their contents without being asked.
 
 ## Stack
 
-- Python 3.10, pinned deps in `requirements.txt` (numpy, scipy, sympy, pandas, scikit-learn, statsmodels, torch, networkx, shap, plotly).
-- Static site: plain HTML/CSS/JS, deployed on Vercel (`vercel.json` controls rewrites and security headers — don't loosen `X-Frame-Options`/CSP-adjacent headers without a reason).
+- Python 3.13, pinned runtime dependencies in `requirements.txt`, and dev tools in `requirements-dev.txt`.
+- Package metadata in `pyproject.toml`; keep its dependency list synchronized with `requirements.txt`.
+- Lean 4, pinned by `lean-toolchain` (`leanprover/lean4:v4.31.0`), built with `lake build`.
+- Static site: plain HTML/CSS/JS, deployed on Vercel via `vercel.json`.
 
 ## Commands
 
 ```bash
-pytest                                    # full suite, coverage gate enforced (see below)
-ruff check .                              # lint
-ruff format --check .                     # format check
-mypy codebase                             # type check
+python -m pip install -r requirements.txt -r requirements-dev.txt
+pytest
+ruff check .
+ruff format --check .
+mypy codebase
+lake build
 python -m codebase.cli falsify --budget 200 --seed 42 --target both
-./scripts/validate-links.sh               # static site link check
+./scripts/validate-links.sh
 ```
+
+On Windows, use `scripts/cleanup.ps1 -Deep` to remove local caches, coverage outputs, `.venv`, and any old root-level `frontend/` scratch folder. On Unix shells, use `./scripts/cleanup.sh --deep`.
 
 ## Hard rules
 
-- **Never let a falsification engine's silence become a claim of truth.** A conjecture that survives a search run is "unrefuted at this budget," not "verified" or "likely true." This applies to CLI output, ledger labels, docs, and anything rendered on the public site — mirror the same honesty standard `packages/germinal/CLAUDE.md` enforces for its own pipeline.
-- Coverage is gated at 60% (`pyproject.toml`, `--cov-fail-under=60`). New engine code ships with tests under the matching `tests/test_*` dir — don't drop the gate to get a merge through.
-- `FalsificationEngine`'s feature weights (Collatz risk score, Goldbach deficit score) are asserted to sum to 1.0 at class load and are derived in `docs/engines/falsification.md`. If you change a weight, update that doc's derivation, not just the code.
-- Reproducibility: all engine randomness flows through a single seeded `np.random.Generator` with deterministically derived child seeds. Don't introduce unseeded randomness into a falsifier.
-- Don't reorganize or reformat anything under `packages/germinal/` as a side effect of a ProofX-root change — it's synced against a separate upstream via `git subtree` and unrelated diffs there make that sync painful.
-- No hardcoded secrets. This repo currently has no server-side component of its own (the static site has none, Germinal's env config lives in `packages/germinal/`).
+- Never let a falsification engine's silence become a claim of truth. A conjecture that survives a search run is "unrefuted at this budget," not "verified," "validated," "likely true," or "proved."
+- Coverage is gated at 60% (`pyproject.toml`, `--cov-fail-under=60`). New engine code ships with tests under the matching `tests/test_*` directory.
+- `FalsificationEngine` feature weights are asserted to sum to 1.0 and are derived in `docs/engines/falsification.md`. If you change a weight, update that doc's derivation too.
+- Reproducibility: all engine randomness flows through a seeded `np.random.Generator` with deterministically derived child seeds. Do not introduce unseeded randomness into a falsifier.
+- Do not reorganize or reformat anything under `packages/germinal/` as a side effect of a ProofX-root change.
+- No hardcoded secrets. `.env` files are ignored; `.env.example` files are allowed.
+- Root Lean artifacts follow the same "unrefuted != proved" discipline as the Python side (`docs/lean4.md`): no accepted proof may contain `sorry`, `admit`, an unsound `axiom`, or `unsafe` code added to bypass an obligation.
+
+## Known gaps
+
+- The rationale for the current coverage, mypy, and ruff exclusions on older engine submodules is not fully documented. Treat the exclusions as cleanup debt, not as a pattern to expand.
+- The Lean certificate layer contains hand-written examples only. There is not yet an exporter from `FalsificationEngine` JSONL ledgers to Lean-checkable artifacts.
