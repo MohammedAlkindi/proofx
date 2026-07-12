@@ -6,31 +6,31 @@ import argparse
 import hashlib
 import json
 import math
-import os
 import time
 from pathlib import Path
-from typing import Callable, Optional, Tuple, Dict, Any, List
+from typing import Any
 
 # Constants
 CACHE_DIR = Path("./.cache")
 CACHE_DIR.mkdir(exist_ok=True, parents=True)
-GROUND_TRUTH_PRIMES = [
-    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71
-]
+GROUND_TRUTH_PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
 TELEMETRY_LOG = Path("./sieve_telemetry.jsonl")
 
-def _log_telemetry(event: str, data: Dict[str, Any]) -> None:
+
+def _log_telemetry(event: str, data: dict[str, Any]) -> None:
     """Log telemetry data to JSONL file."""
     record = {"event": event, "timestamp": time.time(), **data}
     with TELEMETRY_LOG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
+
 
 def _validate_limit(limit: int) -> None:
     """Validate the limit parameter."""
     if limit < 2:
         raise ValueError(f"Limit must be ≥ 2, got {limit}")
 
-def _validate_primes(primes: List[int]) -> None:
+
+def _validate_primes(primes: list[int]) -> None:
     """Validate that primes list is strictly increasing and contains only primes."""
     if not primes:
         raise ValueError("Empty primes list")
@@ -39,7 +39,7 @@ def _validate_primes(primes: List[int]) -> None:
         raise ValueError("First prime must be 2")
 
     for i in range(len(primes) - 1):
-        if primes[i] >= primes[i+1]:
+        if primes[i] >= primes[i + 1]:
             raise ValueError(f"Primes not strictly increasing at index {i}")
 
     # Check against ground truth for small primes
@@ -47,13 +47,17 @@ def _validate_primes(primes: List[int]) -> None:
         if i >= len(GROUND_TRUTH_PRIMES):
             break
         if p != GROUND_TRUTH_PRIMES[i]:
-            raise ValueError(f"Prime mismatch at index {i}: expected {GROUND_TRUTH_PRIMES[i]}, got {p}")
+            raise ValueError(
+                f"Prime mismatch at index {i}: expected {GROUND_TRUTH_PRIMES[i]}, got {p}"
+            )
+
 
 def _get_cache_filename(algo: str, limit: int) -> Path:
     """Get the cache filename for given algorithm and limit."""
     return CACHE_DIR / f"primes_{algo}_{limit}.json"
 
-def _cache_is_valid(cache_file: Path, primes: Optional[List[int]] = None) -> bool:
+
+def _cache_is_valid(cache_file: Path, primes: list[int] | None = None) -> bool:
     """Check if cache file is valid."""
     if not cache_file.exists():
         return False
@@ -63,7 +67,9 @@ def _cache_is_valid(cache_file: Path, primes: Optional[List[int]] = None) -> boo
             data = json.load(f)
 
         cached_primes = data["primes"]
-        if not isinstance(cached_primes, list) or not all(isinstance(p, int) for p in cached_primes):
+        if not isinstance(cached_primes, list) or not all(
+            isinstance(p, int) for p in cached_primes
+        ):
             return False
 
         # Check metadata
@@ -83,32 +89,36 @@ def _cache_is_valid(cache_file: Path, primes: Optional[List[int]] = None) -> boo
     except (json.JSONDecodeError, KeyError, ValueError):
         return False
 
-def _write_cache(cache_file: Path, primes: List[int], limit: int) -> None:
+
+def _write_cache(cache_file: Path, primes: list[int], limit: int) -> None:
     """Write primes to cache file with validation metadata."""
     data = {
         "primes": primes,
         "count": len(primes),
         "limit": limit,
         "hash": hashlib.sha256(str(primes).encode()).hexdigest(),
-        "created": time.time()
+        "created": time.time(),
     }
 
     with cache_file.open("w", encoding="utf-8") as f:
         json.dump(data, f)
 
-    _log_telemetry("cache_write", {
-        "algo": cache_file.stem.split("_")[1],
-        "limit": limit,
-        "count": len(primes)
-    })
+    _log_telemetry(
+        "cache_write", {"algo": cache_file.stem.split("_")[1], "limit": limit, "count": len(primes)}
+    )
 
-def _read_cache(cache_file: Path) -> List[int]:
+
+def _read_cache(cache_file: Path) -> list[int]:
     """Read primes from cache file."""
     with cache_file.open("r", encoding="utf-8") as f:
         data = json.load(f)
-    return data["primes"]
+    primes = data["primes"]
+    if not isinstance(primes, list) or not all(isinstance(p, int) for p in primes):
+        raise ValueError("Invalid prime cache payload")
+    return primes
 
-def eratosthenes(limit: int) -> List[int]:
+
+def eratosthenes(limit: int) -> list[int]:
     """
     Sieve of Eratosthenes algorithm for finding primes up to limit.
 
@@ -127,13 +137,14 @@ def eratosthenes(limit: int) -> List[int]:
 
     for i in range(2, int(math.sqrt(limit)) + 1):
         if sieve[i]:
-            sieve[i*i::i] = b"\x00" * ((limit - i*i) // i + 1)
+            sieve[i * i :: i] = b"\x00" * ((limit - i * i) // i + 1)
 
     primes = [i for i, is_prime in enumerate(sieve) if is_prime]
     _validate_primes(primes)
     return primes
 
-def atkin(limit: int) -> List[int]:
+
+def atkin(limit: int) -> list[int]:
     """
     Sieve of Atkin algorithm for finding primes up to limit.
 
@@ -155,31 +166,32 @@ def atkin(limit: int) -> List[int]:
     sqrt_limit = int(math.sqrt(limit)) + 1
     for x in range(1, sqrt_limit):
         for y in range(1, sqrt_limit):
-            n = 4*x*x + y*y
+            n = 4 * x * x + y * y
             if n <= limit and n % 12 in (1, 5):
                 sieve[n] ^= 1
 
-            n = 3*x*x + y*y
+            n = 3 * x * x + y * y
             if n <= limit and n % 12 == 7:
                 sieve[n] ^= 1
 
-            n = 3*x*x - y*y
+            n = 3 * x * x - y * y
             if x > y and n <= limit and n % 12 == 11:
                 sieve[n] ^= 1
 
     # Mark all multiples of squares as non-prime
     for n in range(5, sqrt_limit):
         if sieve[n]:
-            sieve[n*n::n*n] = b"\x00" * ((limit - n*n) // (n*n) + 1)
+            sieve[n * n :: n * n] = b"\x00" * ((limit - n * n) // (n * n) + 1)
 
     # Compile results
     primes = [2, 3]
-    primes.extend(i for i in range(5, limit+1) if sieve[i])
+    primes.extend(i for i in range(5, limit + 1) if sieve[i])
 
     _validate_primes(primes)
     return primes
 
-def wheel(limit: int, *, wheel: Tuple[int, ...] = (2, 3, 5)) -> List[int]:
+
+def wheel(limit: int, *, wheel: tuple[int, ...] = (2, 3, 5)) -> list[int]:
     """
     Wheel sieve algorithm for finding primes up to limit.
 
@@ -220,14 +232,13 @@ def wheel(limit: int, *, wheel: Tuple[int, ...] = (2, 3, 5)) -> List[int]:
     for p in basis:
         if p > limit:
             continue
-        sieve[p*p::p] = b"\x00" * ((limit - p*p) // p + 1)
+        sieve[p * p :: p] = b"\x00" * ((limit - p * p) // p + 1)
 
     # Sieve remaining numbers using wheel pattern
     sqrt_limit = int(math.sqrt(limit)) + 1
     for n in range(basis[-1] + 1, sqrt_limit):
         if sieve[n]:
-            step = next(i for i in increments if (n + i) % circumference != 0)
-            sieve[n*n::n] = b"\x00" * ((limit - n*n) // n + 1)
+            sieve[n * n :: n] = b"\x00" * ((limit - n * n) // n + 1)
 
     # Compile results
     primes = [p for p in basis if p <= limit]
@@ -236,7 +247,8 @@ def wheel(limit: int, *, wheel: Tuple[int, ...] = (2, 3, 5)) -> List[int]:
     _validate_primes(primes)
     return primes
 
-def get_primes(limit: int, *, algo: str = "eratosthenes", use_cache: bool = True) -> List[int]:
+
+def get_primes(limit: int, *, algo: str = "eratosthenes", use_cache: bool = True) -> list[int]:
     """
     Get primes up to limit using specified algorithm, with optional caching.
 
@@ -250,11 +262,7 @@ def get_primes(limit: int, *, algo: str = "eratosthenes", use_cache: bool = True
     """
     _validate_limit(limit)
 
-    algo_map = {
-        "eratosthenes": eratosthenes,
-        "atkin": atkin,
-        "wheel": wheel
-    }
+    algo_map = {"eratosthenes": eratosthenes, "atkin": atkin, "wheel": wheel}
 
     if algo not in algo_map:
         raise ValueError(f"Unknown algorithm: {algo}. Choose from {list(algo_map.keys())}")
@@ -262,20 +270,13 @@ def get_primes(limit: int, *, algo: str = "eratosthenes", use_cache: bool = True
     sieve_func = algo_map[algo]
     cache_file = _get_cache_filename(algo, limit)
 
-    primes: List[int] = []
-    cache_used = False
-
+    primes: list[int] = []
     # Try cache first
     if use_cache and cache_file.exists() and _cache_is_valid(cache_file):
         try:
             primes = _read_cache(cache_file)
-            cache_used = True
-            _log_telemetry("cache_hit", {
-                "algo": algo,
-                "limit": limit,
-                "count": len(primes)
-            })
-        except (IOError, json.JSONDecodeError, KeyError):
+            _log_telemetry("cache_hit", {"algo": algo, "limit": limit, "count": len(primes)})
+        except (OSError, json.JSONDecodeError, KeyError):
             pass  # Fall through to recompute
 
     # Compute if cache not available or invalid
@@ -284,40 +285,50 @@ def get_primes(limit: int, *, algo: str = "eratosthenes", use_cache: bool = True
         primes = sieve_func(limit) if algo != "wheel" else wheel(limit)
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
-        _log_telemetry("sieve_built", {
-            "algo": algo,
-            "limit": limit,
-            "count": len(primes),
-            "time_ms": elapsed_ms
-        })
+        _log_telemetry(
+            "sieve_built",
+            {"algo": algo, "limit": limit, "count": len(primes), "time_ms": elapsed_ms},
+        )
 
         if use_cache:
             _write_cache(cache_file, primes, limit)
 
     return primes
 
-def metadata() -> Dict[str, Any]:
+
+def metadata() -> dict[str, Any]:
     """Return metadata about this engine."""
     return {
         "version": "1.0.0",
         "algorithms": ["eratosthenes", "atkin", "wheel"],
         "cache_location": str(CACHE_DIR.absolute()),
-        "max_tested_limit": 10**7
+        "max_tested_limit": 10**7,
     }
 
-def discover() -> Dict[str, str]:
+
+def discover() -> dict[str, str]:
     """Discovery function for component registration."""
     return {"component": "SieveEngine"}
+
 
 def _cli() -> None:
     """Command line interface for SieveEngine."""
     parser = argparse.ArgumentParser(description="Prime number sieve generator")
     parser.add_argument("--limit", type=int, required=True, help="Upper limit for primes")
-    parser.add_argument("--algo", type=str, default="eratosthenes",
-                       choices=["eratosthenes", "atkin", "wheel"],
-                       help="Sieve algorithm to use")
-    parser.add_argument("--use-cache", type=int, default=1, choices=[0, 1],
-                       help="Whether to use cache (1) or not (0)")
+    parser.add_argument(
+        "--algo",
+        type=str,
+        default="eratosthenes",
+        choices=["eratosthenes", "atkin", "wheel"],
+        help="Sieve algorithm to use",
+    )
+    parser.add_argument(
+        "--use-cache",
+        type=int,
+        default=1,
+        choices=[0, 1],
+        help="Whether to use cache (1) or not (0)",
+    )
 
     args = parser.parse_args()
 
@@ -334,7 +345,8 @@ def _cli() -> None:
             "first_10": primes[:10],
             "last_10": primes[-10:] if len(primes) > 10 else primes,
             "time_ms": elapsed_ms,
-            "cache_used": bool(args.use_cache) and _get_cache_filename(args.algo, args.limit).exists()
+            "cache_used": bool(args.use_cache)
+            and _get_cache_filename(args.algo, args.limit).exists(),
         }
 
         print(json.dumps(summary, indent=2))
@@ -342,6 +354,8 @@ def _cli() -> None:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
+
 if __name__ == "__main__":
     import sys
+
     _cli()

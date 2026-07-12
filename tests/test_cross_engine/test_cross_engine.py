@@ -30,16 +30,18 @@ def _make_entry(candidate: int, score: float, conjecture: str = "collatz") -> Le
 
 def _write_jsonl(path: Path, entries: list) -> None:
     lines = [
-        json.dumps({
-            "candidate": e.candidate,
-            "conjecture": e.conjecture,
-            "near_miss_score": e.near_miss_score,
-            "features": e.features,
-            "details": e.details,
-            "strategy": e.strategy,
-            "timestamp": e.timestamp,
-            "rng_seed": e.rng_seed,
-        })
+        json.dumps(
+            {
+                "candidate": e.candidate,
+                "conjecture": e.conjecture,
+                "near_miss_score": e.near_miss_score,
+                "features": e.features,
+                "details": e.details,
+                "strategy": e.strategy,
+                "timestamp": e.timestamp,
+                "rng_seed": e.rng_seed,
+            }
+        )
         for e in entries
     ]
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -152,17 +154,22 @@ class TestCrossEngineAnalyzerAnalyze:
 
     def test_overlapping_candidates_produce_co_occurrences(self, tmp_path):
         cz_path, gb_path = _ledger_pair(tmp_path, [100, 200], [100, 200])
-        report = self.analyzer.analyze(cz_path, gb_path, neighborhood_radius=0, n_permutations=10, seed=0)
+        report = self.analyzer.analyze(
+            cz_path, gb_path, neighborhood_radius=0, n_permutations=10, seed=0
+        )
         assert report["co_occurrences"]["observed_count"] >= 2
 
     def test_non_overlapping_no_co_occurrences(self, tmp_path):
         cz_path, gb_path = _ledger_pair(tmp_path, [100, 200, 300], [50_000, 60_000, 70_000])
-        report = self.analyzer.analyze(cz_path, gb_path, neighborhood_radius=10, n_permutations=10, seed=0)
+        report = self.analyzer.analyze(
+            cz_path, gb_path, neighborhood_radius=10, n_permutations=10, seed=0
+        )
         assert report["co_occurrences"]["observed_count"] == 0
 
     def test_p_value_in_unit_interval(self, tmp_path):
-        cz_path, gb_path = _ledger_pair(tmp_path, [100, 200, 300, 400, 500],
-                                         [110, 210, 310, 410, 510])
+        cz_path, gb_path = _ledger_pair(
+            tmp_path, [100, 200, 300, 400, 500], [110, 210, 310, 410, 510]
+        )
         report = self.analyzer.analyze(cz_path, gb_path, n_permutations=50, seed=0)
         pval = report["permutation_test"]["p_value"]
         assert 0.0 <= pval <= 1.0
@@ -173,23 +180,34 @@ class TestCrossEngineAnalyzerAnalyze:
         assert report["permutation_test"]["null_std"] >= 0.0
 
     def test_top_k_limits_analyzed_entries(self, tmp_path):
-        cz_path, gb_path = _ledger_pair(tmp_path,
-                                         [100, 200, 300, 400, 500],
-                                         [110, 210, 310, 410, 510])
+        cz_path, gb_path = _ledger_pair(
+            tmp_path, [100, 200, 300, 400, 500], [110, 210, 310, 410, 510]
+        )
         report = self.analyzer.analyze(cz_path, gb_path, top_k=2, n_permutations=10, seed=0)
         assert report["inputs"]["analyzed_collatz"] == 2
         assert report["inputs"]["analyzed_goldbach"] == 2
 
     def test_co_occurrence_pairs_are_list(self, tmp_path):
         cz_path, gb_path = _ledger_pair(tmp_path, [100, 200], [100, 200])
-        report = self.analyzer.analyze(cz_path, gb_path, neighborhood_radius=0, n_permutations=10, seed=0)
+        report = self.analyzer.analyze(
+            cz_path, gb_path, neighborhood_radius=0, n_permutations=10, seed=0
+        )
         assert isinstance(report["co_occurrences"]["pairs"], list)
 
     def test_co_occurrence_pair_keys(self, tmp_path):
         cz_path, gb_path = _ledger_pair(tmp_path, [100], [100])
-        report = self.analyzer.analyze(cz_path, gb_path, neighborhood_radius=0, n_permutations=10, seed=0)
+        report = self.analyzer.analyze(
+            cz_path, gb_path, neighborhood_radius=0, n_permutations=10, seed=0
+        )
         pair = report["co_occurrences"]["pairs"][0]
-        for key in ("collatz", "goldbach", "distance", "collatz_score", "goldbach_score", "joint_score"):
+        for key in (
+            "collatz",
+            "goldbach",
+            "distance",
+            "collatz_score",
+            "goldbach_score",
+            "joint_score",
+        ):
             assert key in pair
 
     def test_score_correlations_none_when_no_shared_candidates(self, tmp_path):
@@ -206,8 +224,9 @@ class TestCrossEngineAnalyzerAnalyze:
 
     def test_radius_recorded_in_inputs(self, tmp_path):
         cz_path, gb_path = _ledger_pair(tmp_path, [100], [200])
-        report = self.analyzer.analyze(cz_path, gb_path, neighborhood_radius=42,
-                                       n_permutations=10, seed=0)
+        report = self.analyzer.analyze(
+            cz_path, gb_path, neighborhood_radius=42, n_permutations=10, seed=0
+        )
         assert report["inputs"]["neighborhood_radius"] == 42
 
     def test_reproducible_with_same_seed(self, tmp_path):

@@ -53,9 +53,14 @@ def _write_ledger(path: Path, n: int = 5) -> None:
 class TestCalibrationReport:
     def _report(self) -> CalibrationReport:
         return CalibrationReport(
-            method="test", n_samples=20, brier_score=0.1,
-            log_loss=0.3, expected_calibration_error=0.05,
-            score_min=0.0, score_max=1.0, seed=42,
+            method="test",
+            n_samples=20,
+            brier_score=0.1,
+            log_loss=0.3,
+            expected_calibration_error=0.05,
+            score_min=0.0,
+            score_max=1.0,
+            seed=42,
         )
 
     def test_to_dict_is_json_serializable(self):
@@ -152,12 +157,14 @@ class TestIsotonicCalibrator:
     def test_fit_requires_10_samples(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
         from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
         with pytest.raises(ValueError, match="10"):
             IsotonicCalibrator().fit([0.1, 0.9], [0, 1])
 
     def test_fit_returns_calibration_report(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
         from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
         scores, labels = _synthetic(n=30)
         report = IsotonicCalibrator().fit(scores, labels)
         assert isinstance(report, CalibrationReport)
@@ -165,6 +172,7 @@ class TestIsotonicCalibrator:
     def test_report_method_is_isotonic(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
         from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
         scores, labels = _synthetic(n=30)
         report = IsotonicCalibrator().fit(scores, labels)
         assert report.method == "isotonic"
@@ -172,6 +180,7 @@ class TestIsotonicCalibrator:
     def test_predict_output_in_unit_interval(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
         from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
         scores, labels = _synthetic(n=30)
         cal = IsotonicCalibrator()
         cal.fit(scores, labels)
@@ -181,12 +190,14 @@ class TestIsotonicCalibrator:
     def test_predict_before_fit_raises_runtime_error(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
         from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
         with pytest.raises(RuntimeError):
             IsotonicCalibrator().predict([0.5])
 
     def test_labels_must_be_binary(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
         from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
         scores = list(range(15))
         labels = list(range(15))  # not binary
         with pytest.raises(ValueError):

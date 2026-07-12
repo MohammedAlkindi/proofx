@@ -1,23 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RiemannX Engine | ProofX</title>
-  <meta name="description" content="Operator-grade verification engine for the Riemann Hypothesis — zero testing, prime-counting validation, and functional symmetry analysis across massive computational ranges.">
+  <title>RiemannX | ProofX</title>
+  <meta name="description" content="RiemannX contains numerical diagnostics for zeta zeros, prime-counting approximations, and related search ledgers.">
   <link rel="canonical" href="https://www.proofx.org/riemannx">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="RiemannX Engine | ProofX">
-  <meta property="og:description" content="Zero testing, prime-counting validation, and functional symmetry analysis for the Riemann Hypothesis.">
+  <meta property="og:title" content="RiemannX | ProofX">
+  <meta property="og:description" content="Numerical Riemann-adjacent diagnostics and bounded prime inspectors.">
   <meta property="og:url" content="https://www.proofx.org/riemannx">
   <meta property="og:site_name" content="ProofX">
   <meta property="og:image" content="https://www.proofx.org/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="RiemannX Engine | ProofX">
-  <meta name="twitter:description" content="Zero testing, prime-counting validation, and functional symmetry analysis for the Riemann Hypothesis.">
+  <meta name="twitter:title" content="RiemannX | ProofX">
+  <meta name="twitter:description" content="Numerical Riemann-adjacent diagnostics and bounded prime inspectors.">
   <meta name="twitter:image" content="https://www.proofx.org/assets/og.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="stylesheet" href="/styles.css">
   <script src="/monitoring.js"></script>
@@ -26,13 +26,14 @@
   <header class="nav">
     <div class="container nav__inner">
       <a class="brand" href="/index.html">
-        <img class="brand__mark" src="/assets/favicon-32x32.png" alt="ProofX logo" width="36" height="36">
+        <img class="brand__mark" src="/assets/icons/favicon-32x32.png" alt="ProofX logo" width="36" height="36">
         <span class="brand__text">ProofX</span>
       </a>
       <nav class="nav__links">
         <a href="/index.html">Home</a>
-        <a href="/riemannx.html">RiemannX</a>
+        <a href="/collatzx.html">CollatzX</a>
         <a href="/goldbachx.html">GoldbachX</a>
+        <a href="/results.html">Results</a>
       </nav>
     </div>
   </header>
@@ -40,23 +41,24 @@
   <main id="main">
     <section class="section hero">
       <div class="container hero__wrap">
-        <h1 class="hero__h1">RiemannX Engine</h1>
-        <p class="hero__sub">Operator-grade verification engine for the Riemann Hypothesis — zero testing, prime-counting validation, and functional symmetry analysis across massive computational ranges.</p>
+        <h1 class="hero__h1">RiemannX</h1>
+        <p class="hero__sub">
+          RiemannX collects numerical experiments around zeta zeros, prime-counting approximations, and Keiper-Li coefficients. These are diagnostics, not proof certificates.
+        </p>
         <div class="hero__actions btn-row">
-          <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/codebase/ReimannX">Verify Zeros</a>
+          <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/codebase/ReimannX" target="_blank" rel="noopener">Source</a>
+          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/falsification.md" target="_blank" rel="noopener">Method Notes</a>
         </div>
       </div>
     </section>
 
-
-    <!-- ================================ DEMO ================================= -->
     <section id="demo" class="section" aria-labelledby="riemann-demo-title">
       <div class="container card">
-        <h2 id="riemann-demo-title">Try It — Prime Inspector</h2>
-        <p class="muted">Enter a positive integer to test primality, find the nearest primes, and count primes up to that value (exact up to 500,000).</p>
+        <h2 id="riemann-demo-title">Browser Prime Inspector</h2>
+        <p class="muted">Enter an integer to test primality, find nearby primes, and count primes up to that value exactly when the browser cap allows.</p>
         <div style="display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap;">
           <input id="riemann-input" type="number" min="2" max="10000000" value="1000003"
-                 placeholder="Positive integer"
+                 placeholder="Integer >= 2"
                  style="flex:1;min-width:140px;padding:.5rem .75rem;border-radius:8px;border:1px solid rgba(128,128,128,.35);background:var(--surface-1,#111);color:inherit;font-size:1rem;"
                  aria-label="Integer to inspect">
           <button id="riemann-run" class="btn btn--primary btn--pill">Inspect</button>
@@ -65,145 +67,32 @@
              style="display:none;margin-top:1rem;padding:1rem;border-radius:8px;background:var(--surface-1,rgba(0,0,0,.25));border:1px solid rgba(128,128,128,.15);font-family:monospace;font-size:.83rem;white-space:pre-wrap;"></div>
       </div>
     </section>
-    <script>
-    (function () {
-      var inp = document.getElementById('riemann-input');
-      var btn = document.getElementById('riemann-run');
-      var out = document.getElementById('riemann-result');
 
-      function millerRabin(n) {
-        if (n < 2) return false;
-        if (n === 2 || n === 3 || n === 5 || n === 7 || n === 11 || n === 13) return true;
-        if (n % 2 === 0 || n % 3 === 0) return false;
-        var d = n - 1, r = 0;
-        while (d % 2 === 0) { d = Math.floor(d / 2); r++; }
-        var witnesses = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
-        for (var wi = 0; wi < witnesses.length; wi++) {
-          var a = witnesses[wi];
-          if (a >= n) continue;
-          var x = modpow(a, d, n);
-          if (x === 1 || x === n - 1) continue;
-          var cont = false;
-          for (var i = 0; i < r - 1; i++) {
-            x = mulmod(x, x, n);
-            if (x === n - 1) { cont = true; break; }
-          }
-          if (!cont) return false;
-        }
-        return true;
-      }
-      function modpow(base, exp, mod) {
-        var result = 1; base = base % mod;
-        while (exp > 0) {
-          if (exp % 2 === 1) result = mulmod(result, base, mod);
-          exp = Math.floor(exp / 2); base = mulmod(base, base, mod);
-        }
-        return result;
-      }
-      function mulmod(a, b, m) {
-        var result = 0; a = a % m;
-        while (b > 0) {
-          if (b % 2 === 1) result = (result + a) % m;
-          a = (a * 2) % m; b = Math.floor(b / 2);
-        }
-        return result;
-      }
-      function nearestPrimes(n) {
-        var prev = null, next = null;
-        for (var k = n - 1; k >= 2; k--) { if (millerRabin(k)) { prev = k; break; } }
-        for (var k = n + 1; k <= n + 10000; k++) { if (millerRabin(k)) { next = k; break; } }
-        return { prev: prev, next: next };
-      }
-      function piCount(n) {
-        if (n < 2) return 0;
-        var limit = Math.min(n, 500000);
-        var sieve = new Uint8Array(limit + 1).fill(1);
-        sieve[0] = sieve[1] = 0;
-        for (var i = 2; i * i <= limit; i++) {
-          if (sieve[i]) for (var j = i * i; j <= limit; j += i) sieve[j] = 0;
-        }
-        var count = 0;
-        for (var i = 2; i <= limit; i++) { if (sieve[i]) count++; }
-        return { count: count, exact: n <= 500000 };
-      }
-
-      function run() {
-        var n = parseInt(inp.value, 10);
-        if (!n || n < 2 || !Number.isFinite(n)) {
-          out.textContent = 'Please enter an integer ≥ 2.';
-          out.style.display = 'block'; return;
-        }
-        var isPrime = millerRabin(n);
-        var near = nearestPrimes(n);
-        var pi = piCount(n);
-        var approx = n / Math.log(n);
-        var lines = [
-          'n              : ' + n.toLocaleString(),
-          'Is prime       : ' + (isPrime ? 'yes' : 'no'),
-          'Nearest prime  : ' + (isPrime ? n + ' (itself)' : (near.prev ? near.prev.toLocaleString() + ' (below)' : '—') + '  /  ' + (near.next ? near.next.toLocaleString() + ' (above)' : '—')),
-          'π(n) exact     : ' + (pi.exact ? pi.count.toLocaleString() : '≥ ' + pi.count.toLocaleString() + ' (capped at 500k; full sieve unavailable)'),
-          'π(n) approx    : ~' + Math.round(approx).toLocaleString() + '  (n / ln n)',
-          'Error estimate : ' + (pi.exact ? (Math.abs(pi.count - approx) / pi.count * 100).toFixed(2) + '%' : 'n/a'),
-        ];
-        out.textContent = lines.join('\n');
-        out.style.display = 'block';
-      }
-      btn.addEventListener('click', run);
-      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
-    }());
-    </script>
-
-
-    <!-- ================================ CAPABILITIES ============================= -->
     <section id="capabilities" class="section" aria-labelledby="capabilities-title">
-      <div class="container card">
-        <h2 id="capabilities-title">Core Engine Capabilities</h2>
-
-        <!-- Verification Tests Card -->
-        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
-          <h3>Verification Tests</h3>
-          <p>Ensures non-trivial zeros lie on the critical line and analyzes spacing patterns.</p>
-          <ul class="bullets bullets--tight">
-            <li>Non-trivial zero identification</li>
-            <li>Critical line validation</li>
-            <li>Zero spacing statistics</li>
-            <li>Dirichlet L-function testing</li>
-            <li>High-precision floating-point validation</li>
-          </ul>
+      <div class="container">
+        <h2 id="capabilities-title">What It Computes</h2>
+        <div class="grid grid--3">
+          <article class="card">
+            <h3>Prime Counts</h3>
+            <p>Compares exact browser-capped prime counts with the simple `n / log(n)` approximation.</p>
+          </article>
+          <article class="card">
+            <h3>Zero Diagnostics</h3>
+            <p>Records numerical zeta-zero and spacing diagnostics in Python experiments where configured.</p>
+          </article>
+          <article class="card">
+            <h3>Coefficient Signals</h3>
+            <p>Explores Keiper-Li-style numerical signals as search diagnostics, subject to precision limits.</p>
+          </article>
         </div>
-
-        <!-- Performance Metrics Card -->
-        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
-          <h3>Performance Metrics</h3>
-          <p>Optimized for high-speed, memory-efficient, distributed zero computations.</p>
-          <ul class="bullets bullets--tight">
-            <li>50M+ zeros computed per second</li>
-            <li>Maximum tested imaginary parts: 10^12+</li>
-            <li>Parallelized zero detection</li>
-            <li>Memory-efficient caching</li>
-            <li>Distributed computation supported</li>
-          </ul>
-        </div>
-
-        <!-- Research Applications Card -->
-        <div class="card" style="margin-bottom:1.5rem; padding:1rem;">
-          <h3>Research Applications</h3>
-          <p>Supports exploration of prime-counting functions and zero distributions in analytic number theory.</p>
-          <ul class="bullets bullets--tight">
-            <li>Prime-counting approximation verification</li>
-            <li>Zero spacing statistical analysis</li>
-            <li>Analytic number theory support</li>
-            <li>Educational visualizations</li>
-            <li>Cross-conjecture correlation studies</li>
-          </ul>
-        </div>
+        <p class="muted" style="margin-top:1rem;">Numerical diagnostics can suggest what to inspect. They do not prove the Riemann Hypothesis.</p>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="container footer__inner">
-      <span>© 2025 ProofX</span>
+      <span>&copy; 2025 ProofX</span>
       <nav class="footer__links">
         <a href="/index.html">Home</a>
         <a href="/results.html">Results</a>
@@ -211,5 +100,107 @@
       </nav>
     </div>
   </footer>
+
+  <script>
+  (function () {
+    var inp = document.getElementById('riemann-input');
+    var btn = document.getElementById('riemann-run');
+    var out = document.getElementById('riemann-result');
+
+    function millerRabin(n) {
+      if (n < 2) return false;
+      if (n === 2 || n === 3 || n === 5 || n === 7 || n === 11 || n === 13) return true;
+      if (n % 2 === 0 || n % 3 === 0) return false;
+      var d = n - 1, r = 0;
+      while (d % 2 === 0) { d = Math.floor(d / 2); r++; }
+      var witnesses = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
+      for (var wi = 0; wi < witnesses.length; wi++) {
+        var a = witnesses[wi];
+        if (a >= n) continue;
+        var x = modpow(a, d, n);
+        if (x === 1 || x === n - 1) continue;
+        var cont = false;
+        for (var i = 0; i < r - 1; i++) {
+          x = mulmod(x, x, n);
+          if (x === n - 1) { cont = true; break; }
+        }
+        if (!cont) return false;
+      }
+      return true;
+    }
+
+    function modpow(base, exp, mod) {
+      var result = 1;
+      base = base % mod;
+      while (exp > 0) {
+        if (exp % 2 === 1) result = mulmod(result, base, mod);
+        exp = Math.floor(exp / 2);
+        base = mulmod(base, base, mod);
+      }
+      return result;
+    }
+
+    function mulmod(a, b, m) {
+      var result = 0;
+      a = a % m;
+      while (b > 0) {
+        if (b % 2 === 1) result = (result + a) % m;
+        a = (a * 2) % m;
+        b = Math.floor(b / 2);
+      }
+      return result;
+    }
+
+    function nearestPrimes(n) {
+      var prev = null, next = null;
+      for (var k = n - 1; k >= 2; k--) { if (millerRabin(k)) { prev = k; break; } }
+      for (var j = n + 1; j <= n + 10000; j++) { if (millerRabin(j)) { next = j; break; } }
+      return { prev: prev, next: next };
+    }
+
+    function piCount(n) {
+      if (n < 2) return { count: 0, exact: true };
+      var limit = Math.min(n, 500000);
+      var sieve = new Uint8Array(limit + 1).fill(1);
+      sieve[0] = sieve[1] = 0;
+      for (var i = 2; i * i <= limit; i++) {
+        if (sieve[i]) for (var j = i * i; j <= limit; j += i) sieve[j] = 0;
+      }
+      var count = 0;
+      for (var k = 2; k <= limit; k++) { if (sieve[k]) count++; }
+      return { count: count, exact: n <= 500000 };
+    }
+
+    function run() {
+      var n = parseInt(inp.value, 10);
+      if (!n || n < 2 || !Number.isFinite(n)) {
+        out.textContent = 'Please enter an integer >= 2.';
+        out.style.display = 'block';
+        return;
+      }
+      var isPrime = millerRabin(n);
+      var near = nearestPrimes(n);
+      var pi = piCount(n);
+      var approx = n / Math.log(n);
+      var nearest = isPrime
+        ? n + ' (itself)'
+        : (near.prev ? near.prev.toLocaleString() + ' below' : 'none found below') +
+          ' / ' +
+          (near.next ? near.next.toLocaleString() + ' above' : 'none found above within search cap');
+      var lines = [
+        'n              : ' + n.toLocaleString(),
+        'Is prime       : ' + (isPrime ? 'yes' : 'no'),
+        'Nearest prime  : ' + nearest,
+        'pi(n) exact    : ' + (pi.exact ? pi.count.toLocaleString() : 'capped at ' + pi.count.toLocaleString() + ' primes through 500,000'),
+        'n / log(n)     : about ' + Math.round(approx).toLocaleString()
+      ];
+      out.textContent = lines.join('\n');
+      out.style.display = 'block';
+    }
+
+    btn.addEventListener('click', run);
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+  }());
+  </script>
 </body>
 </html>

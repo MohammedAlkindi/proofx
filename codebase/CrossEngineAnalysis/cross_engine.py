@@ -32,7 +32,7 @@ import math
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -47,8 +47,8 @@ class LedgerEntry:
     candidate: int
     conjecture: str
     near_miss_score: float
-    features: Dict[str, float]
-    details: Dict[str, Any]
+    features: dict[str, float]
+    details: dict[str, Any]
     strategy: str
     timestamp: float
     rng_seed: int
@@ -67,7 +67,7 @@ class CoOccurrence:
 # ── Loader ────────────────────────────────────────────────────────────────────
 
 
-def _load_ledger(path: Path) -> List[LedgerEntry]:
+def _load_ledger(path: Path) -> list[LedgerEntry]:
     entries = []
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -75,16 +75,18 @@ def _load_ledger(path: Path) -> List[LedgerEntry]:
             continue
         try:
             d = json.loads(line)
-            entries.append(LedgerEntry(
-                candidate=int(d["candidate"]),
-                conjecture=str(d.get("conjecture", "")),
-                near_miss_score=float(d.get("near_miss_score", 0.0)),
-                features=dict(d.get("features", {})),
-                details=dict(d.get("details", {})),
-                strategy=str(d.get("strategy", "")),
-                timestamp=float(d.get("timestamp", 0.0)),
-                rng_seed=int(d.get("rng_seed", 0)),
-            ))
+            entries.append(
+                LedgerEntry(
+                    candidate=int(d["candidate"]),
+                    conjecture=str(d.get("conjecture", "")),
+                    near_miss_score=float(d.get("near_miss_score", 0.0)),
+                    features=dict(d.get("features", {})),
+                    details=dict(d.get("details", {})),
+                    strategy=str(d.get("strategy", "")),
+                    timestamp=float(d.get("timestamp", 0.0)),
+                    rng_seed=int(d.get("rng_seed", 0)),
+                )
+            )
         except (KeyError, ValueError, json.JSONDecodeError) as exc:
             logger.debug("Skipping malformed entry: %s", exc)
     return entries
@@ -101,10 +103,10 @@ class CrossEngineAnalyzer:
         collatz_ledger: Path,
         goldbach_ledger: Path,
         neighborhood_radius: int = 100,
-        top_k: Optional[int] = None,
+        top_k: int | None = None,
         n_permutations: int = 1_000,
         seed: int = 0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the full cross-engine analysis and return a structured report.
 
         Parameters
@@ -139,7 +141,7 @@ class CrossEngineAnalyzer:
 
         score_gap = self._score_gap_analysis(cz, gb)
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "inputs": {
                 "collatz_entries": len(cz_all),
                 "goldbach_entries": len(gb_all),
@@ -181,7 +183,9 @@ class CrossEngineAnalyzer:
 
         logger.info(
             "Cross-engine: %d co-occurrences | p=%.4f | Pearson r=%.4f",
-            observed_count, pvalue, pearson_r or 0.0,
+            observed_count,
+            pvalue,
+            pearson_r or 0.0,
         )
         return report
 
@@ -189,12 +193,12 @@ class CrossEngineAnalyzer:
 
     def _find_co_occurrences(
         self,
-        cz: List[LedgerEntry],
-        gb: List[LedgerEntry],
+        cz: list[LedgerEntry],
+        gb: list[LedgerEntry],
         radius: int,
-    ) -> List[CoOccurrence]:
-        gb_index: Dict[int, float] = {e.candidate: e.near_miss_score for e in gb}
-        hits: List[CoOccurrence] = []
+    ) -> list[CoOccurrence]:
+        gb_index: dict[int, float] = {e.candidate: e.near_miss_score for e in gb}
+        hits: list[CoOccurrence] = []
 
         for c_entry in cz:
             c = c_entry.candidate
@@ -203,26 +207,28 @@ class CrossEngineAnalyzer:
                 if g in gb_index:
                     g_score = gb_index[g]
                     joint = math.sqrt(c_entry.near_miss_score * g_score)
-                    hits.append(CoOccurrence(
-                        collatz_candidate=c,
-                        goldbach_candidate=g,
-                        distance=abs(c - g),
-                        collatz_score=c_entry.near_miss_score,
-                        goldbach_score=g_score,
-                        joint_score=joint,
-                    ))
+                    hits.append(
+                        CoOccurrence(
+                            collatz_candidate=c,
+                            goldbach_candidate=g,
+                            distance=abs(c - g),
+                            collatz_score=c_entry.near_miss_score,
+                            goldbach_score=g_score,
+                            joint_score=joint,
+                        )
+                    )
         return hits
 
     # ── Permutation test ──────────────────────────────────────────────────────
 
     def _permutation_test(
         self,
-        cz: List[LedgerEntry],
-        gb: List[LedgerEntry],
+        cz: list[LedgerEntry],
+        gb: list[LedgerEntry],
         radius: int,
         n_permutations: int,
         seed: int,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Shuffle Goldbach candidates and recount co-occurrences n_permutations times.
 
         Returns (p_value, null_mean, null_std).
@@ -232,7 +238,7 @@ class CrossEngineAnalyzer:
         rng = random.Random(seed)
 
         gb_candidates = [e.candidate for e in gb]
-        null_counts: List[int] = []
+        null_counts: list[int] = []
 
         # Keep the score distribution intact; only shuffle which candidate it's
         # attached to.  This tests whether the specific *positions* matter.
@@ -243,11 +249,16 @@ class CrossEngineAnalyzer:
             rng.shuffle(shuffled_candidates)
             shuffled_gb = [
                 LedgerEntry(
-                    candidate=c, conjecture="goldbach",
-                    near_miss_score=s, features={}, details={},
-                    strategy="", timestamp=0.0, rng_seed=0,
+                    candidate=c,
+                    conjecture="goldbach",
+                    near_miss_score=s,
+                    features={},
+                    details={},
+                    strategy="",
+                    timestamp=0.0,
+                    rng_seed=0,
                 )
-                for c, s in zip(shuffled_candidates, gb_scores)
+                for c, s in zip(shuffled_candidates, gb_scores, strict=False)
             ]
             null_counts.append(len(self._find_co_occurrences(cz, shuffled_gb, radius)))
 
@@ -259,9 +270,9 @@ class CrossEngineAnalyzer:
 
     def _score_correlations(
         self,
-        cz_all: List[LedgerEntry],
-        gb_all: List[LedgerEntry],
-    ) -> Tuple[Optional[float], Optional[float]]:
+        cz_all: list[LedgerEntry],
+        gb_all: list[LedgerEntry],
+    ) -> tuple[float | None, float | None]:
         """Pearson and Spearman r on the intersection of candidate sets.
 
         Only candidates present in both ledgers contribute.  Usually sparse
@@ -288,9 +299,9 @@ class CrossEngineAnalyzer:
 
     def _score_gap_analysis(
         self,
-        cz: List[LedgerEntry],
-        gb: List[LedgerEntry],
-    ) -> Dict[str, Any]:
+        cz: list[LedgerEntry],
+        gb: list[LedgerEntry],
+    ) -> dict[str, Any]:
         """Summarise score distribution gaps: are there numerical ranges where
         both engines produce high scores?
 
@@ -304,13 +315,13 @@ class CrossEngineAnalyzer:
         cz_q75 = np.quantile([e.near_miss_score for e in cz], 0.75)
         gb_q75 = np.quantile([e.near_miss_score for e in gb], 0.75)
 
-        cz_hot: Dict[int, int] = {}
+        cz_hot: dict[int, int] = {}
         for e in cz:
             if e.near_miss_score >= cz_q75:
                 b = e.candidate // bin_width
                 cz_hot[b] = cz_hot.get(b, 0) + 1
 
-        gb_hot: Dict[int, int] = {}
+        gb_hot: dict[int, int] = {}
         for e in gb:
             if e.near_miss_score >= gb_q75:
                 b = e.candidate // bin_width
@@ -323,8 +334,7 @@ class CrossEngineAnalyzer:
             "goldbach_hot_bins": len(gb_hot),
             "dual_hot_bins": len(dual_hot_bins),
             "dual_hot_ranges": [
-                f"[{b * bin_width:,} – {(b + 1) * bin_width - 1:,}]"
-                for b in dual_hot_bins
+                f"[{b * bin_width:,} – {(b + 1) * bin_width - 1:,}]" for b in dual_hot_bins
             ],
             "collatz_q75_threshold": round(float(cz_q75), 4),
             "goldbach_q75_threshold": round(float(gb_q75), 4),
@@ -333,15 +343,15 @@ class CrossEngineAnalyzer:
     # ── Human-readable summary ────────────────────────────────────────────────
 
     @staticmethod
-    def print_report(report: Dict[str, Any]) -> None:
+    def print_report(report: dict[str, Any]) -> None:
         p = report["permutation_test"]
         co = report["co_occurrences"]
         gap = report.get("score_gap_analysis", {})
         corr = report["score_correlations"]
 
-        print(f"\n{'═'*64}")
+        print(f"\n{'═' * 64}")
         print("  ProofX Cross-Engine Correlation Report")
-        print(f"{'═'*64}")
+        print(f"{'═' * 64}")
         print(f"  Collatz entries   : {report['inputs']['analyzed_collatz']}")
         print(f"  Goldbach entries  : {report['inputs']['analyzed_goldbach']}")
         print(f"  Radius            : ±{report['inputs']['neighborhood_radius']:,}")
@@ -349,18 +359,20 @@ class CrossEngineAnalyzer:
         print(f"  Co-occurrences observed : {co['observed_count']}")
         print(f"  Null mean ± std         : {p['null_mean']:.1f} ± {p['null_std']:.1f}")
         print(f"  Z-score                 : {p['z_score']:.2f}")
-        print(f"  p-value ({p['n_permutations']} perms)    : {p['p_value']:.4f}  "
-              f"{'✓ significant' if p['significant_at_05'] else '✗ not significant'} at α=0.05")
+        print(
+            f"  p-value ({p['n_permutations']} perms)    : {p['p_value']:.4f}  "
+            f"{'✓ significant' if p['significant_at_05'] else '✗ not significant'} at α=0.05"
+        )
         print()
         if corr["pearson_r"] is not None:
-            print(f"  Score correlation (shared candidates)")
+            print("  Score correlation (shared candidates)")
             print(f"    Pearson  r = {corr['pearson_r']:.4f}")
             print(f"    Spearman r = {corr['spearman_r']:.4f}")
         else:
             print("  Score correlation: insufficient shared candidates")
         print()
         if gap.get("dual_hot_bins", 0) > 0:
-            print(f"  Dual-hot numerical ranges (both engines top-quartile):")
+            print("  Dual-hot numerical ranges (both engines top-quartile):")
             for rng in gap["dual_hot_ranges"][:10]:
                 print(f"    {rng}")
         else:
@@ -369,22 +381,22 @@ class CrossEngineAnalyzer:
         if co["pairs"]:
             print("  Top co-occurrence pairs (by joint score):")
             for pair in co["pairs"][:5]:
-                print(f"    Collatz {pair['collatz']:>10,}  ↔  "
-                      f"Goldbach {pair['goldbach']:>10,}  "
-                      f"dist={pair['distance']:>4}  "
-                      f"joint={pair['joint_score']:.4f}")
-        print(f"{'═'*64}\n")
+                print(
+                    f"    Collatz {pair['collatz']:>10,}  ↔  "
+                    f"Goldbach {pair['goldbach']:>10,}  "
+                    f"dist={pair['distance']:>4}  "
+                    f"joint={pair['joint_score']:.4f}"
+                )
+        print(f"{'═' * 64}\n")
 
 
 # ── CLI entry point ───────────────────────────────────────────────────────────
 
 
 def main() -> None:
-    import argparse, sys
+    import argparse
 
-    parser = argparse.ArgumentParser(
-        description="ProofX cross-engine correlation analysis"
-    )
+    parser = argparse.ArgumentParser(description="ProofX cross-engine correlation analysis")
     parser.add_argument("--collatz", required=True, help="Collatz JSONL ledger")
     parser.add_argument("--goldbach", required=True, help="Goldbach JSONL ledger")
     parser.add_argument("--radius", type=int, default=100)
@@ -409,7 +421,10 @@ def main() -> None:
 
     if args.output_json:
         import json
-        Path(args.output_json).write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+        Path(args.output_json).write_text(
+            json.dumps(report, indent=2, default=str), encoding="utf-8"
+        )
         print(f"Report saved: {args.output_json}")
 
 

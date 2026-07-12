@@ -25,8 +25,8 @@ np.random.Generator; given seed s, the search path is identical across runs.
 
 from __future__ import annotations
 
-import contextlib
 import concurrent.futures
+import contextlib
 import heapq
 import io
 import json
@@ -34,9 +34,10 @@ import logging
 import math
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterator
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -84,7 +85,7 @@ _EXPECTED_ST_SCALE: float = 2.0
 # Known Collatz champions (seeds with stopping times far above expectation).
 # Source: Oliveira e Silva's exhaustive verification tables.
 # Using these as beam-search anchors focuses the budget on the most anomalous region.
-_COLLATZ_ANCHORS: List[int] = [27, 703, 871, 6171, 77031, 837799, 8400511, 63728127]
+_COLLATZ_ANCHORS: list[int] = [27, 703, 871, 6171, 77031, 837799, 8400511, 63728127]
 
 # Sieve limit for Goldbach partition computation.
 _SIEVE_LIMIT: int = 200_000
@@ -101,15 +102,15 @@ class LedgerEntry:
     """
 
     candidate: int
-    conjecture: str             # "collatz" | "goldbach"
-    strategy: str               # search strategy name that produced this candidate
-    features: Dict[str, float]  # full feature vector at test time
-    near_miss_score: float      # ∈ [0, 1]; 1 = confirmed counterexample
-    details: Dict[str, Any]     # conjecture-specific diagnostics
-    timestamp: float            # epoch seconds
-    rng_seed: int               # seed in effect when generated (for full replay)
+    conjecture: str  # "collatz" | "goldbach"
+    strategy: str  # search strategy name that produced this candidate
+    features: dict[str, float]  # full feature vector at test time
+    near_miss_score: float  # ∈ [0, 1]; 1 = confirmed counterexample
+    details: dict[str, Any]  # conjecture-specific diagnostics
+    timestamp: float  # epoch seconds
+    rng_seed: int  # seed in effect when generated (for full replay)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -121,19 +122,19 @@ class FalsificationLedger:
     """
 
     def __init__(self) -> None:
-        self._entries: List[LedgerEntry] = []
+        self._entries: list[LedgerEntry] = []
         # Heap stores (−near_miss_score, index) so heappop gives the highest score.
-        self._heap: List[Tuple[float, int]] = []
+        self._heap: list[tuple[float, int]] = []
 
     def append(self, entry: LedgerEntry) -> None:
         idx = len(self._entries)
         self._entries.append(entry)
         heapq.heappush(self._heap, (-entry.near_miss_score, idx))
 
-    def top_k(self, k: int) -> List[LedgerEntry]:
+    def top_k(self, k: int) -> list[LedgerEntry]:
         """Return the k entries with the highest near-miss score."""
         heap_copy = list(self._heap)
-        result: List[LedgerEntry] = []
+        result: list[LedgerEntry] = []
         while heap_copy and len(result) < k:
             _, idx = heapq.heappop(heap_copy)
             result.append(self._entries[idx])
@@ -185,7 +186,7 @@ class CollatzFalsifier:
     #   parity    0.20 — excess odd-step fraction above the convergence threshold (0.6309)
     #   binary    0.10 — high entropy ⟹ complex bit pattern, resists fast-path convergence
     #   growth    0.10 — normalized mean ascent per step
-    _RISK_WEIGHTS: Dict[str, float] = {
+    _RISK_WEIGHTS: dict[str, float] = {
         "lyapunov_exponent": 0.35,
         "hurst_exponent": 0.25,
         "parity_excess": 0.20,
@@ -206,7 +207,7 @@ class CollatzFalsifier:
 
     # ── Core mathematics ─────────────────────────────────────────────────────
 
-    def _risk_score(self, features: Dict[str, float]) -> float:
+    def _risk_score(self, features: dict[str, float]) -> float:
         """Continuous risk score ∈ [0, 1] from a feature vector.
 
         Each feature is clipped and normalized to [0, 1] before weighting:
@@ -219,8 +220,10 @@ class CollatzFalsifier:
         lyapunov = max(0.0, features.get("lyapunov_exponent", 0.0))
         hurst = max(0.0, (features.get("hurst_exponent", 0.5) - 0.5) * 2.0)
         parity_raw = features.get("parity_ratio", 0.0)
-        parity_excess = max(0.0, (parity_raw - _PARITY_CONVERGENCE_THRESHOLD) /
-                            (1.0 - _PARITY_CONVERGENCE_THRESHOLD))
+        parity_excess = max(
+            0.0,
+            (parity_raw - _PARITY_CONVERGENCE_THRESHOLD) / (1.0 - _PARITY_CONVERGENCE_THRESHOLD),
+        )
         binary_ent = min(1.0, max(0.0, features.get("binary_entropy", 0.0)))
         growth = min(1.0, abs(features.get("growth_rate", 0.0)))
 
@@ -234,7 +237,7 @@ class CollatzFalsifier:
         return sum(self._RISK_WEIGHTS[k] * normalized[k] for k in self._RISK_WEIGHTS)
 
     def _near_miss_score(
-        self, seed: int, features: Dict[str, float], stopping_time: int, max_value: int
+        self, seed: int, features: dict[str, float], stopping_time: int, max_value: int
     ) -> float:
         """Near-miss score for a Collatz candidate.
 
@@ -260,7 +263,7 @@ class CollatzFalsifier:
         return 0.7 * risk + 0.3 * excursion_norm
 
     @staticmethod
-    def _inverse_collatz_predecessors(n: int) -> List[int]:
+    def _inverse_collatz_predecessors(n: int) -> list[int]:
         """All integers that map to n in exactly one Collatz step.
 
         Two cases:
@@ -273,7 +276,7 @@ class CollatzFalsifier:
         what n already contains.  We keep 2n only if n itself is already high-risk
         and the doubled predecessor is within _MAX_PREDECESSOR_RATIO of n.
         """
-        preds: List[int] = []
+        preds: list[int] = []
 
         # Odd-rule inverse: 3m + 1 = n  ⟹  m = (n-1)/3
         k = n - 1
@@ -290,7 +293,7 @@ class CollatzFalsifier:
         return preds
 
     @staticmethod
-    def _residue_neighborhood(n: int, rng: np.random.Generator, width: int = 8) -> List[int]:
+    def _residue_neighborhood(n: int, rng: np.random.Generator, width: int = 8) -> list[int]:
         """Numbers near n that share its residue class mod 6.
 
         The Collatz structure is strongly influenced by n mod 6:
@@ -301,9 +304,7 @@ class CollatzFalsifier:
         property while exploring a different scale.
         """
         residue = n % 6
-        offsets = rng.choice(
-            [2**k for k in range(1, 7)], size=min(width, 6), replace=False
-        )
+        offsets = rng.choice([2**k for k in range(1, 7)], size=min(width, 6), replace=False)
         neighbors = []
         for off in offsets:
             # Adjust offset to preserve residue class
@@ -364,11 +365,11 @@ class CollatzFalsifier:
         """
         rng = np.random.default_rng(seed)
         ledger = FalsificationLedger()
-        visited: Set[int] = set()
+        visited: set[int] = set()
 
         # Priority queue: (−quick_score, candidate).
         # Negated so heapq (min-heap) acts as a max-heap over quick_score.
-        pq: List[Tuple[float, int]] = []
+        pq: list[tuple[float, int]] = []
         for anchor in _COLLATZ_ANCHORS:
             heapq.heappush(pq, (-self._quick_score(anchor), anchor))
 
@@ -422,7 +423,7 @@ class CollatzFalsifier:
 
     def _evaluate(
         self, candidate: int, base_seed: int, rng: np.random.Generator
-    ) -> Optional[LedgerEntry]:
+    ) -> LedgerEntry | None:
         """Fully evaluate one Collatz candidate and return a LedgerEntry."""
         try:
             cs = CollatzSequence(starting_value=candidate)
@@ -490,10 +491,10 @@ class GoldbachFalsifier:
     """
 
     def __init__(self, sieve_limit: int = _SIEVE_LIMIT) -> None:
-        self._primes: List[int] = eratosthenes(sieve_limit)
-        self._prime_set: Set[int] = set(self._primes)
+        self._primes: list[int] = eratosthenes(sieve_limit)
+        self._prime_set: set[int] = set(self._primes)
         # Small primes used in the H-L Euler product correction (up to sqrt of max n)
-        self._small_primes: List[int] = [p for p in self._primes if p >= 3 and p <= 1000]
+        self._small_primes: list[int] = [p for p in self._primes if p >= 3 and p <= 1000]
 
     # ── Hardy-Littlewood prediction ───────────────────────────────────────────
 
@@ -530,7 +531,7 @@ class GoldbachFalsifier:
             if temp == 1:
                 break
 
-        return 2.0 * _C2 * correction * n / (ln_n ** 2)
+        return 2.0 * _C2 * correction * n / (ln_n**2)
 
     def _actual_partition_count(self, n: int) -> int:
         """Count Goldbach pairs (p, q) with p + q = n, p ≤ q, both prime.
@@ -592,11 +593,12 @@ class GoldbachFalsifier:
         # Maximum possible allowed classes for this mod is mod - 1 (excluding 0)
         residue_score = 1.0 - n_allowed / max(1, mod - 1)
 
-        n_warnings = len(precheck.get("warnings", []))
+        warnings_list = precheck.get("warnings", [])
+        n_warnings = len(warnings_list) if isinstance(warnings_list, list) else 0
         # Cap warning contribution at 1 warning (it's binary in practice)
         warning_score = min(1.0, n_warnings / 1.0)
 
-        return min(1.0, 0.6 * residue_score + 0.4 * warning_score)
+        return float(min(1.0, 0.6 * residue_score + 0.4 * warning_score))
 
     # ── Candidate generation ──────────────────────────────────────────────────
 
@@ -614,7 +616,7 @@ class GoldbachFalsifier:
         Total distinct candidates is bounded by budget; we cycle through the
         families in priority order and stop when budget is exhausted.
         """
-        seen: Set[int] = set()
+        seen: set[int] = set()
         yielded = 0
 
         # Family 1: powers of 2
@@ -628,7 +630,7 @@ class GoldbachFalsifier:
             k += 1
 
         # Family 2: 2·p for large primes p (upper quartile of sieve)
-        upper_quarter = self._primes[3 * len(self._primes) // 4:]
+        upper_quarter = self._primes[3 * len(self._primes) // 4 :]
         rng.shuffle(upper_quarter := list(upper_quarter))
         for p in upper_quarter:
             if yielded >= budget:
@@ -766,11 +768,12 @@ class FalsificationEngine:
     def __init__(self, sieve_limit: int = _SIEVE_LIMIT) -> None:
         self._collatz = CollatzFalsifier()
         self._goldbach = GoldbachFalsifier(sieve_limit=sieve_limit)
-        self._riemann: Optional[Any] = None  # lazy-loaded; requires mpmath
+        self._riemann: Any | None = None  # lazy-loaded; requires mpmath
 
     def _get_riemann(self) -> Any:
         if self._riemann is None:
             from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+
             self._riemann = RiemannFalsifier()
         return self._riemann
 
@@ -780,7 +783,7 @@ class FalsificationEngine:
         seed: int,
         target: str = "both",
         min_score: float = 0.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run falsification search and return a summary dict.
 
         Parameters
@@ -805,9 +808,7 @@ class FalsificationEngine:
         """
         _VALID_TARGETS = {"collatz", "goldbach", "riemann", "both", "all"}
         if target not in _VALID_TARGETS:
-            raise ValueError(
-                f"target must be one of {sorted(_VALID_TARGETS)}; got {target!r}"
-            )
+            raise ValueError(f"target must be one of {sorted(_VALID_TARGETS)}; got {target!r}")
 
         run_collatz = target in {"collatz", "both", "all"}
         run_goldbach = target in {"goldbach", "both", "all"}
@@ -841,7 +842,10 @@ class FalsificationEngine:
             logger.info(
                 "Starting parallel falsification (collatz budget=%d seed=%d, "
                 "goldbach budget=%d seed=%d)",
-                collatz_budget, collatz_seed, goldbach_budget, goldbach_seed,
+                collatz_budget,
+                collatz_seed,
+                goldbach_budget,
+                goldbach_seed,
             )
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
                 cf = pool.submit(self._collatz.search, collatz_budget, collatz_seed)
@@ -853,21 +857,24 @@ class FalsificationEngine:
             if run_collatz:
                 logger.info(
                     "Starting Collatz falsification (budget=%d, seed=%d)",
-                    collatz_budget, collatz_seed,
+                    collatz_budget,
+                    collatz_seed,
                 )
                 collatz_ledger = self._collatz.search(collatz_budget, collatz_seed)
 
             if run_goldbach:
                 logger.info(
                     "Starting Goldbach falsification (budget=%d, seed=%d)",
-                    goldbach_budget, goldbach_seed,
+                    goldbach_budget,
+                    goldbach_seed,
                 )
                 goldbach_ledger = self._goldbach.search(goldbach_budget, goldbach_seed)
 
             if run_riemann:
                 logger.info(
                     "Starting Riemann falsification (budget=%d, seed=%d)",
-                    riemann_budget, riemann_seed,
+                    riemann_budget,
+                    riemann_seed,
                 )
                 riemann_ledger = self._get_riemann().search(riemann_budget, riemann_seed)
 
@@ -877,7 +884,9 @@ class FalsificationEngine:
         elapsed = time.perf_counter() - t0
         logger.info(
             "FalsificationEngine complete: %d total entries (min_score=%.2f) in %.2fs",
-            len(merged), min_score, elapsed,
+            len(merged),
+            min_score,
+            elapsed,
         )
 
         return {
@@ -907,7 +916,7 @@ class FalsificationEngine:
 
     @staticmethod
     def _merge_ledgers(
-        ledgers: List[FalsificationLedger], min_score: float = 0.0
+        ledgers: list[FalsificationLedger], min_score: float = 0.0
     ) -> FalsificationLedger:
         """Merge multiple ledgers, dropping entries below min_score."""
         merged = FalsificationLedger()
@@ -927,34 +936,56 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="ProofX FalsificationEngine — directed counterexample search"
     )
-    parser.add_argument("--budget", type=int, default=200,
-                        help="Total evaluation budget (default 200)")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="RNG seed for reproducible search (default 42)")
-    parser.add_argument("--target",
-                        choices=["collatz", "goldbach", "riemann", "both", "all"],
-                        default="both",
-                        help="Which conjecture to search (default both)")
-    parser.add_argument("--top-k", type=int, default=5,
-                        help="Number of top near-misses to print per conjecture")
-    parser.add_argument("--save-ledger", type=str, default=None,
-                        help="Path to save the full ledger as JSONL (optional)")
-    parser.add_argument("--output-json", type=str, default=None,
-                        help="Path to save a JSON summary report (optional)")
-    parser.add_argument("--sieve-limit", type=int, default=_SIEVE_LIMIT,
-                        help=f"Upper bound for the Goldbach prime sieve (default {_SIEVE_LIMIT})")
-    parser.add_argument("--min-score", type=float, default=0.0,
-                        help="Drop ledger entries with near-miss score below this value (default 0)")
+    parser.add_argument(
+        "--budget", type=int, default=200, help="Total evaluation budget (default 200)"
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="RNG seed for reproducible search (default 42)"
+    )
+    parser.add_argument(
+        "--target",
+        choices=["collatz", "goldbach", "riemann", "both", "all"],
+        default="both",
+        help="Which conjecture to search (default both)",
+    )
+    parser.add_argument(
+        "--top-k", type=int, default=5, help="Number of top near-misses to print per conjecture"
+    )
+    parser.add_argument(
+        "--save-ledger",
+        type=str,
+        default=None,
+        help="Path to save the full ledger as JSONL (optional)",
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default=None,
+        help="Path to save a JSON summary report (optional)",
+    )
+    parser.add_argument(
+        "--sieve-limit",
+        type=int,
+        default=_SIEVE_LIMIT,
+        help=f"Upper bound for the Goldbach prime sieve (default {_SIEVE_LIMIT})",
+    )
+    parser.add_argument(
+        "--min-score",
+        type=float,
+        default=0.0,
+        help="Drop ledger entries with near-miss score below this value (default 0)",
+    )
     args = parser.parse_args()
 
     engine = FalsificationEngine(sieve_limit=args.sieve_limit)
-    result = engine.run(budget=args.budget, seed=args.seed, target=args.target,
-                        min_score=args.min_score)
+    result = engine.run(
+        budget=args.budget, seed=args.seed, target=args.target, min_score=args.min_score
+    )
 
     stats = result["stats"]
-    print(f"\n{'═'*60}")
+    print(f"\n{'═' * 60}")
     print(f"  FalsificationEngine Results  (seed={args.seed})")
-    print(f"{'═'*60}")
+    print(f"{'═' * 60}")
     print(f"  Collatz evaluated   : {stats['collatz_evaluated']}")
     print(f"  Goldbach evaluated  : {stats['goldbach_evaluated']}")
     print(f"  Elapsed             : {stats['elapsed_s']:.2f}s")
@@ -968,9 +999,11 @@ def main() -> None:
         if not entries:
             continue
         print(f"\n  {label}:")
-        for i, e in enumerate(entries[:args.top_k], 1):
-            print(f"    #{i}  n={e.candidate:>12,}  near_miss={e.near_miss_score:.4f}"
-                  f"  strategy={e.strategy}")
+        for i, e in enumerate(entries[: args.top_k], 1):
+            print(
+                f"    #{i}  n={e.candidate:>12,}  near_miss={e.near_miss_score:.4f}"
+                f"  strategy={e.strategy}"
+            )
 
     if args.save_ledger:
         result["ledger"].save(Path(args.save_ledger))

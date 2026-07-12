@@ -9,9 +9,9 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from codebase.GoldbachX.PartitionEnumerator.PartitionEnumerator import (
     _validate_input,
+    discover,
     enumerate_partitions,
     metadata,
-    discover,
 )
 
 
@@ -43,6 +43,7 @@ class TestValidateInput:
 class TestEnumeratePartitions:
     def setup_method(self):
         from codebase.GoldbachX.SieveEngine.SieveEngine import eratosthenes
+
         self.primes_100 = eratosthenes(100)
 
     def test_goldbach_4(self):
@@ -67,6 +68,7 @@ class TestEnumeratePartitions:
     def test_unique_flag(self):
         result_unique = enumerate_partitions(10, [2, 3, 5, 7], unique=True)
         result_all = enumerate_partitions(10, [2, 3, 5, 7], unique=False)
+        assert len(result_all) >= len(result_unique)
         # unique should have p <= q
         for p, q in result_unique:
             assert p <= q

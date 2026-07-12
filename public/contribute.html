@@ -1,110 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contribute to ProofX</title>
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <title>Contribute | ProofX</title>
+  <meta name="description" content="Ways to contribute to ProofX through tests, documentation, reproducibility checks, and engine review.">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="stylesheet" href="/styles.css">
   <script src="/monitoring.js"></script>
 </head>
 <body>
-
-  <!-- Navigation -->
-  <nav class="nav">
+  <header class="nav">
     <div class="container nav__inner">
-      <a href="/" class="brand">ProofX</a>
-      <button class="nav__toggle" aria-expanded="false"><span></span><span></span><span></span></button>
-      <div class="nav__links">
-        <a href="/#research">Research</a>
-        <a href="/#engines">Engines</a>
-        <a href="/roadmap">Roadmap</a>
-        <a href="/contribute">Contribute</a>
-        <a href="/#contact">Contact</a>
-      </div>
+      <a class="brand" href="/index.html">
+        <img class="brand__mark" src="/assets/icons/favicon-32x32.png" alt="ProofX logo" width="36" height="36">
+        <span class="brand__text">ProofX</span>
+      </a>
+      <nav class="nav__links">
+        <a href="/index.html">Home</a>
+        <a href="/research.html">Research</a>
+        <a href="/roadmap.html">Roadmap</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
     </div>
-  </nav>
+  </header>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero__wrap container">
-      <h1 class="hero__h1" data-no-wrap>Join &amp; Contribute</h1>
-      <p class="hero__sub">
-        ProofX is an open ecosystem for researchers, engineers, and enthusiasts. Connect with us to collaborate, contribute, or support our mission.
-      </p>
-    </div>
-  </section>
-
-  <!-- Contribute Section -->
-  <section class="section" id="contribute">
-    <div class="container">
-
-      <div class="card">
-        <h2>Ways to Contribute</h2>
-        <p class="muted">
-          We welcome collaborators from all backgrounds. Choose how you want to contribute to the ProofX mission:
+  <main id="main">
+    <section class="section hero">
+      <div class="hero__wrap container">
+        <h1 class="hero__h1" data-no-wrap>Contribute</h1>
+        <p class="hero__sub">
+          The most useful contributions make ProofX easier to audit: clearer docs, stronger tests, better examples, and reproducible result ledgers.
         </p>
       </div>
+    </section>
 
-      <div class="test-cases-grid">
+    <section class="section" id="contribute">
+      <div class="container">
+        <div class="grid grid--3">
+          <article class="card">
+            <h3>Tests</h3>
+            <ul class="bullets bullets--tight">
+              <li>Cover edge cases in Collatz and Goldbach helpers.</li>
+              <li>Add regression tests for CLI output and ledgers.</li>
+              <li>Separate mocked tests from real integration checks.</li>
+            </ul>
+          </article>
 
-        <div class="test-case">
-          <h4>Research Collaboration</h4>
-          <ul>
-            <li>Academic partnerships for conjecture verification</li>
-            <li>Joint research papers and publications</li>
-            <li>Open-source contributions to ML engines</li>
-          </ul>
+          <article class="card">
+            <h3>Documentation</h3>
+            <ul class="bullets bullets--tight">
+              <li>Improve method notes and examples.</li>
+              <li>Remove vague claims and unsupported benchmarks.</li>
+              <li>Keep public copy aligned with the code.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Reproducibility</h3>
+            <ul class="bullets bullets--tight">
+              <li>Publish sample ledgers from documented commands.</li>
+              <li>Record dependency and platform context.</li>
+              <li>Check that result pages match generated data.</li>
+            </ul>
+          </article>
         </div>
 
-        <div class="test-case">
-          <h4>Engineering Contributions</h4>
-          <ul>
-            <li>Performance optimization of engines</li>
-            <li>UI/UX enhancements for dashboards</li>
-            <li>Integration of new computational modules</li>
-          </ul>
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX" target="_blank" rel="noopener">Open GitHub</a>
+          <a class="btn btn--pill" href="/contact.html">Contact</a>
         </div>
-
-        <div class="test-case">
-          <h4>Community & Outreach</h4>
-          <ul>
-            <li>STEM educational content creation</li>
-            <li>Organizing workshops and webinars</li>
-            <li>LinkedIn or social reach-out to new partners</li>
-          </ul>
-        </div>
-
       </div>
+    </section>
+  </main>
 
-      <div class="btn-row">
-        <a class="btn btn--primary btn--pill" href="https://www.linkedin.com/company/proofx/" target="_blank" rel="noopener">
-          Reach Out on LinkedIn
-        </a>
-        <a class="btn btn--pill" href="mailto:contact@proofx.com">Email Us</a>
-        <a class="btn btn--pill" href="/roadmap">View Roadmap</a>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- Footer -->
   <footer class="footer">
     <div class="container footer__inner">
-      <p>&copy; 2025 ProofX. All rights reserved.</p>
+      <span>&copy; 2025 ProofX</span>
       <div class="footer__links">
-        <a href="/">Home</a>
-        <a href="/#research">Research</a>
-        <a href="/#engines">Engines</a>
-        <a href="/roadmap">Roadmap</a>
-        <a href="/#contact">Contact</a>
+        <a href="/index.html">Home</a>
+        <a href="/research.html">Research</a>
+        <a href="/roadmap.html">Roadmap</a>
       </div>
     </div>
   </footer>
-
-  <a href="#top" class="to-top" aria-label="Back to top">↑</a>
-
 </body>
 </html>

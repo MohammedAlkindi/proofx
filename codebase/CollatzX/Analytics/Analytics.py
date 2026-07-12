@@ -21,25 +21,17 @@ from enum import Enum, auto
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sympy as sp
-from matplotlib import cm
-from plotly.subplots import make_subplots
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 -- registers the 3d projection
 from scipy.optimize import curve_fit
 from scipy.stats import kurtosis, skew
-from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import (
-    explained_variance_score,
-    mean_absolute_error,
-    mean_squared_error,
-    r2_score,
-)
-from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
+from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
@@ -48,8 +40,7 @@ from tqdm import tqdm
 
 try:
     import torch
-    import torch.nn as nn
-    from torch.utils.data import DataLoader, Dataset
+
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
@@ -58,9 +49,10 @@ except ImportError:
 # Enhanced Logging & Configuration
 # ============================================================
 
+
 class EnhancedConfig:
     """Enhanced configuration with validation and better defaults."""
-    
+
     def __init__(self):
         # Preserve original constants
         self.MAX_ITERATIONS = 10_000_000
@@ -68,30 +60,32 @@ class EnhancedConfig:
         self.DEFAULT_OUTPUT_DIR = Path("collatz_results")
         self.CACHE_DIR = Path(".collatz_cache")
         self.PLOT_STYLE = "seaborn-v0_8-darkgrid"
-        
+
         # Enhanced defaults
         self.USE_GPU = _TORCH_AVAILABLE and torch.cuda.is_available()
-        self.MAX_PROCESSES = max(1, (__import__("os").cpu_count() or 2) - 1)  # Better CPU utilization
+        self.MAX_PROCESSES = max(
+            1, (__import__("os").cpu_count() or 2) - 1
+        )  # Better CPU utilization
         self.PRECISION = np.float64
         self.ENABLE_CACHE = True
         self.ENABLE_PROGRESS_BAR = True
         self.DEFAULT_TEST_SIZE = 0.2
         self.RANDOM_SEED = 42
         self.EARLY_STOPPING_PATIENCE = 5
-        
+
         # Enhanced model configurations
         self.RF_N_EST = [100, 200]
         self.RF_MAX_DEPTH = [None, 10, 20]
         self.RF_MIN_SAMPLES_SPLIT = [2, 5]
         self.NN_HIDDEN_LAYERS = [(100, 50), (64, 32)]  # Added NN options
-        
+
         # New: Performance tuning
         self.CACHE_MAX_SIZE = 100000
         self.CHUNK_SIZE = 1000  # For large computations
         self.ENABLE_CYCLE_DETECTION = True  # New feature
-        
+
         self._setup_determinism()
-    
+
     def _setup_determinism(self):
         """Enhanced deterministic setup."""
         np.random.seed(self.RANDOM_SEED)
@@ -101,25 +95,30 @@ class EnhancedConfig:
                 torch.backends.cudnn.deterministic = True
                 torch.backends.cudnn.benchmark = False
 
+
 config = EnhancedConfig()
 
 # Enhanced logging setup
 LOG_DIR = Path(".logs")
 LOG_DIR.mkdir(exist_ok=True)
 
+
 class EnhancedFormatter(logging.Formatter):
     """Enhanced log formatting with colors and better structure."""
-    
+
     def format(self, record):
         # Add custom formatting here while preserving original functionality
         return super().format(record)
+
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        RotatingFileHandler(LOG_DIR / "collatz_debug.log", maxBytes=10 * 1024 * 1024, backupCount=5),
+        RotatingFileHandler(
+            LOG_DIR / "collatz_debug.log", maxBytes=10 * 1024 * 1024, backupCount=5
+        ),
         logging.FileHandler(LOG_DIR / "collatz_analysis.log"),
     ],
 )
@@ -129,6 +128,7 @@ logger = logging.getLogger("collatz")
 # Enhanced Enums & Registries (PRESERVED + ENHANCED)
 # ============================================================
 
+
 class ModelType(Enum):
     EXPONENTIAL = auto()
     POWER_LAW = auto()
@@ -137,13 +137,17 @@ class ModelType(Enum):
     RANDOM_FOREST = auto()
     NEURAL_NET = auto()
 
-MODEL_REGISTRY: Dict[ModelType, Any] = {}
+
+MODEL_REGISTRY: dict[ModelType, Any] = {}
+
 
 def register_model(model_type: ModelType):
     def decorator(cls):
         MODEL_REGISTRY[model_type] = cls
         return cls
+
     return decorator
+
 
 class CollatzVariant(Enum):
     CLASSIC = auto()
@@ -168,22 +172,24 @@ class CollatzVariant(Enum):
             return lambda n: (2 * n + 1) if n % mod == 0 else (n // 2)
         raise ValueError(f"Unsupported variant: {variant.name}")
 
+
 # ============================================================
 # Enhanced Data Structures
 # ============================================================
 
+
 @dataclass
 class CollatzSequence:
     """Enhanced with cycle detection and better metadata."""
-    
+
     starting_value: int
-    sequence: List[int] = field(default_factory=list)
-    stopping_time: Optional[int] = None
-    max_value: Optional[int] = None
-    features: Dict[str, float] = field(default_factory=dict)
+    sequence: list[int] = field(default_factory=list)
+    stopping_time: int | None = None
+    max_value: int | None = None
+    features: dict[str, float] = field(default_factory=dict)
     # NEW: Enhanced metadata
     computation_time: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         if not self.sequence:
@@ -195,25 +201,31 @@ class CollatzSequence:
         n = self.starting_value
         seq = [n]
         steps = 0
-        seen = set() if config.ENABLE_CYCLE_DETECTION else None
-        
+        seen: set[int] | None = set() if config.ENABLE_CYCLE_DETECTION else None
+
         while n != 1 and steps < config.MAX_ITERATIONS:
             if n > config.MAX_VALUE:
                 raise OverflowError(f"Value {n} exceeds MAX_VALUE")
-            
+
             # Enhanced: Cycle detection
             if seen is not None and n in seen:
-                warnings.warn(f"Cycle detected for start={self.starting_value} at n={n}")
+                warnings.warn(
+                    f"Cycle detected for start={self.starting_value} at n={n}",
+                    stacklevel=2,
+                )
                 break
             if seen is not None:
                 seen.add(n)
-            
+
             n = 3 * n + 1 if n % 2 else n // 2
             seq.append(n)
             steps += 1
 
         if steps >= config.MAX_ITERATIONS:
-            warnings.warn(f"Max iterations reached for start={self.starting_value}")
+            warnings.warn(
+                f"Max iterations reached for start={self.starting_value}",
+                stacklevel=2,
+            )
 
         self.sequence = seq
         self.stopping_time = len(seq) - 1
@@ -222,13 +234,14 @@ class CollatzSequence:
         self.metadata = {
             "iterations": steps,
             "converged": n == 1,
-            "cycle_detected": seen is not None and len(seq) != len(set(seq)) if seen else False
+            "cycle_detected": seen is not None and len(seq) != len(set(seq)) if seen else False,
         }
+
 
 @dataclass
 class FitResult:
     """PRESERVED ORIGINAL + enhanced serialization."""
-    
+
     parameters: np.ndarray
     errors: np.ndarray
     r_squared: float
@@ -237,16 +250,18 @@ class FitResult:
     bic: float
     model_type: ModelType
     fit_time: float
-    cross_val_scores: Optional[np.ndarray] = None
-    feature_importances: Optional[np.ndarray] = None
-    model: Optional[Any] = None
-    training_metrics: Dict[str, float] = field(default_factory=dict)
-    validation_metrics: Dict[str, float] = field(default_factory=dict)
+    cross_val_scores: np.ndarray | None = None
+    feature_importances: np.ndarray | None = None
+    model: Any | None = None
+    training_metrics: dict[str, float] = field(default_factory=dict)
+    validation_metrics: dict[str, float] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Enhanced serialization with better error handling."""
-        as_arr = lambda x: x.tolist() if isinstance(x, np.ndarray) else x
-        
+
+        def as_arr(x: Any) -> Any:
+            return x.tolist() if isinstance(x, np.ndarray) else x
+
         result = {
             "model_type": self.model_type.name,
             "parameters": as_arr(self.parameters),
@@ -256,12 +271,16 @@ class FitResult:
             "aic": self.aic,
             "bic": self.bic,
             "fit_time": self.fit_time,
-            "cross_val_scores": as_arr(self.cross_val_scores) if self.cross_val_scores is not None else None,
-            "feature_importances": as_arr(self.feature_importances) if self.feature_importances is not None else None,
+            "cross_val_scores": as_arr(self.cross_val_scores)
+            if self.cross_val_scores is not None
+            else None,
+            "feature_importances": as_arr(self.feature_importances)
+            if self.feature_importances is not None
+            else None,
             "training_metrics": self.training_metrics,
             "validation_metrics": self.validation_metrics,
         }
-        
+
         # Enhanced: Validate serializable
         try:
             json.dumps(result)
@@ -271,40 +290,55 @@ class FitResult:
             for key, value in result.items():
                 if isinstance(value, (np.floating, np.integer)):
                     result[key] = float(value)
-        
+
         return result
+
 
 # ============================================================
 # Enhanced Feature Extraction (PRESERVED + IMPROVED)
 # ============================================================
 
+
 class FeatureExtractor(ABC):
     """PRESERVED ORIGINAL ABSTRACT BASE CLASS"""
+
     @abstractmethod
-    def extract(self, sequence: List[int]) -> Dict[str, float]:
-        ...
+    def extract(self, sequence: list[int]) -> dict[str, float]: ...
 
     @property
     @abstractmethod
-    def feature_names(self) -> List[str]:
-        ...
+    def feature_names(self) -> list[str]: ...
+
 
 class StatisticalFeatureExtractor(FeatureExtractor):
     """Enhanced statistical features with better numerical stability."""
-    
+
     def __init__(self):
         self._names = [
-            "length", "max_value", "min_value", "mean_value", "median_value",
-            "std_dev", "skewness", "kurtosis", "entropy", "parity_ratio",
-            "even_streak_max", "odd_streak_max", "growth_rate", "volatility",
-            "autocorrelation", "hurst_exponent", "lyapunov_exponent",
+            "length",
+            "max_value",
+            "min_value",
+            "mean_value",
+            "median_value",
+            "std_dev",
+            "skewness",
+            "kurtosis",
+            "entropy",
+            "parity_ratio",
+            "even_streak_max",
+            "odd_streak_max",
+            "growth_rate",
+            "volatility",
+            "autocorrelation",
+            "hurst_exponent",
+            "lyapunov_exponent",
         ]
 
     @property
-    def feature_names(self) -> List[str]:
+    def feature_names(self) -> list[str]:
         return self._names
 
-    def extract(self, sequence: List[int]) -> Dict[str, float]:
+    def extract(self, sequence: list[int]) -> dict[str, float]:
         """Enhanced extraction with better error handling."""
         if not sequence:
             return {n: 0.0 for n in self._names}
@@ -336,7 +370,7 @@ class StatisticalFeatureExtractor(FeatureExtractor):
 
     # PRESERVED ORIGINAL METHODS
     @staticmethod
-    def _max_streak(seq: List[int], target: int) -> int:
+    def _max_streak(seq: list[int], target: int) -> int:
         m = c = 0
         for v in seq:
             if v == target:
@@ -347,20 +381,20 @@ class StatisticalFeatureExtractor(FeatureExtractor):
         return m
 
     @staticmethod
-    def _entropy(sequence: List[int]) -> float:
+    def _entropy(sequence: list[int]) -> float:
         vals, cnts = np.unique(np.abs(sequence), return_counts=True)
         p = cnts.astype(np.float64) / cnts.sum()
         return float(-(p * np.log2(p + 1e-12)).sum())
 
     @staticmethod
-    def _growth_rate(sequence: List[int]) -> float:
+    def _growth_rate(sequence: list[int]) -> float:
         if len(sequence) < 2:
             return 0.0
         diffs = np.diff(sequence)
         return float(np.mean(diffs) / (np.max(sequence) + 1e-12))
 
     @staticmethod
-    def _volatility(sequence: List[int]) -> float:
+    def _volatility(sequence: list[int]) -> float:
         if len(sequence) < 2:
             return 0.0
         prev = np.array(sequence[:-1], dtype=np.float64)
@@ -368,7 +402,7 @@ class StatisticalFeatureExtractor(FeatureExtractor):
         return float(np.std(ret))
 
     @staticmethod
-    def _autocorr(sequence: List[int], lag: int) -> float:
+    def _autocorr(sequence: list[int], lag: int) -> float:
         if len(sequence) < lag + 1:
             return 0.0
         try:
@@ -377,7 +411,7 @@ class StatisticalFeatureExtractor(FeatureExtractor):
             return 0.0  # Enhanced: Graceful fallback
 
     @staticmethod
-    def _hurst(sequence: List[int]) -> float:
+    def _hurst(sequence: list[int]) -> float:
         if len(sequence) < 10:
             return 0.5
         lags = range(2, min(20, len(sequence) // 2))
@@ -391,7 +425,7 @@ class StatisticalFeatureExtractor(FeatureExtractor):
             return 0.5
 
     @staticmethod
-    def _lyap(sequence: List[int]) -> float:
+    def _lyap(sequence: list[int]) -> float:
         if len(sequence) < 10:
             return 0.0
         dv = []
@@ -430,9 +464,10 @@ class StatisticalFeatureExtractor(FeatureExtractor):
                 return 0.0
             return float(np.mean((x - mu) ** 4) / (sd**4) - 3)
 
+
 class AlgebraicFeatureExtractor(FeatureExtractor):
     """PRESERVED ORIGINAL IMPLEMENTATION - COMPLETE AND WORKING"""
-    
+
     def __init__(self):
         self._names = [
             "prime_factors_count",
@@ -450,15 +485,15 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         ]
 
     @property
-    def feature_names(self) -> List[str]:
+    def feature_names(self) -> list[str]:
         return self._names
 
     @staticmethod
     @lru_cache(maxsize=100000)
-    def _factorint_cached(x: int) -> Dict[int, int]:
-        return sp.factorint(x)
+    def _factorint_cached(x: int) -> dict[int, int]:
+        return {int(k): int(v) for k, v in sp.factorint(x).items()}
 
-    def extract(self, sequence: List[int]) -> Dict[str, float]:
+    def extract(self, sequence: list[int]) -> dict[str, float]:
         if not sequence:
             return {n: 0.0 for n in self._names}
 
@@ -478,17 +513,17 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         }
         return features
 
-    def _total_prime_factors(self, seq: List[int]) -> float:
+    def _total_prime_factors(self, seq: list[int]) -> float:
         return sum(len(self._factorint_cached(abs(int(n)))) for n in seq if n)
 
-    def _distinct_prime_factors(self, seq: List[int]) -> float:
-        primes = set()
+    def _distinct_prime_factors(self, seq: list[int]) -> float:
+        primes: set[int] = set()
         for n in seq:
             if n:
                 primes.update(self._factorint_cached(abs(int(n))).keys())
         return float(len(primes))
 
-    def _avg_prime_multiplicity(self, seq: List[int]) -> float:
+    def _avg_prime_multiplicity(self, seq: list[int]) -> float:
         total = count = 0
         for n in seq:
             if n:
@@ -498,12 +533,12 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return total / count if count else 0.0
 
     @staticmethod
-    def _power2_ratio(seq: List[int]) -> float:
+    def _power2_ratio(seq: list[int]) -> float:
         c = sum(1 for n in seq if n > 0 and (n & (n - 1)) == 0)
         return c / len(seq) if seq else 0.0
 
     @staticmethod
-    def _log2_ratio(seq: List[int]) -> float:
+    def _log2_ratio(seq: list[int]) -> float:
         if len(seq) < 2:
             return 0.0
         vals = []
@@ -514,7 +549,7 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return float(np.mean(vals)) if vals else 0.0
 
     @staticmethod
-    def _modular_pattern(seq: List[int]) -> float:
+    def _modular_pattern(seq: list[int]) -> float:
         if len(seq) < 3:
             return 0.0
         sigmas = []
@@ -523,8 +558,9 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return float(np.mean(sigmas))
 
     @staticmethod
-    def _binary_density(seq: List[int]) -> float:
-        acc = cnt = 0
+    def _binary_density(seq: list[int]) -> float:
+        acc = 0.0
+        cnt = 0
         for n in seq:
             if n > 0:
                 b = bin(int(n))[2:]
@@ -533,18 +569,20 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return acc / cnt if cnt else 0.0
 
     @staticmethod
-    def _binary_transitions(seq: List[int]) -> float:
-        acc = cnt = 0
+    def _binary_transitions(seq: list[int]) -> float:
+        acc = 0.0
+        cnt = 0
         for n in seq:
             if n > 0:
                 b = bin(int(n))[2:]
-                acc += sum(1 for a, c in zip(b, b[1:]) if a != c) / max(1, len(b) - 1)
+                acc += sum(1 for a, c in zip(b, b[1:], strict=False) if a != c) / max(1, len(b) - 1)
                 cnt += 1
         return acc / cnt if cnt else 0.0
 
     @staticmethod
-    def _binary_entropy(seq: List[int]) -> float:
-        acc = cnt = 0
+    def _binary_entropy(seq: list[int]) -> float:
+        acc = 0.0
+        cnt = 0
         for n in seq:
             if n > 0:
                 b = bin(int(n))[2:]
@@ -561,7 +599,7 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return acc / cnt if cnt else 0.0
 
     @staticmethod
-    def _gcd_with_max(seq: List[int]) -> float:
+    def _gcd_with_max(seq: list[int]) -> float:
         if not seq:
             return 0.0
         mx = int(max(seq))
@@ -569,7 +607,7 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return float(np.mean(vals)) if vals else 0.0
 
     @staticmethod
-    def _lcm_with_max(seq: List[int]) -> float:
+    def _lcm_with_max(seq: list[int]) -> float:
         if not seq:
             return 0.0
         mx = int(max(seq))
@@ -577,7 +615,7 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
         return float(np.mean(vals)) if vals else 0.0
 
     @staticmethod
-    def _avg_divisors(seq: List[int]) -> float:
+    def _avg_divisors(seq: list[int]) -> float:
         total = cnt = 0
         for n in seq:
             if n:
@@ -585,52 +623,61 @@ class AlgebraicFeatureExtractor(FeatureExtractor):
                 cnt += 1
         return total / cnt if cnt else 0.0
 
+
 class FeatureUnion:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
-    def __init__(self, extractors: List[FeatureExtractor]):
+
+    def __init__(self, extractors: list[FeatureExtractor]):
         self.extractors = extractors
         self._names = []
         for e in extractors:
             self._names.extend(e.feature_names)
 
-    def extract(self, sequence: List[int]) -> Dict[str, float]:
-        out: Dict[str, float] = {}
+    def extract(self, sequence: list[int]) -> dict[str, float]:
+        out: dict[str, float] = {}
         for e in self.extractors:
             out.update(e.extract(sequence))
         return out
 
     @property
-    def feature_names(self) -> List[str]:
+    def feature_names(self) -> list[str]:
         return self._names
+
 
 # ============================================================
 # Enhanced Models (PRESERVED ORIGINAL + OPTIONAL IMPROVEMENTS)
 # ============================================================
 
+
 @register_model(ModelType.EXPONENTIAL)
 class ExponentialModel:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
+
     @staticmethod
     def f(n: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-        return a * (b ** n) + c
+        return a * (b**n) + c
 
     def fit(self, X, y):
         try:
-            self.params_, self.pcov_ = curve_fit(self.f, X.flatten(), y, p0=[1, 1.1, 0], maxfev=5000)
+            self.params_, self.pcov_ = curve_fit(
+                self.f, X.flatten(), y, p0=[1, 1.1, 0], maxfev=5000
+            )
         except Exception as e:
             logger.error(f"Exponential fit failed: {e}")
             self.params_, self.pcov_ = np.array([1, 1, 0]), np.eye(3)
         return self
 
     def predict(self, X) -> np.ndarray:
-        return self.f(X.flatten(), *self.params_)
+        return np.asarray(self.f(X.flatten(), *self.params_), dtype=float)
+
 
 @register_model(ModelType.POWER_LAW)
 class PowerLawModel:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
+
     @staticmethod
     def f(n: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-        return a * np.power(n, b) + c
+        return np.asarray(a * np.power(n, b) + c, dtype=float)
 
     def fit(self, X, y):
         try:
@@ -641,11 +688,13 @@ class PowerLawModel:
         return self
 
     def predict(self, X) -> np.ndarray:
-        return self.f(X.flatten(), *self.params_)
+        return np.asarray(self.f(X.flatten(), *self.params_), dtype=float)
+
 
 @register_model(ModelType.LOGARITHMIC)
 class LogarithmicModel:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
+
     @staticmethod
     def f(n: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
         return a * np.log(n + 1e-12) + b * n + c
@@ -659,11 +708,13 @@ class LogarithmicModel:
         return self
 
     def predict(self, X) -> np.ndarray:
-        return self.f(X.flatten(), *self.params_)
+        return np.asarray(self.f(X.flatten(), *self.params_), dtype=float)
+
 
 @register_model(ModelType.LINEAR)
 class LinearModel:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
+
     @staticmethod
     def f(n: np.ndarray, a: float, b: float) -> np.ndarray:
         return a * n + b
@@ -677,16 +728,23 @@ class LinearModel:
         return self
 
     def predict(self, X) -> np.ndarray:
-        return self.f(X.flatten(), *self.params_)
+        return np.asarray(self.f(X.flatten(), *self.params_), dtype=float)
+
 
 @register_model(ModelType.RANDOM_FOREST)
 class RandomForestModel:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
+
     def __init__(self):
         self.pipeline = Pipeline(
             [
                 ("scaler", StandardScaler()),
-                ("rf", RandomForestRegressor(n_estimators=200, random_state=config.RANDOM_SEED, n_jobs=-1)),
+                (
+                    "rf",
+                    RandomForestRegressor(
+                        n_estimators=200, random_state=config.RANDOM_SEED, n_jobs=-1
+                    ),
+                ),
             ]
         )
         self.best_params_ = None
@@ -697,24 +755,36 @@ class RandomForestModel:
             "rf__max_depth": config.RF_MAX_DEPTH,
             "rf__min_samples_split": config.RF_MIN_SAMPLES_SPLIT,
         }
-        gs = GridSearchCV(self.pipeline, grid, cv=5, scoring="neg_mean_squared_error", n_jobs=-1, verbose=0)
+        gs = GridSearchCV(
+            self.pipeline, grid, cv=5, scoring="neg_mean_squared_error", n_jobs=-1, verbose=0
+        )
         gs.fit(X, y)
         self.pipeline = gs.best_estimator_
         self.best_params_ = gs.best_params_
         return self
 
     def predict(self, X) -> np.ndarray:
-        return self.pipeline.predict(X)
+        return np.asarray(self.pipeline.predict(X), dtype=float)
+
 
 @register_model(ModelType.NEURAL_NET)
 class NeuralNetworkModel:
     """PRESERVED ORIGINAL IMPLEMENTATION"""
+
     def __init__(self, hidden_layer_sizes=(100, 50)):
         self.pipeline = Pipeline(
             [
                 ("scaler", StandardScaler()),
                 ("poly", PolynomialFeatures(degree=2, include_bias=False)),
-                ("nn", MLPRegressor(hidden_layer_sizes=hidden_layer_sizes, max_iter=1000, random_state=config.RANDOM_SEED, early_stopping=True)),
+                (
+                    "nn",
+                    MLPRegressor(
+                        hidden_layer_sizes=hidden_layer_sizes,
+                        max_iter=1000,
+                        random_state=config.RANDOM_SEED,
+                        early_stopping=True,
+                    ),
+                ),
             ]
         )
 
@@ -723,30 +793,40 @@ class NeuralNetworkModel:
         return self
 
     def predict(self, X) -> np.ndarray:
-        return self.pipeline.predict(X)
+        return np.asarray(self.pipeline.predict(X), dtype=float)
+
 
 # ============================================================
 # Enhanced Analyzer Class
 # ============================================================
 
+
 class CollatzAnalyzer:
     """Enhanced analyzer with preserved functionality + improvements."""
-    
-    def __init__(self, base: int = 2, output_dir: Optional[str] = None, variant: CollatzVariant = CollatzVariant.CLASSIC, variant_params: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self,
+        base: int = 2,
+        output_dir: str | None = None,
+        variant: CollatzVariant = CollatzVariant.CLASSIC,
+        variant_params: dict[str, Any] | None = None,
+    ):
         # PRESERVED ORIGINAL INITIALIZATION
         self.base = base
         self.variant = variant
         self.variant_params = variant_params or {}
         self.collatz_func = CollatzVariant.get_function(variant, **self.variant_params)
 
-        self.n_values: Optional[np.ndarray] = None
-        self.T_values: Optional[List[Optional[int]]] = None
-        self.sequences: Dict[int, CollatzSequence] = {}
-        self.fit_results: Dict[ModelType, FitResult] = {}
+        self.n_values: np.ndarray | None = None
+        self.T_values: list[int | None] | None = None
+        self.sequences: dict[int, CollatzSequence] = {}
+        self.fit_results: dict[ModelType, FitResult] = {}
         self.computation_time = 0.0
-        self.results_df: Optional[pd.DataFrame] = None
+        self.results_df: pd.DataFrame | None = None
 
-        self.feature_extractor = FeatureUnion([StatisticalFeatureExtractor(), AlgebraicFeatureExtractor()])
+        self.feature_extractor = FeatureUnion(
+            [StatisticalFeatureExtractor(), AlgebraicFeatureExtractor()]
+        )
 
         self.output_dir = Path(output_dir) if output_dir else config.DEFAULT_OUTPUT_DIR
         self.output_dir.mkdir(exist_ok=True, parents=True)
@@ -773,11 +853,20 @@ class CollatzAnalyzer:
 
     def _cache_key(self, n: int) -> str:
         """PRESERVED ORIGINAL"""
-        key = json.dumps({"base": self.base, "n": n, "variant": self.variant.name, "variant_params": self.variant_params}, sort_keys=True)
+        key = json.dumps(
+            {
+                "base": self.base,
+                "n": n,
+                "variant": self.variant.name,
+                "variant_params": self.variant_params,
+            },
+            sort_keys=True,
+        )
         import hashlib
+
         return hashlib.md5(key.encode()).hexdigest()
 
-    def _load_cache(self, n: int) -> Optional[CollatzSequence]:
+    def _load_cache(self, n: int) -> CollatzSequence | None:
         """PRESERVED ORIGINAL"""
         if not config.ENABLE_CACHE:
             return None
@@ -785,7 +874,10 @@ class CollatzAnalyzer:
         if f.exists():
             try:
                 with open(f, "rb") as fh:
-                    return pickle.load(fh)
+                    cached = pickle.load(fh)
+                if isinstance(cached, CollatzSequence):
+                    return cached
+                logger.warning(f"Cache payload had wrong type (n={n})")
             except Exception as e:
                 logger.warning(f"Cache load failed (n={n}): {e}")
         return None
@@ -806,7 +898,7 @@ class CollatzAnalyzer:
         cached = self._load_cache(n)
         if cached:
             return cached
-            
+
         # Use the enhanced sequence generation
         cs = CollatzSequence(starting_value=n)
         cs.features = self.feature_extractor.extract(cs.sequence)
@@ -814,7 +906,7 @@ class CollatzAnalyzer:
         return cs
 
     # PRESERVE ALL ORIGINAL METHODS (they'll use the enhanced CollatzSequence)
-    def collatz_stopping_time(self, exponent: int) -> Optional[int]:
+    def collatz_stopping_time(self, exponent: int) -> int | None:
         try:
             value = self.base**exponent
             cs = self.collatz_sequence(value)
@@ -824,19 +916,23 @@ class CollatzAnalyzer:
             logger.error(f"Stopping time error base^{exponent}: {e}")
             return None
 
-    def parallel_compute(self, exponents: np.ndarray) -> List[Optional[int]]:
+    def parallel_compute(self, exponents: np.ndarray) -> list[int | None]:
         """PRESERVED ORIGINAL IMPLEMENTATION"""
         logger.info(f"Parallel compute for {len(exponents)} exponents")
         start = time.perf_counter()
-        pbar = tqdm(total=len(exponents), disable=not config.ENABLE_PROGRESS_BAR, desc="Compute", unit="exp")
+        pbar = tqdm(
+            total=len(exponents), disable=not config.ENABLE_PROGRESS_BAR, desc="Compute", unit="exp"
+        )
 
-        results: List[Optional[int]] = [None] * len(exponents)
+        results: list[int | None] = [None] * len(exponents)
         variant_name = self.variant.name
         variant_params = self.variant_params
 
         with ProcessPoolExecutor(max_workers=config.MAX_PROCESSES) as pool:
             fut2idx = {
-                pool.submit(_compute_sequence_worker, self.base, int(exp), variant_name, variant_params): i
+                pool.submit(
+                    _compute_sequence_worker, self.base, int(exp), variant_name, variant_params
+                ): i
                 for i, exp in enumerate(exponents)
             }
             for fut in as_completed(fut2idx):
@@ -856,69 +952,204 @@ class CollatzAnalyzer:
         logger.info(f"Parallel compute done in {self.computation_time:.2f}s")
         return results
 
-    # PRESERVE ALL OTHER ORIGINAL METHODS:
-    # _prepare_ml, _metrics, _fit_ml, _fit_param, fit_models, 
-    # create_results_dataframe, _add_derived_columns, plot_main_results,
-    # plot_feature_importance, plot_model_comparison, plot_3d_visualization,
-    # create_interactive_plot, save_results, save_analysis_notebook, run_analysis
+    def _prepare_training_data(self) -> tuple[np.ndarray, np.ndarray]:
+        """Build supervised training arrays from completed stopping times."""
+        if self.n_values is None or self.T_values is None:
+            raise RuntimeError("Run parallel_compute before fitting models")
 
-    def run_analysis(self, start: int, end: int, model_types: Optional[List[ModelType]] = None) -> None:
+        rows = [
+            (int(exponent), int(stopping_time))
+            for exponent, stopping_time in zip(self.n_values, self.T_values, strict=False)
+            if stopping_time is not None
+        ]
+        if not rows:
+            raise RuntimeError("No completed stopping times are available for fitting")
+
+        x = np.array([[exponent] for exponent, _ in rows], dtype=float)
+        y = np.array([stopping_time for _, stopping_time in rows], dtype=float)
+        return x, y
+
+    @staticmethod
+    def _fit_metrics(
+        y_true: np.ndarray, y_pred: np.ndarray, n_params: int
+    ) -> tuple[float, float, float, float]:
+        """Return r2, adjusted r2, AIC, and BIC for fitted predictions."""
+        residual = y_true - y_pred
+        ss_res = float(np.sum(residual**2))
+        ss_tot = float(np.sum((y_true - np.mean(y_true)) ** 2))
+        r_squared = 1.0 if ss_tot == 0 else 1.0 - ss_res / ss_tot
+
+        n_obs = len(y_true)
+        if n_obs > n_params + 1:
+            adjusted = 1.0 - (1.0 - r_squared) * (n_obs - 1) / (n_obs - n_params - 1)
+        else:
+            adjusted = r_squared
+
+        mse = max(ss_res / max(1, n_obs), 1e-12)
+        aic = float(n_obs * np.log(mse) + 2 * n_params)
+        bic = float(n_obs * np.log(mse) + n_params * np.log(max(1, n_obs)))
+        return float(r_squared), float(adjusted), aic, bic
+
+    def fit_models(self, model_types: list[ModelType] | None = None) -> None:
+        """Fit configured stopping-time models against completed trajectories."""
+        x, y = self._prepare_training_data()
+        selected = model_types or [ModelType.LINEAR, ModelType.EXPONENTIAL, ModelType.POWER_LAW]
+
+        for model_type in selected:
+            model_cls = MODEL_REGISTRY.get(model_type)
+            if model_cls is None:
+                logger.warning(f"Skipping unknown model type: {model_type}")
+                continue
+
+            if model_type in {ModelType.RANDOM_FOREST, ModelType.NEURAL_NET} and len(y) < 5:
+                logger.warning(f"Skipping {model_type.name}: need at least 5 observations")
+                continue
+
+            start = time.perf_counter()
+            model = model_cls()
+            model.fit(x, y)
+            predictions = np.asarray(model.predict(x), dtype=float)
+            fit_time = time.perf_counter() - start
+
+            params = np.asarray(getattr(model, "params_", np.array([])), dtype=float)
+            pcov = np.asarray(getattr(model, "pcov_", np.empty((0, 0))), dtype=float)
+            if pcov.size:
+                errors = np.sqrt(np.maximum(np.diag(pcov), 0.0))
+            else:
+                errors = np.array([], dtype=float)
+
+            n_params = max(1, len(params))
+            r_squared, adjusted, aic, bic = self._fit_metrics(y, predictions, n_params)
+
+            feature_importances = None
+            pipeline = getattr(model, "pipeline", None)
+            if pipeline is not None and hasattr(pipeline, "named_steps"):
+                estimator = pipeline.named_steps.get("rf")
+                feature_importances = getattr(estimator, "feature_importances_", None)
+
+            self.fit_results[model_type] = FitResult(
+                parameters=params,
+                errors=errors,
+                r_squared=r_squared,
+                adjusted_r_squared=adjusted,
+                aic=aic,
+                bic=bic,
+                model_type=model_type,
+                fit_time=fit_time,
+                feature_importances=feature_importances,
+                model=model,
+            )
+
+    def create_results_dataframe(self) -> pd.DataFrame:
+        """Create a tabular summary for computed sequences."""
+        if self.n_values is None or self.T_values is None:
+            raise RuntimeError("Run parallel_compute before creating a dataframe")
+
+        rows: list[dict[str, Any]] = []
+        for exponent, stopping_time in zip(self.n_values, self.T_values, strict=False):
+            exp_int = int(exponent)
+            sequence = self.sequences.get(exp_int)
+            row: dict[str, Any] = {
+                "exponent": exp_int,
+                "start_value": self.base**exp_int,
+                "stopping_time": stopping_time,
+                "max_value": sequence.max_value if sequence else None,
+                "computation_time": sequence.computation_time if sequence else None,
+            }
+            if sequence:
+                row.update(sequence.features)
+            rows.append(row)
+
+        self.results_df = pd.DataFrame(rows)
+        return self.results_df
+
+    def save_results(self) -> None:
+        """Persist the dataframe, fitted model metrics, and narrative summary."""
+        if self.results_df is None:
+            self.create_results_dataframe()
+        if self.results_df is None:
+            raise RuntimeError("No results dataframe available")
+
+        self.results_df.to_csv(self.output_dir / "collatz_results.csv", index=False)
+        model_summary = {
+            model_type.name: fit.to_dict() for model_type, fit in self.fit_results.items()
+        }
+        (self.output_dir / "model_fits.json").write_text(
+            json.dumps(model_summary, indent=2),
+            encoding="utf-8",
+        )
+
+        exporter = NarrativeExporter(self)
+        exporter.generate_summary()
+        exporter.save_summary()
+
+    def run_analysis(
+        self, start: int, end: int, model_types: list[ModelType] | None = None
+    ) -> None:
         """Enhanced with better progress tracking."""
         logger.info(f"🚀 Starting enhanced analysis: {self.base}^{start} to {self.base}^{end}")
-        
+
         if start > end or start <= 0:
             raise ValueError("Invalid range: start ≤ end and start > 0 required")
-        
+
         # Enhanced: Pre-computation validation
         total_sequences = end - start + 1
-        logger.info(f"Will compute {total_sequences} sequences using {config.MAX_PROCESSES} processes")
-        
+        logger.info(
+            f"Will compute {total_sequences} sequences using {config.MAX_PROCESSES} processes"
+        )
+
         self.n_values = np.arange(start, end + 1)
         self.T_values = self.parallel_compute(self.n_values)
         self.fit_models(model_types)
         self.create_results_dataframe()
         self.save_results()
-        
+
         # Enhanced: Post-analysis summary
         successful = sum(1 for t in self.T_values if t is not None)
         logger.info(f"✅ Analysis completed: {successful}/{total_sequences} sequences successful")
+
 
 # ============================================================
 # Enhanced Worker Function
 # ============================================================
 
-def _compute_sequence_worker(base: int, exponent: int, variant_name: str, variant_params: Dict[str, Any]) -> Tuple[int, Optional[int], CollatzSequence]:
+
+def _compute_sequence_worker(
+    base: int, exponent: int, variant_name: str, variant_params: dict[str, Any]
+) -> tuple[int, int | None, CollatzSequence]:
     """Enhanced worker with better error handling."""
     try:
         variant = CollatzVariant[variant_name]
-        f = CollatzVariant.get_function(variant, **(variant_params or {}))
+        _ = CollatzVariant.get_function(variant, **(variant_params or {}))
         start_value = pow(base, exponent)
 
         # Use enhanced sequence generation
         cs = CollatzSequence(starting_value=start_value)
-        
+
         # Enhanced: Log performance for large computations
         if cs.computation_time > 1.0:
             logger.debug(f"Long computation: {base}^{exponent} took {cs.computation_time:.2f}s")
-            
+
         return exponent, cs.stopping_time, cs
-        
+
     except Exception as e:
         logger.error(f"Worker error (exp={exponent}): {e}")
         v = pow(base, exponent)
         return exponent, None, CollatzSequence(starting_value=v, sequence=[v, 1])
 
+
 # ============================================================
 # Enhanced Narrative Exporter
 # ============================================================
 
+
 class NarrativeExporter:
     """Enhanced with better formatting and metrics."""
-    
+
     def __init__(self, analyzer: CollatzAnalyzer):
         self.analyzer = analyzer
         self.summary = ""
-        self.sections: List[Tuple[str, str]] = []
+        self.sections: list[tuple[str, str]] = []
 
     def add_section(self, title: str, content: str):
         self.sections.append((title, content))
@@ -928,7 +1159,7 @@ class NarrativeExporter:
         self._model_comparison()
         self._feature_analysis()
         self._performance_metrics()  # NEW: Enhanced metrics
-        
+
         self.summary = "# Collatz Conjecture Analysis Report\n\n"
         for t, c in self.sections:
             self.summary += f"## {t}\n\n{c}\n\n"
@@ -940,11 +1171,14 @@ class NarrativeExporter:
         if df is None:
             self.add_section("Error", "No results available.")
             return
-            
+
         valid = df.dropna(subset=["stopping_time"])
-        cycles_detected = sum(1 for seq in self.analyzer.sequences.values() 
-                            if seq.metadata.get("cycle_detected", False))
-        
+        cycles_detected = sum(
+            1
+            for seq in self.analyzer.sequences.values()
+            if seq.metadata.get("cycle_detected", False)
+        )
+
         content = (
             f"**Base:** {self.analyzer.base}\n\n"
             f"**Variant:** {self.analyzer.variant.name}\n\n"
@@ -971,18 +1205,19 @@ class NarrativeExporter:
         """NEW: Enhanced performance metrics."""
         if not self.analyzer.sequences:
             return
-            
+
         total_time = sum(seq.computation_time for seq in self.analyzer.sequences.values())
         avg_time = total_time / len(self.analyzer.sequences)
-        converged = sum(1 for seq in self.analyzer.sequences.values() 
-                       if seq.metadata.get("converged", True))
-        
+        converged = sum(
+            1 for seq in self.analyzer.sequences.values() if seq.metadata.get("converged", True)
+        )
+
         content = (
             f"**Performance Metrics:**\n\n"
             f"- Total sequence computation time: {total_time:.2f}s\n"
             f"- Average time per sequence: {avg_time:.4f}s\n"
             f"- Sequences converged to 1: {converged}/{len(self.analyzer.sequences)}\n"
-            f"- Convergence rate: {converged/len(self.analyzer.sequences):.1%}\n"
+            f"- Convergence rate: {converged / len(self.analyzer.sequences):.1%}\n"
         )
         self.add_section("Performance Analysis", content)
 
@@ -990,7 +1225,9 @@ class NarrativeExporter:
         """PRESERVED ORIGINAL"""
         if not self.analyzer.fit_results:
             return
-        rows = "| Model | R² | Adjusted R² | AIC | BIC | Time (s) |\n|---|---:|---:|---:|---:|---:|\n"
+        rows = (
+            "| Model | R² | Adjusted R² | AIC | BIC | Time (s) |\n|---|---:|---:|---:|---:|---:|\n"
+        )
         for mt, fr in self.analyzer.fit_results.items():
             rows += f"| {mt.name} | {fr.r_squared:.4f} | {fr.adjusted_r_squared:.4f} | {fr.aic:.1f} | {fr.bic:.1f} | {fr.fit_time:.2f} |\n"
         best = max(self.analyzer.fit_results.items(), key=lambda kv: kv[1].r_squared)
@@ -1001,9 +1238,18 @@ class NarrativeExporter:
         """PRESERVED ORIGINAL"""
         if not any(fr.feature_importances is not None for fr in self.analyzer.fit_results.values()):
             return
-        best = max((kv for kv in self.analyzer.fit_results.items() if kv[1].feature_importances is not None), key=lambda kv: kv[1].r_squared)
+        best = max(
+            (
+                kv
+                for kv in self.analyzer.fit_results.items()
+                if kv[1].feature_importances is not None
+            ),
+            key=lambda kv: kv[1].r_squared,
+        )
         names = self.analyzer.feature_extractor.feature_names
         imps = best[1].feature_importances
+        if imps is None:
+            return
         order = np.argsort(imps)[::-1]
         top = "| Feature | Importance |\n|---|---:|\n" + "\n".join(
             f"| {names[i]} | {imps[i]:.4f} |" for i in order[:10]
@@ -1016,18 +1262,20 @@ class NarrativeExporter:
             fh.write(self.summary)
         logger.info(f"Saved enhanced summary: {p}")
 
+
 # ============================================================
 # Enhanced Main Function
 # ============================================================
 
+
 def main():
     """Enhanced main with better user experience."""
-    
+
     print("\n🎯 Collatz Conjecture Advanced Analyzer")
     print("=" * 50)
     print("Enhanced version with cycle detection and better performance")
     print()
-    
+
     try:
         base = int(input("Enter base value (default 2): ") or 2)
         start = int(input("Enter start exponent: "))
@@ -1035,7 +1283,7 @@ def main():
 
         print("\nVariants:")
         for i, v in enumerate(CollatzVariant):
-            print(f"{i+1}. {v.name}")
+            print(f"{i + 1}. {v.name}")
         v_choice = input("Select variant (default 1): ") or "1"
         try:
             v_idx = int(v_choice) - 1
@@ -1043,7 +1291,7 @@ def main():
         except Exception:
             variant = CollatzVariant.CLASSIC
 
-        v_params: Dict[str, Any] = {}
+        v_params: dict[str, Any] = {}
         if variant == CollatzVariant.GENERALIZED:
             print("\nEnter generalized parameters:")
             v_params["p"] = int(input("Odd multiplier p (default 3): ") or 3)
@@ -1052,7 +1300,7 @@ def main():
 
         print("\nAvailable models:")
         for i, m in enumerate(MODEL_REGISTRY.keys()):
-            print(f"{i+1}. {m.name}")
+            print(f"{i + 1}. {m.name}")
         msel = input("Select models to fit (comma-separated, default=all): ") or "all"
         if msel.strip().lower() == "all":
             model_types = None
@@ -1070,15 +1318,17 @@ def main():
         # Enhanced: Progress indication
         print(f"\n⏳ Starting analysis for {base}^{start} to {base}^{end}...")
         print("This may take a while for large ranges.")
-        
-        analyzer = CollatzAnalyzer(base=base, output_dir=out_dir, variant=variant, variant_params=v_params)
+
+        analyzer = CollatzAnalyzer(
+            base=base, output_dir=out_dir, variant=variant, variant_params=v_params
+        )
         analyzer.run_analysis(start, end, model_types)
 
         print("\n✅ Analysis completed successfully!")
         print(f"📊 Results saved to: {analyzer.output_dir}")
         print("• data/  → CSV & JSON with enhanced metadata")
         print("• plots/ → Enhanced visualizations")
-        print("• models/→ Model artifacts & metadata") 
+        print("• models/→ Model artifacts & metadata")
         print("• analysis_notebook.ipynb, collatz_report.md")
 
     except ValueError as e:
@@ -1093,6 +1343,7 @@ def main():
         logger.error(f"Unexpected error: {e}", exc_info=True)
         print(f"\n❌ Unexpected error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

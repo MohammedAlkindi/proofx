@@ -41,9 +41,10 @@ import json
 import logging
 import math
 import pickle
-from dataclasses import dataclass, asdict
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -55,10 +56,11 @@ logger = logging.getLogger("proofx.calibration")
 @dataclass
 class CalibrationReport:
     """Summary of a calibration fit."""
+
     method: str
     n_samples: int
-    brier_score: float        # lower is better; 0 = perfect, 0.25 = coin-flip baseline
-    log_loss: float           # lower is better
+    brier_score: float  # lower is better; 0 = perfect, 0.25 = coin-flip baseline
+    log_loss: float  # lower is better
     expected_calibration_error: float  # ECE across 10 equal-width bins
     score_min: float
     score_max: float
@@ -79,7 +81,9 @@ class CalibrationReport:
 
 
 class _BaseCalibrator:
-    def fit(self, scores: Sequence[float], labels: Sequence[int], seed: int = 0) -> CalibrationReport:
+    def fit(
+        self, scores: Sequence[float], labels: Sequence[int], seed: int = 0
+    ) -> CalibrationReport:
         raise NotImplementedError
 
     def predict(self, scores: Sequence[float]) -> np.ndarray:
@@ -93,9 +97,11 @@ class _BaseCalibrator:
         logger.info("Calibrator saved: %s", path)
 
     @staticmethod
-    def load(path: Path) -> "_BaseCalibrator":
+    def load(path: Path) -> _BaseCalibrator:
         with open(path, "rb") as fh:
             obj = pickle.load(fh)
+        if not isinstance(obj, _BaseCalibrator):
+            raise TypeError(f"Expected _BaseCalibrator payload in {path}")
         logger.info("Calibrator loaded: %s", path)
         return obj
 
@@ -115,7 +121,7 @@ class _BaseCalibrator:
         """Expected Calibration Error across equal-width bins."""
         bins = np.linspace(0.0, 1.0, n_bins + 1)
         ece = 0.0
-        for lo, hi in zip(bins[:-1], bins[1:]):
+        for lo, hi in zip(bins[:-1], bins[1:], strict=False):
             mask = (probs >= lo) & (probs < hi)
             if mask.sum() == 0:
                 continue
@@ -157,9 +163,11 @@ class IsotonicCalibrator(_BaseCalibrator):
     """
 
     def __init__(self) -> None:
-        self._model = None
+        self._model: Any = None
 
-    def fit(self, scores: Sequence[float], labels: Sequence[int], seed: int = 0) -> CalibrationReport:
+    def fit(
+        self, scores: Sequence[float], labels: Sequence[int], seed: int = 0
+    ) -> CalibrationReport:
         try:
             from sklearn.isotonic import IsotonicRegression
         except ImportError as e:
@@ -184,7 +192,7 @@ class IsotonicCalibrator(_BaseCalibrator):
     def predict(self, scores: Sequence[float]) -> np.ndarray:
         if self._model is None:
             raise RuntimeError("Call fit() before predict()")
-        return self._model.predict(np.asarray(scores, dtype=float))
+        return np.asarray(self._model.predict(np.asarray(scores, dtype=float)), dtype=float)
 
 
 # ── Platt (logistic) calibrator ───────────────────────────────────────────────
@@ -200,10 +208,12 @@ class PlattCalibrator(_BaseCalibrator):
     """
 
     def __init__(self) -> None:
-        self._A: Optional[float] = None
-        self._B: Optional[float] = None
+        self._A: float | None = None
+        self._B: float | None = None
 
-    def fit(self, scores: Sequence[float], labels: Sequence[int], seed: int = 0) -> CalibrationReport:
+    def fit(
+        self, scores: Sequence[float], labels: Sequence[int], seed: int = 0
+    ) -> CalibrationReport:
         try:
             from scipy.optimize import minimize
         except ImportError as e:
@@ -228,26 +238,31 @@ class PlattCalibrator(_BaseCalibrator):
             p = 1.0 / (1.0 + np.exp(-np.clip(f, -500, 500)))
             return -np.mean(t * np.log(p + 1e-9) + (1 - t) * np.log(1 - p + 1e-9))
 
-        result = minimize(neg_log_likelihood, x0=[0.0, math.log((n_neg + 1) / (n_pos + 1))],
-                          method="L-BFGS-B")
+        result = minimize(
+            neg_log_likelihood, x0=[0.0, math.log((n_neg + 1) / (n_pos + 1))], method="L-BFGS-B"
+        )
         self._A, self._B = float(result.x[0]), float(result.x[1])
 
-        probs = self.predict(X)
+        probs = self.predict(X.tolist())
         report = self._report("platt", X, y, probs, seed)
         logger.info("PlattCalibrator fit: A=%.4f B=%.4f | %s", self._A, self._B, report.summary())
         return report
 
     def predict(self, scores: Sequence[float]) -> np.ndarray:
-        if self._A is None:
+        if self._A is None or self._B is None:
             raise RuntimeError("Call fit() before predict()")
-        f = self._A * np.asarray(scores, dtype=float) + self._B
+        a = self._A
+        b = self._B
+        f = a * np.asarray(scores, dtype=float) + b
         return 1.0 / (1.0 + np.exp(-np.clip(f, -500, 500)))
 
 
 # ── Attach calibrated probabilities to a ledger ───────────────────────────────
 
 
-def annotate_ledger(ledger_path: Path, calibrator: _BaseCalibrator, output_path: Optional[Path] = None) -> None:
+def annotate_ledger(
+    ledger_path: Path, calibrator: _BaseCalibrator, output_path: Path | None = None
+) -> None:
     """Read a JSONL ledger, attach calibrated_prob to each entry, write output.
 
     If output_path is None, writes to ledger_path with a .calibrated.jsonl suffix.
@@ -256,7 +271,7 @@ def annotate_ledger(ledger_path: Path, calibrator: _BaseCalibrator, output_path:
     output_path = output_path or ledger_path.with_suffix(".calibrated.jsonl")
 
     lines = ledger_path.read_text(encoding="utf-8").splitlines()
-    entries = [json.loads(l) for l in lines if l.strip()]
+    entries = [json.loads(line) for line in lines if line.strip()]
     if not entries:
         logger.warning("Empty ledger at %s", ledger_path)
         return
@@ -266,7 +281,7 @@ def annotate_ledger(ledger_path: Path, calibrator: _BaseCalibrator, output_path:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as fh:
-        for entry, prob in zip(entries, probs):
+        for entry, prob in zip(entries, probs, strict=False):
             entry["calibrated_prob"] = round(float(prob), 6)
             fh.write(json.dumps(entry) + "\n")
 
@@ -286,10 +301,15 @@ def main() -> None:
 
     # fit subcommand
     fit_p = sub.add_parser("fit", help="Fit a calibrator from a labelled JSONL file")
-    fit_p.add_argument("--ledger", required=True,
-                       help="JSONL ledger (each entry must have near_miss_score and label fields)")
+    fit_p.add_argument(
+        "--ledger",
+        required=True,
+        help="JSONL ledger (each entry must have near_miss_score and label fields)",
+    )
     fit_p.add_argument("--method", choices=["isotonic", "platt"], default="isotonic")
-    fit_p.add_argument("--output", default="calibrator.pkl", help="Where to save the fitted calibrator")
+    fit_p.add_argument(
+        "--output", default="calibrator.pkl", help="Where to save the fitted calibrator"
+    )
     fit_p.add_argument("--seed", type=int, default=0)
 
     # annotate subcommand
@@ -304,17 +324,20 @@ def main() -> None:
 
     if args.cmd == "fit":
         lines = Path(args.ledger).read_text(encoding="utf-8").splitlines()
-        entries = [json.loads(l) for l in lines if l.strip()]
+        entries = [json.loads(line) for line in lines if line.strip()]
         if not entries:
             parser.error("Ledger is empty")
         if "label" not in entries[0]:
-            parser.error("Each entry must have a 'label' field (0 or 1). "
-                         "Add labels manually before fitting.")
+            parser.error(
+                "Each entry must have a 'label' field (0 or 1). Add labels manually before fitting."
+            )
 
         scores = [e["near_miss_score"] for e in entries]
         labels = [int(e["label"]) for e in entries]
 
-        cal: _BaseCalibrator = IsotonicCalibrator() if args.method == "isotonic" else PlattCalibrator()
+        cal: _BaseCalibrator = (
+            IsotonicCalibrator() if args.method == "isotonic" else PlattCalibrator()
+        )
         report = cal.fit(scores, labels, seed=args.seed)
         print(report.summary())
         cal.save(Path(args.output))

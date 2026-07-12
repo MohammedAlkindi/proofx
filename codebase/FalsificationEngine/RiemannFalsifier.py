@@ -28,7 +28,7 @@ import math
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
@@ -59,11 +59,12 @@ class RiemannFalsifier:
     def __init__(self, precision_dps: int = _DEFAULT_PRECISION_DPS) -> None:
         try:
             import mpmath
+
             self._mp = mpmath
-        except ImportError:
+        except ImportError as exc:
             raise RuntimeError(
-                "mpmath is required for RiemannFalsifier — pip install mpmath"
-            )
+                "mpmath is required for RiemannFalsifier - pip install mpmath"
+            ) from exc
         self._precision_dps = precision_dps
         self._mp.mp.dps = precision_dps
         # Below this deviation, the score is effectively 0 (within precision floor).
@@ -83,7 +84,8 @@ class RiemannFalsifier:
 
         logger.info(
             "RiemannFalsifier start: %d zeros + %d Keiper-Li coefficients",
-            half, kl_budget,
+            half,
+            kl_budget,
         )
 
         self._zero_deviation_scan(half, seed, ledger)
@@ -99,14 +101,12 @@ class RiemannFalsifier:
 
     # ── Strategy 1: zero-deviation scan ──────────────────────────────────────
 
-    def _zero_deviation_scan(
-        self, n_zeros: int, seed: int, ledger: FalsificationLedger
-    ) -> None:
+    def _zero_deviation_scan(self, n_zeros: int, seed: int, ledger: FalsificationLedger) -> None:
         """Compute the first n_zeros non-trivial zeros and score by deviation."""
         mp = self._mp
         mp.mp.dps = self._precision_dps
 
-        prev_imag: Optional[float] = None
+        prev_imag: float | None = None
         evaluated = 0
 
         for idx in range(1, n_zeros + 1):
@@ -142,61 +142,61 @@ class RiemannFalsifier:
             if near_miss >= 1.0:
                 logger.critical(
                     "RIEMANN OFF-LINE ZERO: ρ_%d = (%.15f + %.15fi)  deviation=%.3e",
-                    idx, z.real, z.imag, deviation,
+                    idx,
+                    z.real,
+                    z.imag,
+                    deviation,
                 )
 
-            ledger.append(LedgerEntry(
-                candidate=idx,
-                conjecture="riemann",
-                strategy="zero_deviation_scan",
-                features={
-                    "imaginary_part": round(z.imag, 6),
-                    "real_deviation": deviation,
-                    "normalized_spacing": round(norm_s, 6),
-                    "spacing_anomaly": round(spacing_anomaly, 6),
-                    "dev_score": round(dev_score, 6),
-                },
-                near_miss_score=round(near_miss, 6),
-                details={
-                    "zero_index": idx,
-                    "zero_real": z.real,
-                    "zero_imag": z.imag,
-                    "deviation_from_half": deviation,
-                    "mean_spacing": round(mean_spacing, 6),
-                    "precision_dps": self._precision_dps,
-                    "computation_time_s": round(elapsed, 4),
-                },
-                timestamp=time.time(),
-                rng_seed=seed,
-            ))
+            ledger.append(
+                LedgerEntry(
+                    candidate=idx,
+                    conjecture="riemann",
+                    strategy="zero_deviation_scan",
+                    features={
+                        "imaginary_part": round(z.imag, 6),
+                        "real_deviation": deviation,
+                        "normalized_spacing": round(norm_s, 6),
+                        "spacing_anomaly": round(spacing_anomaly, 6),
+                        "dev_score": round(dev_score, 6),
+                    },
+                    near_miss_score=round(near_miss, 6),
+                    details={
+                        "zero_index": idx,
+                        "zero_real": z.real,
+                        "zero_imag": z.imag,
+                        "deviation_from_half": deviation,
+                        "mean_spacing": round(mean_spacing, 6),
+                        "precision_dps": self._precision_dps,
+                        "computation_time_s": round(elapsed, 4),
+                    },
+                    timestamp=time.time(),
+                    rng_seed=seed,
+                )
+            )
             prev_imag = z.imag
             evaluated += 1
 
             if evaluated % 10 == 0:
                 logger.info(
                     "RH zero scan: %d/%d | max deviation %.2e",
-                    evaluated, n_zeros, deviation,
+                    evaluated,
+                    n_zeros,
+                    deviation,
                 )
 
     # ── Strategy 2: Keiper-Li coefficient analysis ────────────────────────────
 
-    def _keiper_li_scan(
-        self, n_coeffs: int, seed: int, ledger: FalsificationLedger
-    ) -> None:
+    def _keiper_li_scan(self, n_coeffs: int, seed: int, ledger: FalsificationLedger) -> None:
         """Compute Keiper-Li λ_n and score violations of positivity/monotonicity."""
         mp = self._mp
         mp.mp.dps = self._precision_dps
 
         def xi(s: Any) -> Any:
             # Completed Riemann xi function: ξ(s) = ½·s(s-1)·π^{-s/2}·Γ(s/2)·ζ(s)
-            return (
-                0.5 * s * (s - 1)
-                * mp.gamma(s / 2)
-                * mp.power(mp.pi, -s / 2)
-                * mp.zeta(s)
-            )
+            return 0.5 * s * (s - 1) * mp.gamma(s / 2) * mp.power(mp.pi, -s / 2) * mp.zeta(s)
 
-        prev_lambda: Optional[float] = None
+        prev_lambda: float | None = None
 
         for n in range(1, n_coeffs + 1):
             t0 = time.perf_counter()
@@ -217,7 +217,8 @@ class RiemannFalsifier:
                 positivity_score = 1.0
                 logger.critical(
                     "KEIPER-LI VIOLATION: λ_%d = %.8f  (non-positive — RH counterexample candidate)",
-                    n, lambda_n,
+                    n,
+                    lambda_n,
                 )
             else:
                 # Expected asymptotic: λ_n ~ ½·n·log(n)
@@ -235,31 +236,36 @@ class RiemannFalsifier:
 
             near_miss = min(1.0, 0.75 * positivity_score + 0.25 * monotone_score)
 
-            ledger.append(LedgerEntry(
-                candidate=n,
-                conjecture="riemann",
-                strategy="keiper_li_coefficients",
-                features={
-                    "lambda_n": round(lambda_n, 8),
-                    "lambda_prev": round(prev_lambda, 8) if prev_lambda is not None else 0.0,
-                    "positivity_score": round(positivity_score, 6),
-                    "monotone_score": round(monotone_score, 6),
-                },
-                near_miss_score=round(near_miss, 6),
-                details={
-                    "n": n,
-                    "lambda_n": lambda_n,
-                    "is_positive": lambda_n > 0.0,
-                    "is_increasing": prev_lambda is None or lambda_n > prev_lambda,
-                    "precision_dps": self._precision_dps,
-                    "computation_time_s": round(elapsed, 4),
-                },
-                timestamp=time.time(),
-                rng_seed=seed,
-            ))
+            ledger.append(
+                LedgerEntry(
+                    candidate=n,
+                    conjecture="riemann",
+                    strategy="keiper_li_coefficients",
+                    features={
+                        "lambda_n": round(lambda_n, 8),
+                        "lambda_prev": round(prev_lambda, 8) if prev_lambda is not None else 0.0,
+                        "positivity_score": round(positivity_score, 6),
+                        "monotone_score": round(monotone_score, 6),
+                    },
+                    near_miss_score=round(near_miss, 6),
+                    details={
+                        "n": n,
+                        "lambda_n": lambda_n,
+                        "is_positive": lambda_n > 0.0,
+                        "is_increasing": prev_lambda is None or lambda_n > prev_lambda,
+                        "precision_dps": self._precision_dps,
+                        "computation_time_s": round(elapsed, 4),
+                    },
+                    timestamp=time.time(),
+                    rng_seed=seed,
+                )
+            )
             prev_lambda = lambda_n
 
             logger.info(
                 "Keiper-Li λ_%d = %.8f | near_miss=%.4f | elapsed=%.2fs",
-                n, lambda_n, near_miss, elapsed,
+                n,
+                lambda_n,
+                near_miss,
+                elapsed,
             )

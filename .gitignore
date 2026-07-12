@@ -19,3 +19,12 @@ __pycache__/
 coverage.xml
 .pytest_cache/
 htmlcov/
+
+# Cache / log directories
+.cache/
+.logs/
+.lake/
+
+# Business/pitch materials and legacy archives (not code)
+/findings/
+/legacy/

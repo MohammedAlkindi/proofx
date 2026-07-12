@@ -12,7 +12,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-mpmath = pytest.importorskip("mpmath", reason="mpmath not installed — skipping RiemannFalsifier tests")
+mpmath = pytest.importorskip(
+    "mpmath", reason="mpmath not installed — skipping RiemannFalsifier tests"
+)
 
 from codebase.FalsificationEngine.FalsificationEngine import FalsificationLedger
 from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
@@ -38,6 +40,7 @@ def small_ledger(rf):
 class TestRiemannFalsifierConstruction:
     def test_missing_mpmath_raises(self, monkeypatch):
         import builtins
+
         real_import = builtins.__import__
 
         def _block_mpmath(name, *args, **kwargs):

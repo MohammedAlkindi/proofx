@@ -11,8 +11,8 @@ from codebase.CollatzX.Analytics.Analytics import (
     AlgebraicFeatureExtractor,
     CollatzSequence,
     CollatzVariant,
-    FitResult,
     FeatureUnion,
+    FitResult,
     ModelType,
     StatisticalFeatureExtractor,
 )

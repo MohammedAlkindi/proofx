@@ -21,7 +21,9 @@ from codebase.FalsificationEngine.FalsificationEngine import (
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _make_entry(candidate: int = 27, score: float = 0.5, conjecture: str = "collatz") -> LedgerEntry:
+def _make_entry(
+    candidate: int = 27, score: float = 0.5, conjecture: str = "collatz"
+) -> LedgerEntry:
     return LedgerEntry(
         candidate=candidate,
         conjecture=conjecture,
@@ -254,7 +256,9 @@ class TestGoldbachFalsifierMath:
 
 class TestGoldbachFalsifierSearch:
     def test_search_returns_ledger_type(self):
-        assert isinstance(GoldbachFalsifier(sieve_limit=1_000).search(budget=5, seed=0), FalsificationLedger)
+        assert isinstance(
+            GoldbachFalsifier(sieve_limit=1_000).search(budget=5, seed=0), FalsificationLedger
+        )
 
     def test_search_all_conjecture_labels(self):
         for e in GoldbachFalsifier(sieve_limit=1_000).search(budget=5, seed=0)._entries:
@@ -306,8 +310,13 @@ class TestFalsificationEngine:
     def test_run_stats_keys_present(self):
         stats = self._engine().run(budget=self._BUDGET, seed=0, target="both")["stats"]
         required = {
-            "collatz_evaluated", "goldbach_evaluated", "total_evaluated",
-            "collatz_max_near_miss", "goldbach_max_near_miss", "seed", "elapsed_s",
+            "collatz_evaluated",
+            "goldbach_evaluated",
+            "total_evaluated",
+            "collatz_max_near_miss",
+            "goldbach_max_near_miss",
+            "seed",
+            "elapsed_s",
         }
         assert required <= set(stats)
 

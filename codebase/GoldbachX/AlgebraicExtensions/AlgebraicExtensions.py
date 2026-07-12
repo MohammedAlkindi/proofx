@@ -4,23 +4,20 @@ Provides conservative pruning rules to reduce candidate prime search space.
 """
 
 import json
+import math
+import random
 import sys
 import time
-import math
-from typing import List, Dict, Optional
 from argparse import ArgumentParser
-import random
+from importlib.util import find_spec
+from typing import Any
 
-# Optional numpy support (feature-gated)
-try:
-    import numpy as np
-    HAS_NUMPY = True
-except ImportError:
-    HAS_NUMPY = False
+HAS_NUMPY = find_spec("numpy") is not None
 
 random.seed(42)  # Fixed seed for deterministic behavior
 
-def mod_class_prune(n: int, mod: int = 6) -> Dict:
+
+def mod_class_prune(n: int, mod: int = 6) -> dict:
     """
     Returns allowed residue classes for candidate primes p where p + q = n.
 
@@ -46,9 +43,9 @@ def mod_class_prune(n: int, mod: int = 6) -> Dict:
                 allowed.add(p_class)
 
     result = {
-        'allowed_classes': sorted(allowed),
-        'modulus': mod,
-        'notes': f"Primes must be ≡{sorted(allowed)} mod {mod} to pair with valid q"
+        "allowed_classes": sorted(allowed),
+        "modulus": mod,
+        "notes": f"Primes must be ≡{sorted(allowed)} mod {mod} to pair with valid q",
     }
 
     elapsed_ms = (time.perf_counter_ns() - start_time) // 1_000_000
@@ -56,7 +53,8 @@ def mod_class_prune(n: int, mod: int = 6) -> Dict:
 
     return result
 
-def quadratic_residue_filter(n: int, primes: List[int]) -> List[int]:
+
+def quadratic_residue_filter(n: int, primes: list[int]) -> list[int]:
     """
     Filters primes p where n-p is quadratic residue modulo small primes.
     Conservative: only excludes p where n-p is provably non-residue.
@@ -83,24 +81,29 @@ def quadratic_residue_filter(n: int, primes: List[int]) -> List[int]:
                 continue
             residue = (n - p) % m
             # Check if residue is quadratic non-residue mod m
-            if all((residue != (r*r) % m) for r in range(1, m)):
+            if all((residue != (r * r) % m) for r in range(1, m)):
                 keep = False
                 break
         if keep:
             filtered.append(p)
 
     elapsed_ms = (time.perf_counter_ns() - start_time) // 1_000_000
-    print(json.dumps({
-        "event": "qr_filter_done",
-        "n": n,
-        "input_size": len(primes),
-        "output_size": len(filtered),
-        "elapsed_ms": elapsed_ms
-    }))
+    print(
+        json.dumps(
+            {
+                "event": "qr_filter_done",
+                "n": n,
+                "input_size": len(primes),
+                "output_size": len(filtered),
+                "elapsed_ms": elapsed_ms,
+            }
+        )
+    )
 
     return filtered
 
-def small_factor_exclusions(n: int, primes: List[int], *, bounds: int = 1000) -> List[int]:
+
+def small_factor_exclusions(n: int, primes: list[int], *, bounds: int = 1000) -> list[int]:
     """
     Excludes primes p where n-p has small factors (below bounds).
     Conservative: only excludes when n-p is provably composite.
@@ -122,7 +125,7 @@ def small_factor_exclusions(n: int, primes: List[int], *, bounds: int = 1000) ->
     sieve[0] = sieve[1] = False
     for i in range(2, int(math.sqrt(bounds)) + 1):
         if sieve[i]:
-            sieve[i*i::i] = [False] * len(sieve[i*i::i])
+            sieve[i * i :: i] = [False] * len(sieve[i * i :: i])
     small_primes = [i for i, is_p in enumerate(sieve) if is_p]
 
     filtered = []
@@ -140,18 +143,23 @@ def small_factor_exclusions(n: int, primes: List[int], *, bounds: int = 1000) ->
             filtered.append(p)
 
     elapsed_ms = (time.perf_counter_ns() - start_time) // 1_000_000
-    print(json.dumps({
-        "event": "small_factor_done",
-        "n": n,
-        "bounds": bounds,
-        "input_size": len(primes),
-        "output_size": len(filtered),
-        "elapsed_ms": elapsed_ms
-    }))
+    print(
+        json.dumps(
+            {
+                "event": "small_factor_done",
+                "n": n,
+                "bounds": bounds,
+                "input_size": len(primes),
+                "output_size": len(filtered),
+                "elapsed_ms": elapsed_ms,
+            }
+        )
+    )
 
     return filtered
 
-def composite_precheck(n: int) -> Dict:
+
+def composite_precheck(n: int) -> dict:
     """
     Quick checks that predict low Goldbach pair density.
     Returns dictionary with metrics and warnings if n appears 'hard'.
@@ -164,32 +172,29 @@ def composite_precheck(n: int) -> Dict:
     """
     start_time = time.perf_counter_ns()
 
-    result = {
-        'n': n,
-        'notes': [],
-        'warnings': []
-    }
+    result: dict[str, Any] = {"n": n, "notes": [], "warnings": []}
 
     # Check if n is divisible by small primes (more possible pairs)
     small_primes = [3, 5, 7, 11, 13]
     for p in small_primes:
         if n % p == 0:
-            result['notes'].append(f"Divisible by {p} (expect more pairs)")
+            result["notes"].append(f"Divisible by {p} (expect more pairs)")
             break
     else:
-        result['warnings'].append("Not divisible by small primes (fewer pairs expected)")
+        result["warnings"].append("Not divisible by small primes (fewer pairs expected)")
 
     # Check if n is congruent to 2 mod 6 (tends to have fewer pairs)
     if n % 6 == 2:
-        result['warnings'].append("n ≡ 2 mod 6 (historically fewer pairs)")
+        result["warnings"].append("n ≡ 2 mod 6 (historically fewer pairs)")
 
     elapsed_ms = (time.perf_counter_ns() - start_time) // 1_000_000
-    result['elapsed_ms'] = elapsed_ms
+    result["elapsed_ms"] = elapsed_ms
     print(json.dumps({"event": "precheck_done", "n": n, "elapsed_ms": elapsed_ms}))
 
     return result
 
-def metadata() -> Dict:
+
+def metadata() -> dict:
     """Returns plugin metadata and capabilities."""
     return {
         "version": "1.0",
@@ -200,13 +205,15 @@ def metadata() -> Dict:
             "quadratic_residue_filter": True,
             "small_factor_exclusions": True,
             "composite_precheck": True,
-            "numpy_available": HAS_NUMPY
-        }
+            "numpy_available": HAS_NUMPY,
+        },
     }
 
-def discover() -> Dict:
+
+def discover() -> dict:
     """Discovery function for plugin system."""
     return {"component": "AlgebraicExtensions"}
+
 
 def self_test() -> bool:
     """Run self-tests and return True if all pass."""
@@ -214,7 +221,7 @@ def self_test() -> bool:
 
     # Test mod_class_prune
     res = mod_class_prune(100, 6)
-    tests.append(set(res['allowed_classes']) == {1, 5})
+    tests.append(set(res["allowed_classes"]) == {1, 5})
 
     # Test quadratic_residue_filter doesn't remove all candidates
     primes = [3, 7, 11, 17, 23, 29]
@@ -228,7 +235,7 @@ def self_test() -> bool:
 
     # Test composite_precheck gives warnings
     res = composite_precheck(98)
-    tests.append(len(res['warnings']) > 0)
+    tests.append(len(res["warnings"]) > 0)
 
     # Test determinism
     primes1 = quadratic_residue_filter(1000, list(range(3, 200, 2)))
@@ -237,12 +244,14 @@ def self_test() -> bool:
 
     return all(tests)
 
+
 def main():
     parser = ArgumentParser(description="AlgebraicExtensions plugin for GoldbachX")
     parser.add_argument("--n", type=int, help="Target even number to analyze")
     parser.add_argument("--mod", type=int, default=6, help="Modulus for residue pruning")
-    parser.add_argument("--bounds", type=int, default=1000,
-                       help="Factor bound for small factor exclusion")
+    parser.add_argument(
+        "--bounds", type=int, default=1000, help="Factor bound for small factor exclusion"
+    )
     parser.add_argument("--export", type=str, help="Export results to JSON file")
     parser.add_argument("--self-test", action="store_true", help="Run self-tests")
 
@@ -261,22 +270,23 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    results = {}
+    results: dict[str, Any] = {}
 
     # Run all analyses
-    results['mod_class'] = mod_class_prune(args.n, args.mod)
+    results["mod_class"] = mod_class_prune(args.n, args.mod)
     primes = list(range(3, args.n, 2))  # Demo candidate list
-    results['qr_filter'] = quadratic_residue_filter(args.n, primes)
-    results['small_factor'] = small_factor_exclusions(args.n, primes, bounds=args.bounds)
-    results['precheck'] = composite_precheck(args.n)
-    results['metadata'] = metadata()
+    results["qr_filter"] = quadratic_residue_filter(args.n, primes)
+    results["small_factor"] = small_factor_exclusions(args.n, primes, bounds=args.bounds)
+    results["precheck"] = composite_precheck(args.n)
+    results["metadata"] = metadata()
 
     if args.export:
-        with open(args.export, 'w') as f:
+        with open(args.export, "w") as f:
             json.dump(results, f, indent=2)
         print(f"Results exported to {args.export}")
     else:
         print(json.dumps(results, indent=2))
+
 
 if __name__ == "__main__":
     main()
