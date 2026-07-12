@@ -1,0 +1,134 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: germinal
+      POSTGRES_PASSWORD: germinal
+      POSTGRES_DB: germinal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U germinal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # OpenTelemetry Collector — receives OTLP traces, exports to stdout (swap exporter for Jaeger/Tempo in prod)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.113.0
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4318:4318"   # OTLP HTTP
+      - "4317:4317"   # OTLP gRPC
+      - "8888:8888"   # Prometheus metrics (self-observability)
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+      WOLFRAM_APP_ID: ${WOLFRAM_APP_ID:-}
+      DATABASE_URL: postgresql+asyncpg://germinal:germinal@postgres:5432/germinal
+      REDIS_URL: redis://redis:6379/0
+      LEAN_TIMEOUT: ${LEAN_TIMEOUT:-120}
+      LEAN_SANDBOX_DIR: /app/.lean_sandbox
+      GIT_EXPERIMENTS_BRANCH: ${GIT_EXPERIMENTS_BRANCH:-experiments}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORS_ORIGINS: http://localhost:3000
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: germinal-api
+      NOVELTY_THRESHOLD: ${NOVELTY_THRESHOLD:-0.55}
+      THINKING_BUDGET_TOKENS: ${THINKING_BUDGET_TOKENS:-10000}
+      ARXIV_MAX_RESULTS: ${ARXIV_MAX_RESULTS:-4}
+    ports:
+      - "8000:8000"
+    volumes:
+      - experiments_data:/app/experiments
+      - lean_sandbox:/app/.lean_sandbox
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    command: celery -A api.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+      WOLFRAM_APP_ID: ${WOLFRAM_APP_ID:-}
+      DATABASE_URL: postgresql+asyncpg://germinal:germinal@postgres:5432/germinal
+      REDIS_URL: redis://redis:6379/0
+      LEAN_TIMEOUT: ${LEAN_TIMEOUT:-120}
+      LEAN_SANDBOX_DIR: /app/.lean_sandbox
+      GIT_EXPERIMENTS_BRANCH: ${GIT_EXPERIMENTS_BRANCH:-experiments}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: germinal-worker
+      NOVELTY_THRESHOLD: ${NOVELTY_THRESHOLD:-0.55}
+      THINKING_BUDGET_TOKENS: ${THINKING_BUDGET_TOKENS:-10000}
+      ARXIV_MAX_RESULTS: ${ARXIV_MAX_RESULTS:-4}
+    volumes:
+      - experiments_data:/app/experiments
+      - lean_sandbox:/app/.lean_sandbox
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  flower:
+    image: mher/flower:2.0
+    restart: unless-stopped
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      FLOWER_PORT: 5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - worker
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  experiments_data:
+  lean_sandbox:
