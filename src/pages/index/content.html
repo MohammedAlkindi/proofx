@@ -1,6 +1,6 @@
     <section id="top" class="section hero" aria-labelledby="hero-title">
       <div class="container hero__wrap">
-        <h1 id="hero-title" class="hero__h1" data-no-wrap>Directed search for mathematical counterexamples.</h1>
+        <h1 id="hero-title" class="hero__h1">Directed search for mathematical counterexamples.</h1>
         <p class="hero__sub">
           ProofX is an open Python research toolkit for ranking candidates, running bounded experiments, and publishing replayable ledgers. It is a search system, not a proof system.
         </p>
@@ -71,6 +71,21 @@
       </div>
     </section>
 
+    <section id="germinal" class="section" aria-labelledby="germinal-title">
+      <div class="container card card--row">
+        <div>
+          <h2 id="germinal-title">Germinal</h2>
+          <p class="muted">
+            Germinal is a separate, isolated project vendored in this repository. It proposes conjectures with Claude, formalizes them in Lean 4, attempts automated proofs, and searches for counterexamples with three independent methods. It is not a ProofX engine and shares no code, dependencies, or build pipeline with the toolkit.
+          </p>
+        </div>
+        <div class="contact__actions" role="group" aria-label="Germinal links">
+          <a class="btn btn--primary btn--pill" href="/germinal">Open Germinal</a>
+          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/packages/germinal" target="_blank" rel="noopener">Source</a>
+        </div>
+      </div>
+    </section>
+
     <section id="results" class="section" aria-labelledby="results-title">
       <div class="container card">
         <h2 id="results-title">Results</h2>
@@ -105,7 +120,7 @@
 
         <details class="card faq__item">
           <summary class="faq__q">Where does Lean 4 fit?</summary>
-          <p>The root ProofX repository now includes a small Lean 4 package for bounded certificates. Germinal remains a separate vendored Lean 4 project.</p>
+          <p>The root ProofX repository now includes a small Lean 4 package for bounded certificates. <a href="/germinal">Germinal</a> remains a separate vendored project with its own Claude, Lean 4, and counterexample-search pipeline.</p>
         </details>
       </div>
     </section>

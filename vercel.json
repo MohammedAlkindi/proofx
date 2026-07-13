@@ -11,6 +11,14 @@
       "destination": "/src/auth-error.html"
     },
     {
+      "source": "/germinal",
+      "destination": "https://REPLACE_WITH_RAILWAY_FRONTEND_DOMAIN/germinal"
+    },
+    {
+      "source": "/germinal/:path*",
+      "destination": "https://REPLACE_WITH_RAILWAY_FRONTEND_DOMAIN/germinal/:path*"
+    },
+    {
       "source": "/((?!src/).*)",
       "destination": "/src/$1"
     }
