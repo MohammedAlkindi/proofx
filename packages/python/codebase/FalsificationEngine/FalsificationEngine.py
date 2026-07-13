@@ -102,6 +102,7 @@ def json_default(value: Any) -> Any:
         return value.item()
     raise TypeError(f"Object of type {value.__class__.__name__} is not JSON serializable")
 
+
 # ── Shared data structures ────────────────────────────────────────────────────
 
 

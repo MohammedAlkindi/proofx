@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Assemble the deployable static site under src/ from site sources in the same tree.
+"""Assemble generated site pages under src/ from source fragments.
 
 Vercel serves the generated files at the src/ root (HTML, nav.js, assets/, etc.)
 as-is with no server build step. Source inputs live in src/components/,
-src/pages/, src/scripts/, and src/static/. Run this script after editing any of
-those, then commit the regenerated deploy artifacts under src/.
+src/pages/, and src/scripts/. Static files such as styles.css, monitoring.js,
+results.json, and assets/ live directly in the src/ deploy root. Run this script
+after editing page fragments, then commit the regenerated deploy artifacts under
+src/.
 
 Usage: python scripts/build_site.py
 """
@@ -12,13 +14,11 @@ Usage: python scripts/build_site.py
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
 from string import Template
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
-STATIC = SRC / "static"
 
 GENERATED_COMMENT = (
     "<!-- GENERATED FILE — edit src/pages/<slug>/ or src/components/, "
@@ -132,23 +132,7 @@ def render_page(slug: str) -> str:
     )
 
 
-def copy_static() -> int:
-    """Copy hand-authored static files from src/static/ into the src/ deploy root."""
-    count = 0
-    for source in STATIC.rglob("*"):
-        if source.is_dir():
-            continue
-        relative = source.relative_to(STATIC)
-        destination = SRC / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-        count += 1
-    return count
-
-
 def main() -> None:
-    static_count = copy_static()
-
     for slug in PAGES:
         html = render_page(slug)
         out_path = SRC / f"{slug}.html"
@@ -158,10 +142,7 @@ def main() -> None:
     nav_js_comment = "// GENERATED FILE — edit src/scripts/nav.js, then run scripts/build.sh\n"
     (SRC / "nav.js").write_text(nav_js_comment + nav_js, encoding="utf-8", newline="\n")
 
-    print(
-        f"{len(PAGES)} pages generated into src/, "
-        f"plus src/nav.js and {static_count} static files"
-    )
+    print(f"{len(PAGES)} pages generated into src/, plus src/nav.js")
 
 
 if __name__ == "__main__":

@@ -35,10 +35,11 @@ dependencies = [
 proofx = "codebase.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["codebase"]
+packages = ["packages/python/codebase"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["packages/python"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -51,26 +52,26 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["codebase"]
+source = ["packages/python/codebase"]
 omit = [
     "tests/*",
     "*/__init__.py",
     "*/results/*",
-    "codebase/CollatzX/Bifurcation/*",
-    "codebase/CollatzX/Boundary/*",
-    "codebase/CollatzX/Pipeline/*",
-    "codebase/CollatzX/PrimeGraph/*",
-    "codebase/CollatzX/Processing/*",
-    "codebase/CollatzX/RareEvent/*",
-    "codebase/GoldbachX/GoldbachReasoner/*",
-    "codebase/GoldbachX/MetaVariant/*",
-    "codebase/GoldbachX/SequenceGenerator/*",
-    "codebase/ReimannX/ContourTruth/*",
-    "codebase/ReimannX/PrimeEchos/*",
-    "codebase/ReimannX/TuringThreshold/*",
-    "codebase/ReimannX/ZeroProperties/*",
-    "codebase/ReimannX/ZetaMirror/*",
-    "codebase/cli.py",
+    "packages/python/codebase/CollatzX/Bifurcation/*",
+    "packages/python/codebase/CollatzX/Boundary/*",
+    "packages/python/codebase/CollatzX/Pipeline/*",
+    "packages/python/codebase/CollatzX/PrimeGraph/*",
+    "packages/python/codebase/CollatzX/Processing/*",
+    "packages/python/codebase/CollatzX/RareEvent/*",
+    "packages/python/codebase/GoldbachX/GoldbachReasoner/*",
+    "packages/python/codebase/GoldbachX/MetaVariant/*",
+    "packages/python/codebase/GoldbachX/SequenceGenerator/*",
+    "packages/python/codebase/ReimannX/ContourTruth/*",
+    "packages/python/codebase/ReimannX/PrimeEchos/*",
+    "packages/python/codebase/ReimannX/TuringThreshold/*",
+    "packages/python/codebase/ReimannX/ZeroProperties/*",
+    "packages/python/codebase/ReimannX/ZetaMirror/*",
+    "packages/python/codebase/cli.py",
 ]
 
 [tool.coverage.report]
@@ -83,6 +84,7 @@ exclude_lines = [
 
 [tool.mypy]
 python_version = "3.13"
+mypy_path = ["packages/python"]
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
@@ -93,21 +95,21 @@ exclude = [
     "tests/",
     "docs/",
     "packages/germinal/",
-    "codebase/CollatzX/Bifurcation/",
-    "codebase/CollatzX/Boundary/",
-    "codebase/CollatzX/Pipeline/",
-    "codebase/CollatzX/PrimeGraph/",
-    "codebase/CollatzX/Processing/",
-    "codebase/CollatzX/RareEvent/",
-    "codebase/GoldbachX/GoldbachReasoner/",
-    "codebase/GoldbachX/MetaVariant/",
-    "codebase/GoldbachX/SequenceGenerator/",
-    "codebase/ReimannX/ContourTruth/",
-    "codebase/ReimannX/PrimeEchos/",
-    "codebase/ReimannX/TuringThreshold/",
-    "codebase/ReimannX/ZeroProperties/",
-    "codebase/ReimannX/ZetaMirror/",
-    "codebase/cli.py",
+    "packages/python/codebase/CollatzX/Bifurcation/",
+    "packages/python/codebase/CollatzX/Boundary/",
+    "packages/python/codebase/CollatzX/Pipeline/",
+    "packages/python/codebase/CollatzX/PrimeGraph/",
+    "packages/python/codebase/CollatzX/Processing/",
+    "packages/python/codebase/CollatzX/RareEvent/",
+    "packages/python/codebase/GoldbachX/GoldbachReasoner/",
+    "packages/python/codebase/GoldbachX/MetaVariant/",
+    "packages/python/codebase/GoldbachX/SequenceGenerator/",
+    "packages/python/codebase/ReimannX/ContourTruth/",
+    "packages/python/codebase/ReimannX/PrimeEchos/",
+    "packages/python/codebase/ReimannX/TuringThreshold/",
+    "packages/python/codebase/ReimannX/ZeroProperties/",
+    "packages/python/codebase/ReimannX/ZetaMirror/",
+    "packages/python/codebase/cli.py",
 ]
 
 [tool.ruff]
@@ -115,20 +117,20 @@ line-length = 100
 target-version = "py313"
 extend-exclude = [
     "packages/germinal",
-    "codebase/CollatzX/Bifurcation",
-    "codebase/CollatzX/Boundary",
-    "codebase/CollatzX/Pipeline",
-    "codebase/CollatzX/PrimeGraph",
-    "codebase/CollatzX/Processing",
-    "codebase/CollatzX/RareEvent",
-    "codebase/GoldbachX/GoldbachReasoner",
-    "codebase/GoldbachX/MetaVariant",
-    "codebase/GoldbachX/SequenceGenerator",
-    "codebase/ReimannX/ContourTruth",
-    "codebase/ReimannX/PrimeEchos",
-    "codebase/ReimannX/TuringThreshold",
-    "codebase/ReimannX/ZeroProperties",
-    "codebase/ReimannX/ZetaMirror",
+    "packages/python/codebase/CollatzX/Bifurcation",
+    "packages/python/codebase/CollatzX/Boundary",
+    "packages/python/codebase/CollatzX/Pipeline",
+    "packages/python/codebase/CollatzX/PrimeGraph",
+    "packages/python/codebase/CollatzX/Processing",
+    "packages/python/codebase/CollatzX/RareEvent",
+    "packages/python/codebase/GoldbachX/GoldbachReasoner",
+    "packages/python/codebase/GoldbachX/MetaVariant",
+    "packages/python/codebase/GoldbachX/SequenceGenerator",
+    "packages/python/codebase/ReimannX/ContourTruth",
+    "packages/python/codebase/ReimannX/PrimeEchos",
+    "packages/python/codebase/ReimannX/TuringThreshold",
+    "packages/python/codebase/ReimannX/ZeroProperties",
+    "packages/python/codebase/ReimannX/ZetaMirror",
 ]
 
 [tool.ruff.lint]
@@ -144,8 +146,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"codebase/FalsificationEngine/FalsificationEngine.py" = ["E402"]
-"codebase/FalsificationEngine/RiemannFalsifier.py" = ["E402"]
+"packages/python/codebase/FalsificationEngine/FalsificationEngine.py" = ["E402"]
+"packages/python/codebase/FalsificationEngine/RiemannFalsifier.py" = ["E402"]
 "tests/*" = ["S101", "E402"]  # assert and import-after-skip are fine in tests
 
 [tool.ruff.format]

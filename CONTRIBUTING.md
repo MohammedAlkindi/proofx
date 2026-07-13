@@ -65,7 +65,7 @@ Windows:
 Install dependencies:
 
 ```bash
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-dev.txt -e .
 ```
 
 ---
@@ -122,7 +122,7 @@ Run checks before submitting:
 pytest
 ruff check .
 ruff format --check .
-mypy codebase
+mypy packages/python/codebase
 lake build
 ```
 

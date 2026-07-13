@@ -8,6 +8,7 @@ PY=python3
 python3 --version >/dev/null 2>&1 || PY=python
 
 export PYTHONUTF8=1
+export PYTHONPATH="$root/packages/python${PYTHONPATH:+:$PYTHONPATH}"
 
 "$PY" -m codebase.cli falsify \
   --budget 500 \
@@ -15,6 +16,6 @@ export PYTHONUTF8=1
   --target both \
   --top-k 25 \
   --save-ledger results/ledger.jsonl \
-  --output-json src/static/results.json
+  --output-json src/results.json
 
 "$PY" "$root/scripts/build_site.py"

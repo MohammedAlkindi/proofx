@@ -13,7 +13,7 @@ repos:
     hooks:
       - id: mypy
         args: [--config-file=pyproject.toml]
-        files: ^codebase/
+        files: ^packages/python/codebase/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

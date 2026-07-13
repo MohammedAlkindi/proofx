@@ -1,20 +1,22 @@
 # Deployment
 
 ProofX's public site is static. The deployed artifact lives under `src/` at the
-repository root: generated HTML pages, `nav.js`, and copied static assets sit
-alongside the site source subdirectories (`components/`, `pages/`, `scripts/`,
-`static/`). There is no server-rendered application in the root project, and
-Vercel has no configured build command — it serves the committed deploy files
-under `src/` as-is.
+repository root: generated HTML pages, `nav.js`, static assets, and site source
+subdirectories (`components/`, `pages/`, `scripts/`) live in the same tree.
+There is no server-rendered application in the root project, and Vercel has no
+configured build command; it serves the committed deploy files under `src/`
+as-is.
 
-Site sources live in `src/components/`, `src/pages/<slug>/`, `src/scripts/`,
-and `src/static/`. `scripts/build_site.py` (via `scripts/build.sh` /
-`scripts/build.ps1`) assembles those inputs into the deployable files at the
-`src/` root.
+Site sources live in `src/components/`, `src/pages/<slug>/`, and
+`src/scripts/`. `scripts/build_site.py` (via `scripts/build.sh` /
+`scripts/build.ps1`) assembles those inputs into generated files at the `src/`
+root. Static deploy files such as `src/styles.css`, `src/monitoring.js`,
+`src/results.json`, error pages, and `src/assets/` are maintained directly at
+their served paths.
 
-Edit site sources under `src/components/`, `src/pages/`, `src/scripts/`, or
-`src/static/`, then rebuild. Do not hand-edit generated files such as
-`src/index.html` or `src/nav.js`; the next build overwrites them.
+Edit site sources under `src/components/`, `src/pages/`, or `src/scripts/`,
+then rebuild. Do not hand-edit generated files such as `src/index.html` or
+`src/nav.js`; the next build overwrites them.
 
 ## Files In Scope
 
@@ -23,8 +25,8 @@ Edit site sources under `src/components/`, `src/pages/`, `src/scripts/`, or
 | `src/components/_head.html`, `_nav.html`, `_footer.html` | Shared partials substituted into every generated page. |
 | `src/pages/<slug>/meta.json` + `content.html` [+ `script.js`] | Per-page source; `slug` matches the output filename. |
 | `src/scripts/nav.js` | Source for generated navigation behavior (`src/nav.js`). |
-| `src/static/` | Hand-authored static files copied to the `src/` deploy root. |
-| `src/*.html`, `src/nav.js`, `src/assets/`, etc. | Generated deploy artifact committed for Vercel. |
+| `src/styles.css`, `src/monitoring.js`, `src/results.json`, `src/assets/`, error pages | Hand-authored or generated static deploy files served directly by Vercel. |
+| `src/*.html`, `src/nav.js` | Generated deploy artifact committed for Vercel. |
 | `vercel.json` | Static routing, redirects, and security headers. |
 
 ## Before Deploying

@@ -9,9 +9,9 @@ the same pass/fail result CI gets. Nothing more is implied.
 
 A change meets the MVP bar only if all of the following hold:
 
-- `pip install -r requirements.txt -r requirements-dev.txt` succeeds from a
+- `pip install -r requirements.txt -r requirements-dev.txt -e .` succeeds from a
   clean clone and actually installs `pytest`, `ruff`, and `mypy`.
-- `pytest`, `ruff check .`, `ruff format --check .`, and `mypy codebase` are
+- `pytest`, `ruff check .`, `ruff format --check .`, and `mypy packages/python/codebase` are
   runnable locally, not just described in `README.md` / `AGENTS.md`.
 - The same four checks run in CI on every push and pull request against
   `main`, so the 60% coverage gate (`pyproject.toml`,

@@ -8,12 +8,12 @@ operating rules.
 
 | Path | Purpose | Notes |
 | --- | --- | --- |
-| `codebase/` | Python research toolkit | Contains the engines, CLI, ledgers, calibration, and cross-engine analysis. |
+| `packages/python/codebase/` | Python research toolkit | Contains the engines, CLI, ledgers, calibration, and cross-engine analysis. |
 | `ProofX/` | Root Lean 4 certificate layer | Contains bounded certificate predicates and status semantics. |
 | `ProofX.lean`, `lakefile.lean`, `lake-manifest.json`, `lean-toolchain` | Lean package entry points | Build with `lake build`; toolchain and manifest are pinned at the root. |
 | `tests/` | Root test suite | Covers the Python toolkit; coverage is configured in `pyproject.toml`. |
 | `docs/` | Maintainer and research documentation | Explains methods, assumptions, and publication standards. |
-| `src/` | Static research site | Source inputs under `components/`, `pages/`, `scripts/`, and `static/`; deployable HTML and assets at the `src/` root, built by `scripts/build_site.py`. |
+| `src/` | Static research site | Source inputs under `components/`, `pages/`, and `scripts/`; deployable HTML and assets live at the `src/` root, with generated pages built by `scripts/build_site.py`. |
 | `packages/germinal/` | Vendored sibling project | Separate Lean 4 conjecture-generation and proof-attempt system. |
 | `findings/`, `legacy/` | Ignored local archives | Historical/pitch material; do not re-track or reorganize during code cleanup. |
 
@@ -66,32 +66,32 @@ is a statement about a run, not a statement about mathematical truth.
 
 ## Core Modules
 
-### `codebase/FalsificationEngine/`
+### `packages/python/codebase/FalsificationEngine/`
 
 Owns shared run orchestration, ledger records, top-k ranking, calibration, and
 the Collatz/Goldbach directed searches. `RiemannFalsifier.py` adds numerical
 Riemann-adjacent diagnostics. All engines should write enough metadata for a
 reader to understand what was checked and under what assumptions.
 
-### `codebase/CollatzX/`
+### `packages/python/codebase/CollatzX/`
 
 Contains Collatz trajectory features, graph and boundary experiments,
 high-throughput processing helpers, and rare-event analysis. The root
 FalsificationEngine uses the analytics layer for feature extraction and ranking.
 
-### `codebase/GoldbachX/`
+### `packages/python/codebase/GoldbachX/`
 
 Contains prime sieves, partition enumeration, residue-class filters, and
 heuristic symbolic reasoning. The root FalsificationEngine uses these pieces to
 rank structurally sparse even numbers.
 
-### `codebase/ReimannX/`
+### `packages/python/codebase/ReimannX/`
 
 Contains numerical experiments related to zeta zeros and Keiper-Li
 coefficients. The directory name is currently spelled `ReimannX`; use the
 existing path in imports unless the rename is handled as a separate migration.
 
-### `codebase/CrossEngineAnalysis/`
+### `packages/python/codebase/CrossEngineAnalysis/`
 
 Compares near-miss neighborhoods across ledgers. This is exploratory tooling;
 correlation between score families should be presented as a hypothesis generator,
@@ -140,6 +140,6 @@ The site source under `src/` should be modest:
 - Avoid "prove", "certify", "validate", and "verify" unless a specific checker
   and scope are named.
 - Do not hard-code benchmark figures without a linked reproducible run.
-- Keep `src/static/styles.css` stable unless the task is explicitly design work.
+- Keep `src/styles.css` stable unless the task is explicitly design work.
 
 Run `scripts/build.sh` and `scripts/validate-links.sh` after changing site files.

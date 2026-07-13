@@ -26,7 +26,7 @@ ProofX contains three kinds of material:
 
 | Area | Status | Role |
 | --- | --- | --- |
-| `codebase/` | Active Python research toolkit | Runs directed searches, computes features, writes ledgers, and exposes the CLI. |
+| `packages/python/codebase/` | Active Python research toolkit | Runs directed searches, computes features, writes ledgers, and exposes the CLI. |
 | `ProofX/` | Root Lean 4 certificate layer | Checks small bounded artifacts and status semantics. |
 | `docs/` | Maintainer and research documentation | Describes assumptions, algorithms, run semantics, and limitations. |
 | `src/` | Static research site | Presents the project, demos, and result summaries without changing the engine behavior. |
@@ -73,7 +73,7 @@ feature vector, score, details, timestamp, and RNG seed.
 
 ```text
 ProofX/
-  codebase/
+  packages/python/codebase/
     FalsificationEngine/     Directed search orchestration and ledgers
     CollatzX/                Collatz sequence features and related experiments
     GoldbachX/               Prime sieve, partitions, and structural filters
@@ -168,7 +168,7 @@ cd ProofX
 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt -e .
 
 python -m codebase.cli falsify --budget 200 --seed 42 --target both
 ```
@@ -211,7 +211,7 @@ The repository policy expects these checks before a commit:
 pytest
 ruff check .
 ruff format --check .
-mypy codebase
+mypy packages/python/codebase
 lake build
 ./scripts/build.sh
 ./scripts/validate-links.sh

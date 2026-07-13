@@ -7,14 +7,14 @@ Context for Claude Code working in this repo. Read this before touching anything
 ProofX is three things sharing one repo:
 
 1. A static research site (`src/`) deployed on Vercel, presenting conjecture-engine findings.
-2. A Python research toolkit (`codebase/`) of directed-search falsification engines for Collatz, Goldbach, and Riemann-hypothesis-adjacent experiments.
+2. A Python research toolkit (`packages/python/codebase/`) of directed-search falsification engines for Collatz, Goldbach, and Riemann-hypothesis-adjacent experiments.
 3. A small root Lean 4 package (`ProofX.lean`, `lakefile.lean`, `ProofX/Certificates.lean`, `ProofX/Status.lean`) that kernel-checks bounded, finite certificates.
 
 `packages/germinal/` is the old Germinal project preserved as a separate vendored package. It has its own `CLAUDE.md`; that file governs inside `packages/germinal/`, not this one. Germinal is not the same thing as the root `ProofX/` Lean package, so do not mix their toolchains, Lake state, or review boundaries.
 
 ## Architecture
 
-- `codebase/` - the Python research engines, each a self-contained package with its own `RESEARCH_LOG.md`:
+- `packages/python/codebase/` - the Python research engines, each a self-contained package with its own `RESEARCH_LOG.md`:
   - `FalsificationEngine/` - orchestrator, Riemann falsifier, calibration, ledgers, and directed counterexample search.
   - `CollatzX/` - analytics, bifurcation, boundary, graph, processing, and rare-event experiments.
   - `GoldbachX/` - algebraic extensions, symbolic reasoning, variants, partition enumeration, sequence generation, and sieves.
@@ -24,7 +24,7 @@ ProofX is three things sharing one repo:
 - `ProofX/` - root Lean 4 modules (`Certificates.lean`, `Status.lean`). Small and intentionally narrow; see `docs/lean4.md` before adding anything here.
 - `tests/` - pytest suite for the root Python toolkit.
 - `docs/` - architecture, deployment, content, changelog, Lean, MVP, and engine writeups.
-- `src/` - static site. `src/components/` (shared head/nav/footer partials) and `src/pages/<slug>/` (per-page `meta.json` + `content.html` + optional `script.js`) are the source inputs; `scripts/build.sh` (`scripts/build_site.py`) generates deployable `src/*.html`, `src/nav.js`, and copies from `src/static/` into the `src/` root — never hand-edit generated files such as `src/index.html`; edit the matching source under `src/pages/`, `src/components/`, or `src/scripts/` and rebuild. Error pages, `styles.css`, `monitoring.js`, and `src/assets/` are authored under `src/static/` and copied on build. `scripts/validate-links.sh` checks links.
+- `src/` - static site. `src/components/` (shared head/nav/footer partials) and `src/pages/<slug>/` (per-page `meta.json` + `content.html` + optional `script.js`) are the source inputs; `scripts/build.sh` (`scripts/build_site.py`) generates deployable `src/*.html` and `src/nav.js`. Static deploy files such as error pages, `styles.css`, `monitoring.js`, `results.json`, and `src/assets/` live directly under `src/`. Never hand-edit generated files such as `src/index.html`; edit the matching source under `src/pages/`, `src/components/`, or `src/scripts/` and rebuild. `scripts/validate-links.sh` checks links.
 - `packages/germinal/` - isolated old Germinal project. Do not re-expand it into the repository root.
 - `findings/`, `legacy/` - gitignored local business/pitch material and historical archives. Do not re-track, move, or delete their contents without being asked.
 
@@ -38,11 +38,11 @@ ProofX is three things sharing one repo:
 ## Commands
 
 ```bash
-python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m pip install -r requirements.txt -r requirements-dev.txt -e .
 pytest
 ruff check .
 ruff format --check .
-mypy codebase
+mypy packages/python/codebase
 lake build
 python -m codebase.cli falsify --budget 200 --seed 42 --target both
 ./scripts/build.sh

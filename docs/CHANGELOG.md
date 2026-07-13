@@ -16,7 +16,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `requirements-dev.txt` for pytest, coverage, ruff, and mypy
 - `scripts/cleanup.ps1` and expanded `scripts/cleanup.sh` for local cache and scratch-folder cleanup
 - `packages/README.md` documenting Germinal as an isolated vendored package
-- `src/static/monitoring.js` for frontend error tracking (opt-in via `window.__SENTRY_DSN__`)
+- `src/monitoring.js` for frontend error tracking (opt-in via `window.__SENTRY_DSN__`)
 - Sentry `<script>` tag injected into all main public pages
 - Pinned versions for all runtime Python dependencies in `requirements.txt`
 

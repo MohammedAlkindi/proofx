@@ -36,7 +36,7 @@
       <div class="container card empty-state">
         <h2>No Generated Results Yet</h2>
         <p class="muted">
-          This page shows real search output once <code>src/static/results.json</code> has been generated and copied into the deploy artifact. Run the reproduction command below, then reload this page.
+          This page shows real search output once <code>src/results.json</code> has been generated. Run the reproduction command below, then reload this page.
         </p>
       </div>
     </section>
@@ -141,7 +141,7 @@
   --target both ^
   --top-k 25 ^
   --save-ledger results/ledger.jsonl ^
-  --output-json src/static/results.json</code></pre>
+  --output-json src/results.json</code></pre>
         <p class="muted" style="margin-top:.75rem; font-size:.85rem;">On Unix shells, replace `^` line continuations with `\`. Or run <code>./scripts/generate-results.sh</code> (<code>.ps1</code> on Windows).</p>
       </div>
     </section>
