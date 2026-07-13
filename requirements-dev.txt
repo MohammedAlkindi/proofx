@@ -1,7 +1,7 @@
 # Test, lint, and type-check toolchain. Not needed to run the engines.
 # Install alongside requirements.txt:
 #   pip install -r requirements.txt -r requirements-dev.txt
-pytest==9.0.3
+pytest==9.1.1
 pytest-cov==7.1.0
 ruff==0.15.12
 mypy==2.1.0
