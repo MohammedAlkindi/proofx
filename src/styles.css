@@ -702,6 +702,124 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
 .collatz-parity__cells .odd { background: var(--warn); }
 .collatz-parity__cells .even { background: var(--accent-1); }
 
+.engine-lab {
+  background: var(--grad-card);
+  border: 1px solid var(--bd-2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-md);
+}
+.engine-lab__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+  align-items: end;
+  margin-bottom: var(--space-lg);
+}
+.engine-lab__head h2 { font-size: clamp(1.35rem, 2vw, 1.9rem); }
+.engine-controls { justify-content: flex-start; margin: 0; }
+.engine-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+.engine-metric {
+  border: 1px solid var(--bd-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-elev);
+  padding: var(--space-sm) var(--space-md);
+}
+.engine-metric span,
+.engine-metric small {
+  display: block;
+  color: var(--fg-muted);
+  font-size: .75rem;
+}
+.engine-metric b {
+  display: block;
+  color: var(--accent-1);
+  font-family: var(--font-mono);
+  font-size: clamp(.95rem, 1.1vw, 1.15rem);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.engine-chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+.engine-chart-panel {
+  min-width: 0;
+  border: 1px solid var(--bd-2);
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,.02);
+  padding: var(--space-md);
+}
+.engine-chart-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.engine-chart-panel__head h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+.engine-chart {
+  min-height: 250px;
+  overflow: hidden;
+}
+.engine-chart--short { min-height: 150px; }
+.engine-chart svg {
+  width: 100%;
+  height: 250px;
+  display: block;
+}
+.engine-chart--short svg { height: 150px; }
+.engine-chart text {
+  fill: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.engine-axis {
+  stroke: var(--bd-1);
+  stroke-width: 1;
+}
+.engine-line {
+  fill: none;
+  stroke: var(--accent-1);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.engine-line--secondary { stroke: var(--warn); }
+.engine-rug {
+  stroke: var(--accent-1);
+  stroke-width: 2;
+  opacity: .78;
+}
+.engine-bar {
+  fill: var(--accent-1);
+  opacity: .82;
+}
+.engine-bar--selected {
+  fill: var(--warn);
+  opacity: .96;
+}
+.engine-legend circle { fill: var(--accent-1); }
+.engine-legend circle.secondary { fill: var(--warn); }
+.engine-chart-empty {
+  display: grid;
+  min-height: inherit;
+  place-items: center;
+  color: var(--fg-muted);
+  font-size: .9rem;
+  text-align: center;
+}
+
 /* ------------------------ Results / data tables ------------------------ */
 .table-scroll { overflow-x: auto; }
 .results-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: var(--space-md); }
@@ -1002,6 +1120,8 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
 
 @media (min-width: 980px) {
   .collatz-lab__head { grid-template-columns: minmax(0, 1fr) auto; }
+  .engine-lab__head { grid-template-columns: minmax(0, 1fr) auto; }
+  .engine-chart-grid { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
   .ledger-visual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ledger-visual--wide { grid-column: 1 / -1; }
 }
@@ -1016,6 +1136,8 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   .hero { min-height: 64vh; text-align: center; }
   .hero__wrap { align-items: center; text-align: center; max-width: 96vw; }
   .hero__actions { justify-content: center; }
+  .engine-lab { padding: var(--space-lg); }
+  .engine-chart-panel__head { align-items: flex-start; flex-direction: column; }
   .footer__inner { flex-direction: column; align-items: center; text-align: center; }
   .footer__links { justify-content: center; }
 }

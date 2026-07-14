@@ -12,17 +12,30 @@
     </section>
 
     <section id="demo" class="section" aria-labelledby="riemann-demo-title">
-      <div class="container card">
-        <h2 id="riemann-demo-title">Browser Prime Inspector</h2>
-        <p class="muted">Enter an integer to test primality, find nearby primes, and count primes up to that value exactly when the browser cap allows.</p>
-        <div class="demo-controls">
-          <input id="riemann-input" type="number" min="2" max="10000000" value="1000003"
-                 placeholder="Integer >= 2"
-                 class="demo-input"
-                 aria-label="Integer to inspect">
-          <button id="riemann-run" class="btn btn--primary btn--pill">Inspect</button>
+      <div class="container engine-lab">
+        <div class="engine-lab__head">
+          <div>
+            <h2 id="riemann-demo-title">Browser Prime Inspector</h2>
+            <p class="muted">Enter an integer to test primality, find nearby primes, and compare exact capped prime counts with the simple <code>n / log(n)</code> approximation.</p>
+          </div>
+          <div class="demo-controls engine-controls">
+            <input id="riemann-input" type="number" min="2" max="10000000" value="1000003"
+                   placeholder="Integer >= 2"
+                   class="demo-input"
+                   aria-label="Integer to inspect">
+            <button id="riemann-run" class="btn btn--primary btn--pill" type="button">Inspect</button>
+          </div>
         </div>
-        <div id="riemann-result" class="demo-output" aria-live="polite"></div>
+
+        <div class="engine-metrics" id="riemann-metrics" aria-live="polite"></div>
+        <section class="engine-chart-panel" aria-labelledby="riemann-prime-chart-title">
+          <div class="engine-chart-panel__head">
+            <h3 id="riemann-prime-chart-title">Prime-Count Curve</h3>
+            <span class="pill">browser cap</span>
+          </div>
+          <div id="riemann-prime-chart" class="engine-chart"></div>
+        </section>
+        <pre id="riemann-result" class="demo-output" aria-live="polite"></pre>
       </div>
     </section>
 

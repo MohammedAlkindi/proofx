@@ -12,17 +12,39 @@
     </section>
 
     <section id="demo" class="section" aria-labelledby="goldbach-demo-title">
-      <div class="container card">
-        <h2 id="goldbach-demo-title">Browser Decomposer</h2>
-        <p class="muted">Enter an even number >= 4, capped at 100,000, to list prime-pair decompositions in your browser.</p>
-        <div class="demo-controls">
-          <input id="goldbach-input" type="number" min="4" max="100000" step="2" value="28"
-                 placeholder="Even integer >= 4"
-                 class="demo-input"
-                 aria-label="Even number for Goldbach decomposition">
-          <button id="goldbach-run" class="btn btn--primary btn--pill">Decompose</button>
+      <div class="container engine-lab">
+        <div class="engine-lab__head">
+          <div>
+            <h2 id="goldbach-demo-title">Browser Decomposer</h2>
+            <p class="muted">Enter an even number >= 4, capped at 100,000, to inspect prime-pair decompositions and nearby partition counts in your browser.</p>
+          </div>
+          <div class="demo-controls engine-controls">
+            <input id="goldbach-input" type="number" min="4" max="100000" step="2" value="28"
+                   placeholder="Even integer >= 4"
+                   class="demo-input"
+                   aria-label="Even number for Goldbach decomposition">
+            <button id="goldbach-run" class="btn btn--primary btn--pill" type="button">Decompose</button>
+          </div>
         </div>
-        <div id="goldbach-result" class="demo-output" aria-live="polite"></div>
+
+        <div class="engine-metrics" id="goldbach-metrics" aria-live="polite"></div>
+        <div class="engine-chart-grid" aria-label="Goldbach decomposition charts">
+          <section class="engine-chart-panel" aria-labelledby="goldbach-pairs-title">
+            <div class="engine-chart-panel__head">
+              <h3 id="goldbach-pairs-title">Prime-Pair Positions</h3>
+              <span class="pill">p <= n / 2</span>
+            </div>
+            <div id="goldbach-pairs-chart" class="engine-chart engine-chart--short"></div>
+          </section>
+          <section class="engine-chart-panel" aria-labelledby="goldbach-neighborhood-title">
+            <div class="engine-chart-panel__head">
+              <h3 id="goldbach-neighborhood-title">Nearby Counts</h3>
+              <span class="pill">even inputs</span>
+            </div>
+            <div id="goldbach-neighborhood-chart" class="engine-chart"></div>
+          </section>
+        </div>
+        <pre id="goldbach-result" class="demo-output" aria-live="polite"></pre>
       </div>
     </section>
 

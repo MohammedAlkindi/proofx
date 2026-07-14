@@ -34,7 +34,7 @@ NAV_HREFS = {
     "riemannx": "/riemannx.html",
     "results": "/results.html",
     "research": "/research.html",
-    "germinal": "/germinal",
+    "germinal": "/germinal.html",
 }
 FOOTER_HREFS = {
     "research": "/research.html",
