@@ -32,6 +32,25 @@ Every public result should include or link to:
 If any of these are missing, label the result as a sample, demo, or illustrative
 output.
 
+## Verified Run Artifacts
+
+ProofX verified run artifacts are JSON records for reproducibility. "Verified"
+means the artifact has the required metadata to replay and inspect a bounded
+run; it does not mean the underlying conjecture is verified.
+
+Every artifact bundle should include:
+
+- Schema version.
+- Generation timestamp.
+- Git commit and dirty-worktree status.
+- Python and dependency versions.
+- One or more run records with engine name, seed, bounds, elapsed time, claim
+  level, status, summary metrics, samples, and a reproduction command.
+
+Use `python -m codebase.cli run all --output-json src/verified-runs.json` to
+generate the public-site artifact bundle. Individual engines can be generated
+with `run collatz`, `run goldbach`, or `run riemann`.
+
 ## Language To Prefer
 
 Use:

@@ -1,0 +1,369 @@
+{
+  "commit": {
+    "dirty": true,
+    "sha": "eb3cbb42a857",
+    "source": "git"
+  },
+  "environment": {
+    "dependencies": {
+      "mpmath": "1.3.0",
+      "numba": "0.66.0",
+      "numpy": "2.4.6",
+      "pandas": "3.0.3",
+      "scikit-learn": "1.9.0",
+      "scipy": "1.18.0",
+      "sympy": "1.14.0"
+    },
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.13"
+  },
+  "generated_at": "2026-07-14T18:57:27Z",
+  "runs": [
+    {
+      "bounds": {
+        "end": 128,
+        "fuel": 10000,
+        "inputs_checked": 128,
+        "start": 1
+      },
+      "claim_level": "bounded_run",
+      "commit": {
+        "dirty": true,
+        "sha": "eb3cbb42a857",
+        "source": "git"
+      },
+      "elapsed_s": 0.001471,
+      "engine": "CollatzX",
+      "environment": {
+        "dependencies": {
+          "mpmath": "1.3.0",
+          "numba": "0.66.0",
+          "numpy": "2.4.6",
+          "pandas": "3.0.3",
+          "scikit-learn": "1.9.0",
+          "scipy": "1.18.0",
+          "sympy": "1.14.0"
+        },
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.13"
+      },
+      "id": "collatzx-1-128-fuel-10000",
+      "metrics": {
+        "converged": 128,
+        "inputs_checked": 128,
+        "max_stopping_time": 118,
+        "peak_start": 27,
+        "peak_value": 9232
+      },
+      "reproduce": "python -m codebase.cli run collatz --start 1 --end 128 --fuel 10000 --seed 42 --output-json src/verified-runs.json",
+      "samples": [
+        {
+          "converged": true,
+          "even_values": 75,
+          "n": 97,
+          "odd_values": 44,
+          "peak": 9232,
+          "steps": 118
+        },
+        {
+          "converged": true,
+          "even_values": 73,
+          "n": 73,
+          "odd_values": 43,
+          "peak": 9232,
+          "steps": 115
+        },
+        {
+          "converged": true,
+          "even_values": 72,
+          "n": 108,
+          "odd_values": 42,
+          "peak": 9232,
+          "steps": 113
+        },
+        {
+          "converged": true,
+          "even_values": 72,
+          "n": 109,
+          "odd_values": 42,
+          "peak": 9232,
+          "steps": 113
+        },
+        {
+          "converged": true,
+          "even_values": 72,
+          "n": 110,
+          "odd_values": 42,
+          "peak": 9232,
+          "steps": 113
+        },
+        {
+          "converged": true,
+          "even_values": 71,
+          "n": 54,
+          "odd_values": 42,
+          "peak": 9232,
+          "steps": 112
+        },
+        {
+          "converged": true,
+          "even_values": 71,
+          "n": 55,
+          "odd_values": 42,
+          "peak": 9232,
+          "steps": 112
+        },
+        {
+          "converged": true,
+          "even_values": 70,
+          "n": 27,
+          "odd_values": 42,
+          "peak": 9232,
+          "steps": 111
+        }
+      ],
+      "seed": 42,
+      "status": "no_counterexample_found",
+      "summary": "Checked Collatz trajectories for 128 starts from 1 to 128; 128 reached 1 within 10000 steps."
+    },
+    {
+      "bounds": {
+        "end_even": 256,
+        "even_inputs_checked": 127,
+        "start_even": 4
+      },
+      "claim_level": "bounded_run",
+      "commit": {
+        "dirty": true,
+        "sha": "eb3cbb42a857",
+        "source": "git"
+      },
+      "elapsed_s": 0.000788,
+      "engine": "GoldbachX",
+      "environment": {
+        "dependencies": {
+          "mpmath": "1.3.0",
+          "numba": "0.66.0",
+          "numpy": "2.4.6",
+          "pandas": "3.0.3",
+          "scikit-learn": "1.9.0",
+          "scipy": "1.18.0",
+          "sympy": "1.14.0"
+        },
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.13"
+      },
+      "id": "goldbachx-4-256",
+      "metrics": {
+        "even_inputs_checked": 127,
+        "max_partition_count": 19,
+        "min_partition_count": 1,
+        "prime_count": 54,
+        "zero_partition_inputs": 0
+      },
+      "reproduce": "python -m codebase.cli run goldbach --start-even 4 --end-even 256 --seed 42 --output-json src/verified-runs.json",
+      "samples": [
+        {
+          "first_pair": [
+            2,
+            2
+          ],
+          "n": 4,
+          "partition_count": 1,
+          "widest_gap": 0
+        },
+        {
+          "first_pair": [
+            3,
+            3
+          ],
+          "n": 6,
+          "partition_count": 1,
+          "widest_gap": 0
+        },
+        {
+          "first_pair": [
+            3,
+            5
+          ],
+          "n": 8,
+          "partition_count": 1,
+          "widest_gap": 2
+        },
+        {
+          "first_pair": [
+            5,
+            7
+          ],
+          "n": 12,
+          "partition_count": 1,
+          "widest_gap": 2
+        },
+        {
+          "first_pair": [
+            3,
+            7
+          ],
+          "n": 10,
+          "partition_count": 2,
+          "widest_gap": 4
+        },
+        {
+          "first_pair": [
+            3,
+            11
+          ],
+          "n": 14,
+          "partition_count": 2,
+          "widest_gap": 8
+        },
+        {
+          "first_pair": [
+            3,
+            13
+          ],
+          "n": 16,
+          "partition_count": 2,
+          "widest_gap": 10
+        },
+        {
+          "first_pair": [
+            5,
+            13
+          ],
+          "n": 18,
+          "partition_count": 2,
+          "widest_gap": 8
+        }
+      ],
+      "seed": 42,
+      "status": "no_counterexample_found",
+      "summary": "Checked Goldbach decompositions for 127 even inputs from 4 to 256; 0 inputs had no partition."
+    },
+    {
+      "bounds": {
+        "limit": 10000,
+        "sample_points": 12
+      },
+      "claim_level": "numerical_diagnostic",
+      "commit": {
+        "dirty": true,
+        "sha": "eb3cbb42a857",
+        "source": "git"
+      },
+      "elapsed_s": 0.001089,
+      "engine": "RiemannX",
+      "environment": {
+        "dependencies": {
+          "mpmath": "1.3.0",
+          "numba": "0.66.0",
+          "numpy": "2.4.6",
+          "pandas": "3.0.3",
+          "scikit-learn": "1.9.0",
+          "scipy": "1.18.0",
+          "sympy": "1.14.0"
+        },
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.13"
+      },
+      "id": "riemannx-prime-count-10000",
+      "metrics": {
+        "absolute_error_at_limit": 143.2638,
+        "limit": 10000,
+        "pi_limit": 1229,
+        "x_over_log_x_at_limit": 1085.7362
+      },
+      "reproduce": "python -m codebase.cli run riemann --limit 10000 --seed 42 --output-json src/verified-runs.json",
+      "samples": [
+        {
+          "absolute_error": 1.8854,
+          "is_prime": true,
+          "pi_x": 1,
+          "x": 2,
+          "x_over_log_x": 2.8854
+        },
+        {
+          "absolute_error": 22.3153,
+          "is_prime": true,
+          "pi_x": 156,
+          "x": 911,
+          "x_over_log_x": 133.6847
+        },
+        {
+          "absolute_error": 37.5464,
+          "is_prime": false,
+          "pi_x": 280,
+          "x": 1820,
+          "x_over_log_x": 242.4536
+        },
+        {
+          "absolute_error": 53.0674,
+          "is_prime": true,
+          "pi_x": 398,
+          "x": 2729,
+          "x_over_log_x": 344.9326
+        },
+        {
+          "absolute_error": 65.2976,
+          "is_prime": false,
+          "pi_x": 509,
+          "x": 3638,
+          "x_over_log_x": 443.7024
+        },
+        {
+          "absolute_error": 76.1188,
+          "is_prime": true,
+          "pi_x": 616,
+          "x": 4547,
+          "x_over_log_x": 539.8812
+        },
+        {
+          "absolute_error": 87.0138,
+          "is_prime": false,
+          "pi_x": 721,
+          "x": 5455,
+          "x_over_log_x": 633.9862
+        },
+        {
+          "absolute_error": 102.3843,
+          "is_prime": false,
+          "pi_x": 829,
+          "x": 6364,
+          "x_over_log_x": 726.6157
+        },
+        {
+          "absolute_error": 110.0668,
+          "is_prime": false,
+          "pi_x": 928,
+          "x": 7273,
+          "x_over_log_x": 817.9332
+        },
+        {
+          "absolute_error": 118.8668,
+          "is_prime": false,
+          "pi_x": 1027,
+          "x": 8182,
+          "x_over_log_x": 908.1332
+        },
+        {
+          "absolute_error": 130.6374,
+          "is_prime": true,
+          "pi_x": 1128,
+          "x": 9091,
+          "x_over_log_x": 997.3626
+        },
+        {
+          "absolute_error": 143.2638,
+          "is_prime": false,
+          "pi_x": 1229,
+          "x": 10000,
+          "x_over_log_x": 1085.7362
+        }
+      ],
+      "seed": 42,
+      "status": "diagnostic_complete",
+      "summary": "Computed exact prime counts through 10000 and compared sampled values with x/log(x)."
+    }
+  ],
+  "schema_version": "proofx.verified_run.v1"
+}

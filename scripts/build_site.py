@@ -14,11 +14,15 @@ Usage: python scripts/build_site.py
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from string import Template
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
+PYTHON_PACKAGE_ROOT = ROOT / "packages" / "python"
+if str(PYTHON_PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PYTHON_PACKAGE_ROOT))
 
 GENERATED_COMMENT = (
     "<!-- GENERATED FILE — edit src/pages/<slug>/ or src/components/, "
@@ -129,12 +133,17 @@ def render_page(slug: str) -> str:
         + render_footer(meta)
         + "\n"
         + script_tag
+        + '  <script src="/verified-runs.js"></script>\n'
         + '  <script src="/nav.js"></script>\n'
         + "</body>\n</html>\n"
     )
 
 
 def main() -> None:
+    from codebase.verified_runs import build_verified_run_bundle, write_bundle
+
+    write_bundle(build_verified_run_bundle(), SRC / "verified-runs.json")
+
     for slug in PAGES:
         html = render_page(slug)
         out_path = SRC / f"{slug}.html"
@@ -144,7 +153,17 @@ def main() -> None:
     nav_js_comment = "// GENERATED FILE — edit src/scripts/nav.js, then run scripts/build.sh\n"
     (SRC / "nav.js").write_text(nav_js_comment + nav_js, encoding="utf-8", newline="\n")
 
-    print(f"{len(PAGES)} pages generated into src/, plus src/nav.js")
+    verified_runs_js = (SRC / "scripts" / "verified-runs.js").read_text(encoding="utf-8")
+    verified_runs_comment = (
+        "// GENERATED FILE - edit src/scripts/verified-runs.js, then run scripts/build.sh\n"
+    )
+    (SRC / "verified-runs.js").write_text(
+        verified_runs_comment + verified_runs_js,
+        encoding="utf-8",
+        newline="\n",
+    )
+
+    print(f"{len(PAGES)} pages generated into src/, plus src/nav.js and src/verified-runs.js")
 
 
 if __name__ == "__main__":

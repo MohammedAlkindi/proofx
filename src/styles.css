@@ -849,6 +849,28 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   border: 1px solid var(--bd-1); color: var(--fg-muted); margin-right: var(--space-xs);
 }
 
+.verified-run-intro {
+  border: 1px solid var(--bd-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-soft);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+.verified-run-panel { margin-top: var(--space-md); }
+.verified-run__meta,
+.verified-run__bounds,
+.verified-run-card__head {
+  display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center;
+}
+.verified-run__summary { color: var(--fg-2); margin: var(--space-sm) 0 var(--space-md); }
+.verified-run__metrics { margin-bottom: var(--space-md); }
+.verified-run__details { margin-top: var(--space-md); }
+.verified-run__details summary {
+  color: var(--accent-1); cursor: pointer; font-weight: var(--fw-semibold);
+}
+.verified-run-card__head { justify-content: space-between; margin-bottom: var(--space-xs); }
+.verified-run-card__head h3 { margin: 0; }
+
 .empty-state { text-align: center; }
 .empty-state h2 { margin-bottom: var(--space-sm); }
 

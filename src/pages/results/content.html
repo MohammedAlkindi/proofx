@@ -48,6 +48,16 @@
       </div>
     </section>
 
+    <section id="verified-runs" class="section" aria-labelledby="verified-runs-title">
+      <div class="container">
+        <h2 id="verified-runs-title">Verified Run Artifacts</h2>
+        <p class="muted">
+          These artifacts bind each public engine demo to a seed, bound, dependency snapshot, commit, and claim level. They are reproducibility records, not mathematical proofs.
+        </p>
+        <div class="grid grid--3" data-run-summary-list aria-live="polite"></div>
+      </div>
+    </section>
+
     <section id="collatz-results" class="section" hidden aria-labelledby="collatz-results-title">
       <div class="container card">
         <h2 id="collatz-results-title">CollatzX Near-Miss Candidates <span class="badge" data-live-badge hidden>live JSON</span></h2>
@@ -134,7 +144,11 @@
     <section id="repro" class="section" aria-labelledby="repro-title">
       <div class="container card">
         <h2 id="repro-title">Reproduce A Run</h2>
-        <p class="muted">Generate a local summary and ledger with:</p>
+        <p class="muted">Generate the public verified-run artifact bundle with:</p>
+        <pre class="code-block"><code>python -m codebase.cli run all ^
+  --seed 42 ^
+  --output-json src/verified-runs.json</code></pre>
+        <p class="muted" style="margin-top:.75rem;">Generate a deeper candidate summary and ledger with:</p>
         <pre class="code-block"><code>python -m codebase.cli falsify ^
   --budget 500 ^
   --seed 42 ^

@@ -10,6 +10,7 @@ Subcommands
   riemann   Run the Riemann zero-property verifier (ZeroProperties)
   collatz   Run the CollatzX pipeline
   goldbach  Run the GoldbachX partition analysis
+  run       Write verified run artifacts for the public site
 
 All subcommands share:
   --log-level   DEBUG | INFO | WARNING | ERROR  (default INFO)
@@ -18,6 +19,7 @@ All subcommands share:
 Usage examples
 ──────────────
   python -m codebase.cli falsify --budget 500 --seed 42 --target both
+  python -m codebase.cli run all --output-json src/verified-runs.json
   python -m codebase.cli calibrate fit --ledger out.jsonl --method isotonic
   python -m codebase.cli calibrate annotate --ledger out.jsonl --calibrator cal.pkl
   python -m codebase.cli correlate --collatz cz.jsonl --goldbach gb.jsonl
@@ -385,6 +387,100 @@ def _build_goldbach(sub: argparse._SubParsersAction) -> None:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+# verified run artifacts -------------------------------------------------------
+
+
+def _write_verified_bundle(args: argparse.Namespace, engines: tuple[str, ...]) -> int:
+    _setup_logging(args.log_level, args.log_file)
+    import json
+
+    from codebase.verified_runs import build_verified_run_bundle, write_bundle
+
+    bundle = build_verified_run_bundle(
+        engines=engines,
+        seed=args.seed,
+        collatz_start=getattr(args, "start", 1),
+        collatz_end=getattr(args, "end", 128),
+        collatz_fuel=getattr(args, "fuel", 10_000),
+        goldbach_start=getattr(args, "start_even", 4),
+        goldbach_end=getattr(args, "end_even", 256),
+        riemann_limit=getattr(args, "limit", 10_000),
+    )
+
+    if args.output_json:
+        out = Path(args.output_json)
+        write_bundle(bundle, out)
+        print(f"Verified run artifact: {out}")
+    else:
+        print(json.dumps(bundle, indent=2, sort_keys=True))
+    return 0
+
+
+def _cmd_run_collatz(args: argparse.Namespace) -> int:
+    return _write_verified_bundle(args, ("collatz",))
+
+
+def _cmd_run_goldbach(args: argparse.Namespace) -> int:
+    return _write_verified_bundle(args, ("goldbach",))
+
+
+def _cmd_run_riemann(args: argparse.Namespace) -> int:
+    return _write_verified_bundle(args, ("riemann",))
+
+
+def _cmd_run_all(args: argparse.Namespace) -> int:
+    return _write_verified_bundle(args, ("collatz", "goldbach", "riemann"))
+
+
+def _add_run_common_args(p: argparse.ArgumentParser) -> None:
+    _add_common_args(p)
+    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--output-json", metavar="PATH")
+
+
+def _add_collatz_run_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--start", type=int, default=1, help="First Collatz start value")
+    p.add_argument("--end", type=int, default=128, help="Last Collatz start value")
+    p.add_argument("--fuel", type=int, default=10_000, help="Maximum steps per trajectory")
+
+
+def _add_goldbach_run_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--start-even", type=int, default=4, help="First even input")
+    p.add_argument("--end-even", type=int, default=256, help="Last even input")
+
+
+def _add_riemann_run_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--limit", type=int, default=10_000, help="Prime-count diagnostic limit")
+
+
+def _build_run(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser("run", help="Write verified run artifacts")
+    _add_common_args(p)
+    rsub = p.add_subparsers(dest="run_cmd", required=True)
+
+    collatz = rsub.add_parser("collatz", help="Write a CollatzX verified run artifact")
+    _add_run_common_args(collatz)
+    _add_collatz_run_args(collatz)
+    collatz.set_defaults(func=_cmd_run_collatz)
+
+    goldbach = rsub.add_parser("goldbach", help="Write a GoldbachX verified run artifact")
+    _add_run_common_args(goldbach)
+    _add_goldbach_run_args(goldbach)
+    goldbach.set_defaults(func=_cmd_run_goldbach)
+
+    riemann = rsub.add_parser("riemann", help="Write a RiemannX verified run artifact")
+    _add_run_common_args(riemann)
+    _add_riemann_run_args(riemann)
+    riemann.set_defaults(func=_cmd_run_riemann)
+
+    all_runs = rsub.add_parser("all", help="Write artifacts for all public engines")
+    _add_run_common_args(all_runs)
+    _add_collatz_run_args(all_runs)
+    _add_goldbach_run_args(all_runs)
+    _add_riemann_run_args(all_runs)
+    all_runs.set_defaults(func=_cmd_run_all)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="proofx",
@@ -400,6 +496,7 @@ def main() -> None:
     _build_riemann(sub)
     _build_collatz(sub)
     _build_goldbach(sub)
+    _build_run(sub)
 
     args = parser.parse_args()
     if not hasattr(args, "func"):
