@@ -1,0 +1,12 @@
+{
+  "title": "Germinal | ProofX",
+  "description": "Germinal is the vendored sibling project inside ProofX, kept separate from the root ProofX engines and Lean certificate layer.",
+  "canonical_path": "/germinal",
+  "og_title": "Germinal | ProofX",
+  "og_description": "A boundary page for the separate Germinal project vendored under packages/germinal.",
+  "og_image": true,
+  "twitter_card": "summary_large_image",
+  "nav_active": "germinal",
+  "footer_active": null,
+  "body_class": null
+}

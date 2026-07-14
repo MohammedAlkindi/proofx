@@ -1,0 +1,13 @@
+{
+  "name": "proofx-static-site",
+  "private": true,
+  "version": "0.0.0",
+  "description": "TypeScript helpers for ProofX's static research site.",
+  "scripts": {
+    "build:ts": "tsc -p tsconfig.json",
+    "build:site": "npm run build:ts && python scripts/build_site.py"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

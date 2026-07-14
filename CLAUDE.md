@@ -39,6 +39,7 @@ ProofX is three things sharing one repo:
 
 ```bash
 python -m pip install -r requirements.txt -r requirements-dev.txt -e .
+npm install
 pytest
 ruff check .
 ruff format --check .
