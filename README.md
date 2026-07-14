@@ -213,6 +213,7 @@ ruff check .
 ruff format --check .
 mypy packages/python/codebase
 lake build
+npm install
 ./scripts/build.sh
 ./scripts/validate-links.sh
 ```

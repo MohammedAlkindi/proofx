@@ -12,17 +12,31 @@
     </section>
 
     <section id="demo" class="section" aria-labelledby="collatz-demo-title">
-      <div class="container card">
-        <h2 id="collatz-demo-title">Browser Tracer</h2>
-        <p class="muted">Enter a positive integer to trace its sequence in the browser. This demo is capped for responsiveness and is not the full Python engine.</p>
-        <div class="demo-controls">
-          <input id="collatz-input" type="number" min="1" max="10000000" value="27"
-                 placeholder="Positive integer"
-                 class="demo-input"
-                 aria-label="Starting value for Collatz sequence">
-          <button id="collatz-run" class="btn btn--primary btn--pill">Trace</button>
+      <div class="container collatz-lab">
+        <div class="collatz-lab__head">
+          <div>
+            <h2 id="collatz-demo-title">Browser Tracer</h2>
+            <p class="muted">Trace one bounded trajectory, inspect log-scale movement, and compare parity structure. This browser demo is smaller than the Python engine.</p>
+          </div>
+          <div class="demo-controls collatz-controls">
+            <input id="collatz-input" type="number" min="1" max="10000000" value="27"
+                   placeholder="Positive integer"
+                   class="demo-input"
+                   aria-label="Starting value for Collatz sequence">
+            <label class="collatz-fuel">
+              Fuel
+              <input id="collatz-fuel" type="number" min="100" max="100000" step="100" value="10000" aria-label="Maximum Collatz steps">
+            </label>
+            <button id="collatz-run" class="btn btn--primary btn--pill" type="button">Trace</button>
+          </div>
         </div>
-        <div id="collatz-result" class="demo-output" aria-live="polite"></div>
+
+        <div class="collatz-metrics" id="collatz-metrics" aria-live="polite"></div>
+        <div class="collatz-chart-wrap">
+          <div id="collatz-chart" class="collatz-chart" aria-label="Collatz trajectory chart"></div>
+          <div id="collatz-parity" class="collatz-parity" aria-label="Collatz parity strip"></div>
+        </div>
+        <pre id="collatz-result" class="demo-output" aria-live="polite"></pre>
       </div>
     </section>
 
