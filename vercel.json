@@ -1,18 +1,14 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build:site",
+  "outputDirectory": "src",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/src/index.html"
-    },
-    {
       "source": "/auth/error",
-      "destination": "/src/auth-error.html"
-    },
-    {
-      "source": "/((?!src/).*)",
-      "destination": "/src/$1"
+      "destination": "/auth-error.html"
     }
   ],
   "headers": [
