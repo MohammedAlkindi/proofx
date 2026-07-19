@@ -481,6 +481,76 @@ def _build_run(sub: argparse._SubParsersAction) -> None:
     all_runs.set_defaults(func=_cmd_run_all)
 
 
+# ── export ────────────────────────────────────────────────────────────────────
+
+
+def _cmd_export_lean(args: argparse.Namespace) -> int:
+    _setup_logging(args.log_level, args.log_file)
+    from codebase.lean_export import LedgerExportError, check_lean, export_lean
+
+    ledger = Path(args.ledger)
+    out = Path(args.out)
+
+    try:
+        if args.check:
+            if check_lean(ledger, out, max_unfoldings=args.max_unfoldings):
+                print(f"OK: {out} matches {ledger}")
+                return 0
+            print(
+                f"DRIFT: {out} does not match what {ledger} produces.\n"
+                f"Regenerate with: python -m codebase.cli export lean",
+                file=sys.stderr,
+            )
+            return 1
+
+        skipped = export_lean(ledger, out, max_unfoldings=args.max_unfoldings)
+        print(f"Wrote {out} from {ledger}")
+        if skipped:
+            print(f"\nSkipped {len(skipped)} row(s):")
+            for reason in skipped[:20]:
+                print(f"  - {reason}")
+            if len(skipped) > 20:
+                print(f"  ... and {len(skipped) - 20} more")
+        return 0
+    except LedgerExportError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+
+def _build_export(sub: argparse._SubParsersAction) -> None:
+    from codebase.lean_export import DEFAULT_LEDGER, DEFAULT_OUTPUT
+
+    p = sub.add_parser("export", help="Export run artifacts to other checkers")
+    _add_common_args(p)
+    esub = p.add_subparsers(dest="export_cmd", required=True)
+
+    lean = esub.add_parser(
+        "lean",
+        help="Export ledger rows as kernel-checkable Lean certificates",
+        description=(
+            "Emit one named Lean theorem per certifiable ledger row. Each states "
+            "a bounded, finite fact the Lean kernel checks; none states or "
+            "implies the Collatz or Goldbach conjecture."
+        ),
+    )
+    _add_common_args(lean)
+    lean.add_argument("--ledger", default=str(DEFAULT_LEDGER), metavar="PATH")
+    lean.add_argument("--out", default=str(DEFAULT_OUTPUT), metavar="PATH")
+    lean.add_argument(
+        "--check",
+        action="store_true",
+        help="Verify the generated file matches the ledger; do not write",
+    )
+    lean.add_argument(
+        "--max-unfoldings",
+        type=int,
+        default=2_000_000,
+        metavar="N",
+        help="Fail rather than emit a ledger whose kernel cost would hang the build",
+    )
+    lean.set_defaults(func=_cmd_export_lean)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="proofx",
@@ -497,6 +567,7 @@ def main() -> None:
     _build_collatz(sub)
     _build_goldbach(sub)
     _build_run(sub)
+    _build_export(sub)
 
     args = parser.parse_args()
     if not hasattr(args, "func"):
