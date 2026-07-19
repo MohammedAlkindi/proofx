@@ -234,6 +234,7 @@ If a check is failing, note that explicitly in any published result or release.
 | [docs/deployment.md](docs/deployment.md) | Static site deployment and validation notes. |
 | [docs/content-strategy.md](docs/content-strategy.md) | Tone and site-copy guidance. |
 | [docs/mvp.md](docs/mvp.md) | Minimum viable tooling bar (CI, packaging, local checks) and current gap status. |
+| [ROADMAP.md](ROADMAP.md) | Open workstreams and non-goals, at a glance. |
 
 ## License
 
