@@ -18,11 +18,17 @@ it become a second source of truth for line-item status — link out instead.
   lint/type/coverage gates, but why each exclusion exists isn't written down
   anywhere. Treat the exclusions as cleanup debt: document the reason per
   module, then narrow or remove exclusions that no longer need to exist.
-- **Ledger-to-Lean exporter.** `docs/lean4.md` describes turning
-  `FalsificationEngine` JSONL ledger entries into Lean-checkable certificates,
-  but `ProofX/Certificates.lean` still only contains hand-written examples.
-  Building this exporter is the main way the Lean layer stops being a static
-  demo and starts reflecting actual search output.
+## Recently landed
+
+- **Ledger-to-Lean exporter.** `python -m codebase.cli export lean` turns
+  ledger rows into named, kernel-checked Lean theorems in
+  `ProofX/Generated/LedgerCertificates.lean`, with a provenance header and a
+  drift gate in CI. The Lean layer now reflects actual search output rather
+  than hand-written examples. Design:
+  `docs/superpowers/specs/2026-07-19-lean-certificate-exporter-design.md`.
+- **Kernel-checked, not compiler-trusted.** Certificates close with `decide`
+  instead of `native_decide`, and `ProofX/Audit.lean` fails the build if any
+  theorem depends on an axiom outside the allowed three.
 
 ## Non-goals
 

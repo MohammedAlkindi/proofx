@@ -7,7 +7,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `codebase/lean_export.py` and `python -m codebase.cli export lean`, turning ledger rows into kernel-checkable Lean certificates with a deterministic, provenance-stamped generated module
+- `ProofX/Generated/LedgerCertificates.lean`, 500 generated theorems covering the `--seed 42 --budget 500` ledger
+- `ProofX/Audit.lean`, a build-time axiom audit that fails `lake build` if any theorem in the `ProofX` namespace depends on an axiom outside `propext`, `Classical.choice`, and `Quot.sound`
+- `ProofX.IsPrime` and `isPrime_of_isPrimeWithBound`, proving that an exporter-supplied divisor bound discharges primality without a Mathlib dependency
+- `details.witness` on Goldbach ledger rows, recording the prime pair the search found
+- `LEDGER_SCHEMA_VERSION` (`proofx.ledger.v2`); rows previously carried no version field
+- `certificates` job in `ci.yml`, regenerating the ledger from seed and failing on certificate drift
 - `tests/` directory with unit tests for CollatzX, GoldbachX, and ReimannX engines
+
+### Changed
+- Lean certificates close with `decide` rather than `native_decide`, so the kernel rather than the compiler checks them, and are named theorems rather than anonymous examples so `#print axioms` can reach them
+- `goldbachPair` takes the two trial-division bounds as additional arguments
+
+### Fixed
+- `native_decide` widened the trusted computing base to the Lean compiler and runtime via `Lean.ofReduceBool` and `Lean.trustCompiler` while passing the documented `rg` audit, which scans for tokens that the tactic never introduces
 - `pyproject.toml` with packaging metadata plus pytest, mypy, and ruff configuration
 - `.pre-commit-config.yaml` with ruff, mypy, and standard file hygiene hooks
 - `.github/workflows/ci.yml` with lint, format, type-check, and test jobs for Python 3.13

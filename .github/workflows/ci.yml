@@ -59,3 +59,34 @@ jobs:
             requirements-dev.txt
       - run: python -m pip install -r requirements.txt -r requirements-dev.txt -e .
       - run: pytest
+
+  certificates:
+    name: Lean certificate drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt -e .
+
+      # results/ is gitignored, so there is no committed ledger to compare
+      # against. Regenerate it from the seed instead: the search is
+      # deterministic, so a fresh run is a sound reference -- and a stronger
+      # one, since it checks the certificates against what the engine produces
+      # now rather than against a stale snapshot.
+      - name: Regenerate ledger
+        run: |
+          python -m codebase.cli falsify \
+            --budget 500 --seed 42 --target both \
+            --save-ledger results/ledger.jsonl
+
+      # Fails if ProofX/Generated/LedgerCertificates.lean no longer matches the
+      # ledger. The budget guard fails here too, rather than letting an
+      # expensive ledger hang the Lean build.
+      - name: Check certificates match the ledger
+        run: python -m codebase.cli export lean --check

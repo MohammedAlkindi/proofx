@@ -101,15 +101,42 @@ Do not move the old Germinal tree back to the root: it belongs under
 
 ## Lean 4 Boundary
 
-The root Lean package checks small bounded certificates. Current examples cover
-one Collatz starting value reaching `1` within a finite fuel bound and one
-Goldbach witness pair for a concrete even number. These artifacts make finite
-claims kernel-checkable; they do not prove open conjectures.
+The root Lean package checks bounded certificates produced by the search, not
+hand-written samples. `python -m codebase.cli export lean` reads the ledger and
+writes one named theorem per certifiable row into
+`ProofX/Generated/LedgerCertificates.lean`:
 
-Build the Lean layer with:
+```lean
+theorem collatz_27_reaches_one :
+    reachesOneWithin 111 27 = true := by
+  decide
+
+theorem goldbach_28_has_pair :
+    goldbachPair 28 5 23 3 5 = true := by
+  decide
+```
+
+The first says 27 reaches 1 within 111 steps. The second says 28 is even and at
+least 4, that 5 + 23 = 28, and that both summands are prime — each verified
+against a trial-division bound the exporter supplies, so the kernel checks one
+multiplication instead of computing a square root. `isPrime_of_isPrimeWithBound`
+proves once that such a bound really does establish primality.
+
+**These are finite checks, not evidence.** 500 certificates are 500 bounded
+facts. None states or implies Collatz or Goldbach, and a passing build says
+nothing about either conjecture.
+
+Every proof closes with `decide`, so the Lean **kernel** checks it.
+`native_decide` is barred: it evaluates via compiled native code and trusts the
+result through `Lean.ofReduceBool` and `Lean.trustCompiler`, which would widen
+the trusted base to the compiler and runtime. `ProofX/Audit.lean` enforces this
+during `lake build` by walking each theorem's real axiom dependencies — a
+textual scan cannot see an axiom introduced by a tactic.
 
 ```bash
-lake build
+lake build                                  # kernel-check + axiom audit
+python -m codebase.cli export lean          # regenerate from the ledger
+python -m codebase.cli export lean --check  # fail if they drifted
 ```
 
 See [docs/lean4.md](docs/lean4.md) for the formal boundary and acceptance bar.
@@ -201,6 +228,10 @@ python -m codebase.cli correlate \
     --collatz results/collatz.jsonl \
     --goldbach results/goldbach.jsonl \
     --radius 200
+
+# 6. Export certifiable rows as Lean theorems and kernel-check them.
+python -m codebase.cli export lean --ledger results/ledger.jsonl
+lake build
 ```
 
 ## Testing

@@ -322,6 +322,43 @@ class TestRendering:
         assert "import ProofX.Certificates" in source
         assert "namespace ProofX.Generated" in source
 
+    def test_raises_max_recursion_depth(self, fixture_ledger: Path):
+        # Lean's default maxRecDepth is 512 and `decide` unfolds once per step
+        # of fuel, so without this the build fails on the deeper certificates.
+        source, _ = build_lean_source(fixture_ledger)
+        match = re.search(r"set_option maxRecDepth (\d+)", source)
+        assert match, "generated file must raise maxRecDepth"
+        assert int(match.group(1)) > 512
+
+    def test_set_option_precedes_the_namespace(self, fixture_ledger: Path):
+        # `set_option` has to be in scope for the theorems that need it.
+        source, _ = build_lean_source(fixture_ledger)
+        assert source.index("set_option maxRecDepth") < source.index("namespace ProofX.Generated")
+
+
+class TestRecursionDepth:
+    def test_collatz_depth_is_its_fuel(self):
+        assert CollatzCertificate(candidate=27, fuel=111).recursion_depth == 111
+
+    def test_goldbach_depth_is_the_larger_check_not_the_sum(self):
+        # The two primality checks run in sequence, not nested.
+        cert = GoldbachCertificate(candidate=28, p=5, q=23, bound_p=3, bound_q=5)
+        assert cert.recursion_depth == 5
+        assert cert.unfolding_cost == 3 + 5
+
+    def test_depth_respects_the_min_with_p_minus_one(self):
+        # p = 2 takes bound 2, but only d = 1 is ever searched.
+        cert = GoldbachCertificate(candidate=4, p=2, q=2, bound_p=2, bound_q=2)
+        assert cert.recursion_depth == 1
+
+    def test_budget_scales_with_the_deepest_certificate(self, tmp_path: Path):
+        shallow = _write_ledger(tmp_path / "a.jsonl", [_collatz_row(1, 0)])
+        deep = _write_ledger(tmp_path / "b.jsonl", [_collatz_row(27, 111)])
+        a = re.search(r"maxRecDepth (\d+)", build_lean_source(shallow)[0])
+        b = re.search(r"maxRecDepth (\d+)", build_lean_source(deep)[0])
+        assert a and b
+        assert int(b.group(1)) >= int(a.group(1))
+
 
 # ── Budget guard ──────────────────────────────────────────────────────────────
 

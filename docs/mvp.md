@@ -41,7 +41,8 @@ site content. Those are governed by `docs/research-standards.md` and
 | Pre-commit hooks mirror CI lint/type-check locally | Done | `.pre-commit-config.yaml` |
 | Secrets excluded from version control | Done | `.gitignore` |
 | Rationale for `coverage`/`mypy`/`ruff` exclusions on `CollatzX`/`GoldbachX`/`ReimannX` submodules and `cli.py` | Gap | `pyproject.toml` exclusion lists are still under-documented; see `CLAUDE.md` |
-| Exporter from `FalsificationEngine` JSONL ledger to a Lean-checkable certificate | Gap | `docs/lean4.md` describes this as intended; `ProofX/Certificates.lean` still only has hand-written examples |
+| Exporter from `FalsificationEngine` JSONL ledger to a Lean-checkable certificate | Done | `codebase/lean_export.py`; `python -m codebase.cli export lean` writes `ProofX/Generated/LedgerCertificates.lean`, drift-gated in `ci.yml` |
+| Every accepted Lean proof kernel-checked, enforced rather than conventional | Done | `ProofX/Audit.lean` fails `lake build` on a disallowed axiom dependency |
 
 Update this table when a row's state changes; keep it aligned with
 `CLAUDE.md`'s "Known gaps" section and `docs/CHANGELOG.md`'s `[Unreleased]`

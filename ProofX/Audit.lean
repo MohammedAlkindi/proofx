@@ -1,6 +1,7 @@
 import Lean
 import ProofX.Certificates
 import ProofX.Status
+import ProofX.Generated.LedgerCertificates
 
 /-!
 Build-time axiom audit for ProofX artifacts.

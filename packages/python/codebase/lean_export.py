@@ -64,9 +64,29 @@ _VOLATILE_DETAIL_FIELDS = frozenset({"computation_time_s"})
 # per candidate divisor.
 _DEFAULT_MAX_UNFOLDINGS = 2_000_000
 
+# The binding constraint on the Lean side is not total unfoldings but the
+# recursion depth of the single deepest certificate: `decide` unfolds
+# `reachesOneWithin` once per step of fuel, and each unfolding costs more than
+# one elaborator frame. Lean's default `maxRecDepth` of 512 is exceeded by a
+# Collatz row with fuel 444, so the generated file raises it.
+_MIN_REC_DEPTH = 1024
+_REC_DEPTH_FACTOR = 8
+_REC_DEPTH_STEP = 1024
+
 
 class LedgerExportError(ValueError):
     """Raised when a ledger cannot be turned into sound certificates."""
+
+
+def _elaborator_recursion_budget(depth: int) -> int:
+    """`maxRecDepth` needed to elaborate a certificate of the given depth.
+
+    Each unfolding consumes several elaborator frames rather than one, so the
+    measured depth is scaled and given a floor. Rounded to a stable step so
+    small ledger changes do not churn the generated file.
+    """
+    needed = max(_MIN_REC_DEPTH, depth * _REC_DEPTH_FACTOR)
+    return -(-needed // _REC_DEPTH_STEP) * _REC_DEPTH_STEP
 
 
 # ── Arithmetic helpers ────────────────────────────────────────────────────────
@@ -193,6 +213,11 @@ class CollatzCertificate:
     def unfolding_cost(self) -> int:
         return self.fuel
 
+    @property
+    def recursion_depth(self) -> int:
+        """Deepest nested `reachesOneWithin` unfolding `decide` will perform."""
+        return self.fuel
+
 
 @dataclass(frozen=True)
 class GoldbachCertificate:
@@ -217,6 +242,15 @@ class GoldbachCertificate:
     @property
     def unfolding_cost(self) -> int:
         return min(self.bound_p, self.p - 1) + min(self.bound_q, self.q - 1)
+
+    @property
+    def recursion_depth(self) -> int:
+        """Deepest nested `hasDivisorUpTo` unfolding `decide` will perform.
+
+        The two primality checks run in sequence, not nested, so the depth is
+        the larger of the two rather than their sum.
+        """
+        return max(min(self.bound_p, self.p - 1), min(self.bound_q, self.q - 1))
 
 
 Certificate = CollatzCertificate | GoldbachCertificate
@@ -325,6 +359,8 @@ def render_lean(
     byte-identical output.
     """
     cost = sum(c.unfolding_cost for c in certificates)
+    depth = max(c.recursion_depth for c in certificates)
+    rec_depth = _elaborator_recursion_budget(depth)
     collatz = [c for c in certificates if isinstance(c, CollatzCertificate)]
     goldbach = [c for c in certificates if isinstance(c, GoldbachCertificate)]
 
@@ -347,6 +383,7 @@ def render_lean(
         f"({len(collatz)} collatz, {len(goldbach)} goldbach)",
         f"    claim_level      : {CLAIM_LEVEL}",
         f"    est_unfoldings   : {cost}",
+        f"    max_rec_depth    : {depth}",
         "",
         "  The digest covers a canonical projection of the ledger that excludes",
         "  wall-clock fields, so it is stable across regenerations of the same",
@@ -358,6 +395,14 @@ def render_lean(
         "  docs/research-standards.md and docs/lean4.md.",
         "-/",
         "import ProofX.Certificates",
+        "",
+        "-- `decide` unfolds `reachesOneWithin` once per step of fuel and",
+        "-- `hasDivisorUpTo` once per candidate divisor, and each unfolding costs",
+        "-- elaborator recursion depth. The default limit of 512 is exceeded by",
+        "-- the deepest certificate here, so the budget is raised to fit it.",
+        "-- This is an elaboration limit, not a soundness setting: the kernel",
+        "-- still checks every proof.",
+        f"set_option maxRecDepth {rec_depth}",
         "",
         "namespace ProofX.Generated",
         "",

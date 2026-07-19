@@ -180,8 +180,22 @@ resulting certificate would attest to a property of the integer rather than to
 what the run discovered, which quietly breaks the provenance chain the whole
 project exists to demonstrate.
 
-Regenerate `results/ledger.jsonl` and `src/results.json` from the same
-`--seed 42 --budget 500` invocation so the committed data matches the schema.
+Regenerate `results/ledger.jsonl` from `--seed 42 --budget 500`.
+
+**Correction to an earlier assumption.** This design originally spoke of the
+"committed" ledger. `results/` is gitignored (`.gitignore` line 45) and no
+ledger has ever been tracked, so there is nothing committed to match against
+and CI has no ledger file to read.
+
+Rather than un-ignore a 500-row generated artifact, CI regenerates it from the
+seed before checking drift. Phase 3 measured the search to be fully
+deterministic — two runs agree on every candidate, score, seed, and witness —
+so a fresh run is a sound reference. This is also the stronger check: it
+verifies the certificates match what the engine *actually produces now*, not
+merely what some committed snapshot claims.
+
+The consequence for Phase 5 is that the drift gate belongs in `ci.yml`, which
+already has the Python toolchain, rather than in `lean.yml`.
 
 Site impact is small. `src/pages/ledger-viewer/` reads `/results.json` and
 user-uploaded files, never `results/ledger.jsonl` directly, and the change is
@@ -211,8 +225,19 @@ Output requirements:
   formatting; byte-identical across runs on identical input.
 - **No wall-clock timestamps in the generated file.** A timestamp would make
   `--check` fail on every run, which would train everyone to ignore it.
-- **Provenance header** recording ledger path, SHA-256 of ledger contents,
-  ledger schema version, exporter version, and row count.
+- **Provenance header** recording ledger path, SHA-256 of a *canonical
+  projection* of the ledger, ledger schema version, exporter version, and row
+  count.
+
+  Not a hash of the raw bytes. Measured during Phase 3: two runs at
+  `--seed 42 --budget 500` agree on every candidate, score, seed, and witness,
+  but differ in two wall-clock fields — top-level `timestamp` and
+  `details.computation_time_s`. Hashing raw bytes would change the header on
+  every regeneration even when no certificate changed, producing exactly the
+  reflexive-ignore problem the no-timestamp rule above exists to prevent.
+
+  The canonical projection drops both fields, sorts keys, and hashes the
+  result. Verified stable across regenerations.
 - **One named theorem per row**, so every generated proof is reachable by the
   Phase 1 axiom audit.
 
@@ -227,11 +252,20 @@ each certificate per `docs/lean4.md`.
 
 Scope: `.github/workflows/lean.yml`, `.github/workflows/ci.yml`.
 
-Four gates:
+Four gates, split across the two workflows by which toolchain each needs:
+
+`lean.yml`:
 
 1. `lake build` — the committed certificates kernel-check.
-2. `export lean --check` — the committed certificates still match the ledger.
-3. Axiom audit — no proof depends on a disallowed axiom.
+2. Axiom audit — no proof depends on a disallowed axiom. Enforced inside the
+   build by `ProofX/Audit.lean`, so gate 1 subsumes it; a textual pre-scan
+   fails faster on the obvious case.
+
+`ci.yml` (has Python; `lean.yml` does not):
+
+3. Regenerate the ledger from `--seed 42 --budget 500`, then
+   `export lean --check` — the committed certificates still match what the
+   engine produces.
 4. Build budget guard — a future ledger that blows up kernel cost fails loudly
    instead of hanging CI.
 
