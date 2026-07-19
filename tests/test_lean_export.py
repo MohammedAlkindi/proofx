@@ -1,6 +1,7 @@
 """Tests for the ledger-to-Lean certificate exporter."""
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -438,3 +439,52 @@ class TestRealLedger:
         cost = sum(c.unfolding_cost for c in certs)
         # Spec estimated ~270k unfoldings for the full ledger.
         assert cost < 1_000_000, f"kernel cost {cost} higher than the design assumed"
+
+
+class TestEmittedClaimsAreTrue:
+    """Parse the rendered Lean back and re-derive every claim independently.
+
+    The exporter validates its own inputs, but this checks the text it actually
+    emitted. A rendering bug -- a transposed argument, a wrong bound -- would
+    otherwise surface only as a failing `lake build`, far from its cause.
+    """
+
+    COLLATZ_RE = re.compile(
+        r"theorem collatz_(\d+)_reaches_one :\s*\n\s*reachesOneWithin (\d+) (\d+) = true"
+    )
+    GOLDBACH_RE = re.compile(
+        r"theorem goldbach_(\d+)_has_pair :\s*\n\s*goldbachPair (\d+) (\d+) (\d+) (\d+) (\d+) = true"
+    )
+
+    def test_collatz_claims_hold(self, fixture_ledger: Path):
+        source, _ = build_lean_source(fixture_ledger)
+        matches = self.COLLATZ_RE.findall(source)
+        assert len(matches) == 2
+        for name, fuel, start in matches:
+            assert int(name) == int(start), "theorem name must identify its candidate"
+            assert collatz_reaches_one_within(int(start), int(fuel))
+
+    def test_goldbach_claims_hold(self, fixture_ledger: Path):
+        source, _ = build_lean_source(fixture_ledger)
+        matches = self.GOLDBACH_RE.findall(source)
+        assert len(matches) == 3
+        for name, n, p, q, bp, bq in matches:
+            n, p, q, bp, bq = (int(x) for x in (n, p, q, bp, bq))
+            assert int(name) == n
+            assert n >= 4 and n % 2 == 0
+            assert p + q == n
+            assert p <= q
+            assert is_prime(p) and is_prime(q)
+            # The side condition isPrime_of_isPrimeWithBound requires.
+            assert p <= bp * bp
+            assert q <= bq * bq
+
+    def test_no_divisor_in_the_range_decide_will_search(self, fixture_ledger: Path):
+        # Mirrors `hasDivisorUpTo p (min b (p - 1))` on the Lean side. If this
+        # found a divisor, `decide` would evaluate to false and the kernel
+        # would reject the theorem.
+        source, _ = build_lean_source(fixture_ledger)
+        for _, _, p, q, bp, bq in self.GOLDBACH_RE.findall(source):
+            for value, bound in ((int(p), int(bp)), (int(q), int(bq))):
+                limit = min(bound, value - 1)
+                assert not any(value % d == 0 for d in range(2, limit + 1))
