@@ -46,6 +46,8 @@ ruff format --check .
 mypy packages/python/codebase
 lake build
 python -m codebase.cli falsify --budget 200 --seed 42 --target both
+python -m codebase.cli export lean          # regenerate Lean certificates
+python -m codebase.cli export lean --check  # fail if they drifted from the ledger
 ./scripts/build.sh
 ./scripts/validate-links.sh
 ```
@@ -60,9 +62,11 @@ On Windows, use `scripts/cleanup.ps1 -Deep` to remove local caches, coverage out
 - Reproducibility: all engine randomness flows through a seeded `np.random.Generator` with deterministically derived child seeds. Do not introduce unseeded randomness into a falsifier.
 - Do not reorganize or reformat anything under `packages/germinal/` as a side effect of a ProofX-root change.
 - No hardcoded secrets. `.env` files are ignored; `.env.example` files are allowed.
-- Root Lean artifacts follow the same "unrefuted != proved" discipline as the Python side (`docs/lean4.md`): no accepted proof may contain `sorry`, `admit`, an unsound `axiom`, or `unsafe` code added to bypass an obligation.
+- Root Lean artifacts follow the same "unrefuted != proved" discipline as the Python side (`docs/lean4.md`): no accepted proof may contain `sorry`, `admit`, an unsound `axiom`, `unsafe` code added to bypass an obligation, or `native_decide`.
+- `native_decide` is barred by name. It trusts the compiler instead of the kernel, via `Lean.ofReduceBool` and `Lean.trustCompiler`, and introduces both without the token `axiom` ever appearing in the source. `ProofX/Audit.lean` enforces this at build time by walking real axiom dependencies; do not weaken `allowedAxioms` to make a proof go through.
 
 ## Known gaps
 
 - The rationale for the current coverage, mypy, and ruff exclusions on older engine submodules is not fully documented. Treat the exclusions as cleanup debt, not as a pattern to expand.
-- The Lean certificate layer contains hand-written examples only. There is not yet an exporter from `FalsificationEngine` JSONL ledgers to Lean-checkable artifacts.
+- `ProofX/Generated/LedgerCertificates.lean` is generated. Never hand-edit it; change `packages/python/codebase/lean_export.py` or the ledger and re-run `python -m codebase.cli export lean`. CI regenerates the ledger from seed and fails on drift.
+- RiemannX output is a numerical diagnostic and has no certificate form. The exporter reports those rows as skipped rather than dropping them silently.

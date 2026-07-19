@@ -16,4 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      # Fast textual pre-check. Not the gate: it cannot see an axiom introduced
+      # by a tactic, which is exactly how native_decide evaded the older `rg`
+      # scan. It strips comments first so the prose explaining why these
+      # constructs are barred does not trip it.
+      - name: Scan Lean sources for barred constructs
+        run: python scripts/audit_lean_source.py
+
+      # The real gate. ProofX/Audit.lean walks each declaration's actual axiom
+      # dependencies at elaboration time, so a proof resting on a disallowed
+      # axiom fails this build.
       - uses: leanprover/lean-action@v1

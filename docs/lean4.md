@@ -61,8 +61,13 @@ A root Lean artifact is acceptable only when all of the following are true:
 - The toolchain is pinned in `lean-toolchain`.
 - The artifact builds with `lake build`.
 - CI runs the same root package.
-- No accepted proof contains `sorry`, `admit`, an unsound `axiom`, or `unsafe`
-  code introduced to bypass a proof obligation.
+- No accepted proof contains `sorry`, `admit`, an unsound `axiom`, `unsafe`
+  code introduced to bypass a proof obligation, or `native_decide`.
+- Every proof is closed by the kernel. `native_decide` is barred specifically:
+  it compiles the proposition to native code, evaluates it, and trusts the
+  result through `Lean.ofReduceBool` and `Lean.trustCompiler`, widening the
+  trusted computing base to the Lean compiler and runtime. "Lean checked this"
+  must not quietly mean "the Lean compiler evaluated this."
 - Any Python-generated certificate has a deterministic exporter and a documented
   schema.
 - Public copy names the finite scope of the certificate.
@@ -80,8 +85,18 @@ lake build
 Useful source checks:
 
 ```bash
-rg -n "\b(sorry|admit|axiom|unsafe)\b" ProofX ProofX.lean lakefile.lean
+rg -n "\b(sorry|admit|axiom|unsafe|native_decide)\b" ProofX ProofX.lean lakefile.lean
 ```
+
+This textual scan is a convenience, not the gate. It cannot see an axiom that
+enters through a tactic rather than a token, which is exactly how
+`native_decide` evaded the earlier version of this check. The real gate is
+`ProofX/Audit.lean`, which walks the actual axiom dependencies of every theorem
+in the `ProofX` namespace and fails `lake build` if one depends on anything
+outside `propext`, `Classical.choice`, and `Quot.sound`.
+
+Adding a proof that needs a new axiom means editing `allowedAxioms` in that
+file, which is a deliberate, reviewable act rather than an oversight.
 
 If Lean is not installed locally, CI is the source of truth for the root Lean
 build until the local environment is configured with `elan`.
