@@ -105,6 +105,14 @@ def json_default(value: Any) -> Any:
 
 # ── Shared data structures ────────────────────────────────────────────────────
 
+# Ledger row schema. Bump when a row's shape changes so downstream consumers
+# — notably the Lean certificate exporter — can reject data they cannot read
+# rather than silently misinterpreting it.
+#
+#   v1  original shape (implicit; rows carried no version field)
+#   v2  adds `schema_version`; Goldbach rows carry `details.witness`
+LEDGER_SCHEMA_VERSION = "proofx.ledger.v2"
+
 
 @dataclass
 class LedgerEntry:
@@ -122,6 +130,7 @@ class LedgerEntry:
     details: dict[str, Any]  # conjecture-specific diagnostics
     timestamp: float  # epoch seconds
     rng_seed: int  # seed in effect when generated (for full replay)
+    schema_version: str = LEDGER_SCHEMA_VERSION
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -546,20 +555,37 @@ class GoldbachFalsifier:
 
         return 2.0 * _C2 * correction * n / (ln_n**2)
 
-    def _actual_partition_count(self, n: int) -> int:
-        """Count Goldbach pairs (p, q) with p + q = n, p ≤ q, both prime.
+    def _partition_count_and_witness(self, n: int) -> tuple[int, tuple[int, int] | None]:
+        """Count Goldbach pairs (p, q) with p + q = n, p ≤ q, both prime, and
+        return the smallest such p alongside its q.
 
         Uses the precomputed prime set for O(π(n/2)) time per query.
+
+        The witness is what makes a row exportable as a Lean certificate. A
+        count attests to a property of the integer; the pair attests to what
+        this run actually found, which is the provenance chain the project
+        exists to demonstrate. Recomputing the pair later would break it.
+
+        Returns `(0, None)` when no pair exists — which for an even n ≥ 4 would
+        be a Goldbach counterexample, so the absent witness is meaningful data
+        rather than a gap to paper over.
         """
         if n < 4 or n % 2 != 0:
-            return 0
+            return 0, None
         count = 0
+        witness: tuple[int, int] | None = None
         for p in self._primes:
             if p > n // 2:
                 break
             if (n - p) in self._prime_set:
                 count += 1
-        return count
+                if witness is None:
+                    witness = (p, n - p)
+        return count, witness
+
+    def _actual_partition_count(self, n: int) -> int:
+        """Count Goldbach pairs (p, q) with p + q = n, p ≤ q, both prime."""
+        return self._partition_count_and_witness(n)[0]
 
     # ── Near-miss and structural hardness ─────────────────────────────────────
 
@@ -724,7 +750,7 @@ class GoldbachFalsifier:
 
     def _evaluate(self, candidate: int, base_seed: int) -> LedgerEntry:
         """Fully evaluate one Goldbach candidate."""
-        actual = self._actual_partition_count(candidate)
+        actual, witness = self._partition_count_and_witness(candidate)
         expected = self._hardy_littlewood_expected(candidate)
         nm_score = self._near_miss_score(actual, expected)
 
@@ -759,6 +785,10 @@ class GoldbachFalsifier:
                 "is_power_of_two": (candidate & (candidate - 1)) == 0,
                 "mod_6_residue": candidate % 6,
                 "mod_30_residue": candidate % 30,
+                # Explicitly null rather than absent when no pair exists, so a
+                # consumer can tell "this run found none" from "this row
+                # predates the witness field."
+                "witness": ({"p": witness[0], "q": witness[1]} if witness else None),
             },
             timestamp=time.time(),
             rng_seed=base_seed,

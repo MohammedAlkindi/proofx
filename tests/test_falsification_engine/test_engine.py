@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from codebase.FalsificationEngine.FalsificationEngine import (
+    LEDGER_SCHEMA_VERSION,
     CollatzFalsifier,
     FalsificationEngine,
     FalsificationLedger,
@@ -221,6 +222,48 @@ class TestGoldbachFalsifierMath:
     def test_partition_count_below_4_is_zero(self):
         for n in [1, 2, 3]:
             assert self.g._actual_partition_count(n) == 0
+
+    def test_witness_is_smallest_pair(self):
+        # 10 = 3+7 = 5+5; the smallest p is 3.
+        count, witness = self.g._partition_count_and_witness(10)
+        assert count == 2
+        assert witness == (3, 7)
+
+    def test_witness_for_4_is_two_and_two(self):
+        assert self.g._partition_count_and_witness(4) == (1, (2, 2))
+
+    def test_witness_absent_when_no_partition(self):
+        # Odd n and n < 4 admit no pair, so the witness must be None rather
+        # than a fabricated placeholder.
+        for n in [1, 2, 3, 7]:
+            count, witness = self.g._partition_count_and_witness(n)
+            assert count == 0
+            assert witness is None
+
+    def test_witness_sums_to_candidate_and_is_prime(self):
+        for n in range(4, 400, 2):
+            count, witness = self.g._partition_count_and_witness(n)
+            assert count > 0, f"no partition found for {n}"
+            assert witness is not None
+            p, q = witness
+            assert p + q == n
+            assert p <= q
+            assert p in self.g._prime_set
+            assert q in self.g._prime_set
+
+    def test_count_wrapper_agrees_with_witness_method(self):
+        for n in range(4, 200, 2):
+            assert self.g._actual_partition_count(n) == self.g._partition_count_and_witness(n)[0]
+
+    def test_evaluate_records_witness_in_details(self):
+        entry = self.g._evaluate(28, base_seed=42)
+        witness = entry.details["witness"]
+        assert witness is not None
+        assert witness["p"] + witness["q"] == 28
+
+    def test_ledger_entry_carries_schema_version(self):
+        entry = self.g._evaluate(28, base_seed=42)
+        assert entry.to_dict()["schema_version"] == LEDGER_SCHEMA_VERSION
 
     def test_hardy_littlewood_positive_for_even_n(self):
         assert self.g._hardy_littlewood_expected(100) > 0.0
