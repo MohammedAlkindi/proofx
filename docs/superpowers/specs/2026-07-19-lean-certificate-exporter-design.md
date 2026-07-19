@@ -116,26 +116,53 @@ fix by hand; the point is that the next hundred generated ones cannot regress.
 
 ### Phase 2 — Make primality kernel-tractable
 
-Scope: `lakefile.lean`, `lake-manifest.json`, `ProofX/Certificates.lean`.
+Scope: `ProofX/Certificates.lean`. No new dependencies.
 
-- Add Mathlib as a Lake dependency and commit the resulting manifest in the
-  same change, as `docs/lean4.md` requires.
-- Bound trial division at `sqrt p`, reducing ~50,000 unfoldings per prime to
-  ~316.
-- Prefer Mathlib's `Nat.Prime` and its kernel-friendly decidability instance
-  over a hand-rolled predicate.
+Bound trial division, reducing ~50,000 unfoldings per prime to ~316. But take
+the bound from the *exporter* rather than computing it in Lean:
 
-`docs/lean4.md` line 70 says to add Mathlib only when a specific theorem needs
-it. This is that theorem: proving that no divisor at or below `sqrt p` implies
-primality is real work, and reimplementing it locally would be worse than
-depending on the library that already has it.
+```lean
+def IsPrime (p : Nat) : Prop :=
+  2 ≤ p ∧ ∀ d, d ∣ p → d = 1 ∨ d = p
 
-**Open risk.** Mathlib has more than one decidability instance for
-`Nat.Prime`, and they differ sharply in kernel reduction behavior. Which one is
-kernel-tractable at this scale must be measured on real ledger data during
-implementation, not assumed from the names. This is the single largest
-technical unknown in the design, and the implementation plan should front-load
-a spike that benchmarks it before the exporter is written.
+theorem isPrime_of_bounded (p b : Nat)
+    (hp : 2 ≤ p) (hb : p ≤ b * b)
+    (hnd : hasDivisorUpTo p b = false) : IsPrime p
+```
+
+The exporter already knows `p`, so it emits the bound `b` alongside it and Lean
+verifies instead of computing. The `p ≤ b * b` side condition costs the kernel
+one multiplication.
+
+This is the same principle Phase 3 applies to the Goldbach pair — the search
+finds the witness, Lean checks it — pushed one level deeper. Certificates carry
+their own bound.
+
+**Why not Mathlib.** The earlier draft of this design added Mathlib to get
+`Nat.Prime` and a `sqrt`-bounded decidability instance. That was rejected:
+
+- Mathlib has more than one decidability instance for `Nat.Prime` and they
+  differ sharply in kernel reduction behavior. Picking wrong means `decide`
+  hangs, and which is which must be measured rather than assumed. Carrying the
+  bound in the certificate removes the question entirely.
+- Mathlib would require `lake exe cache get` in CI or the job rebuilds from
+  source for hours, for a package whose Lake manifest is otherwise empty.
+- `docs/lean4.md` line 70 says to add Mathlib only when a specific theorem
+  needs it. With the bound supplied externally, no theorem here does.
+
+The cost is one self-contained proof obligation, resting only on
+`Nat.div_mul_cancel` and basic arithmetic from core.
+
+**Structural payoff.** `isPrime_of_bounded` is proven once. Every generated
+certificate stays a cheap `by decide` on a Bool, and its *meaning* comes from
+that single theorem. One hard proof, N cheap certificates — the generated
+file's kernel cost scales linearly while the soundness argument does not.
+
+**Estimated size.** Roughly 50-80 lines across two results: the main theorem
+plus a helper, `2 ≤ m → m ≤ b → m ∣ p → hasDivisorUpTo p b = true`, by
+induction on `b`. The main argument: if `d ∣ p` with `d ≠ 1` and `d ≠ p`, set
+`e = p / d`; both `d > b` and `e > b` would give `p = d * e > b * b ≥ p`, so
+the smaller of the two is a divisor in `[2, b]`, contradicting `hnd`.
 
 ### Phase 3 — Record the Goldbach witness
 
@@ -208,14 +235,13 @@ Four gates:
 4. Build budget guard — a future ledger that blows up kernel cost fails loudly
    instead of hanging CI.
 
-`lean.yml` currently runs bare `leanprover/lean-action@v1`. It needs Mathlib
-cache retrieval, or CI will rebuild Mathlib from source and the job will take
-hours.
+`lean.yml` currently runs bare `leanprover/lean-action@v1` with no axiom check.
+It gains the audit and the drift check. With no Mathlib dependency it needs no
+cache step, and the Lake manifest stays empty.
 
 Estimated kernel cost across the full ledger is ~270k unfoldings
 (250 x 444 for Collatz, 250 x 316 x 2 for Goldbach), which should complete in
-well under a minute once Mathlib is cached. Mathlib cache download, not
-certificate checking, will dominate the job.
+seconds. Toolchain setup, not certificate checking, dominates the job.
 
 ## Testing
 
@@ -238,10 +264,10 @@ Lean side: `lake build` is the test. The axiom audit is the regression guard.
 
 | Risk | Mitigation |
 | --- | --- |
-| Mathlib decidability instance not kernel-tractable at scale | Benchmark spike before writing the exporter; Phase 2 blocks Phase 4 |
-| Mathlib inflates Lean CI time | Cache retrieval in `lean.yml`; measure before and after |
+| `isPrime_of_bounded` proof harder than estimated | Self-contained and resting only on core arithmetic; Phase 2 blocks Phase 4, so it surfaces before exporter work |
 | Regenerating the ledger changes committed site data | Additive change; verify `results.html` and `ledger-viewer` still render |
 | Generated file churn swamps review | Deterministic sort and stable formatting keep diffs minimal |
+| Lean toolchain absent locally | `v4.31.0` was not installed on the dev machine; `lake build` had never run. Install before Phase 1 |
 
 ## Decisions taken
 
@@ -250,8 +276,12 @@ Lean side: `lake build` is the test. The axiom audit is the regression guard.
   failing the repository's own acceptance bar.
 - Witness recorded in the ledger, not recomputed in the exporter, to preserve
   provenance.
-- `sqrt` bound with Mathlib, rather than a hand-written proof or Pratt
-  certificates, for correctness and reuse.
+- Exporter-supplied divisor bound with a self-contained soundness proof, rather
+  than Mathlib's `Nat.Prime` or Pratt certificates. Mathlib was rejected for
+  the reasons in Phase 2. Pratt certificates give O(log p) kernel cost instead
+  of O(sqrt p) and are the right answer if the Goldbach budget ever grows
+  substantially, but at the current ledger maximum of 99,992 the ~316
+  unfoldings per prime do not justify the added exporter complexity.
 - Certificates committed to git with a `--check` drift gate, mirroring
   `ruff format --check`, and following the precedent of committed
   `src/verified-runs.json`.
