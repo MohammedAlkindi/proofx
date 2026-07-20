@@ -27,7 +27,7 @@ dependencies = [
     "statsmodels==0.14.6",
     "sympy==1.14.0",
     "torch==2.13.0",
-    "tqdm==4.68.4",
+    "tqdm==4.69.0",
     "zstandard==0.25.0",
 ]
 
