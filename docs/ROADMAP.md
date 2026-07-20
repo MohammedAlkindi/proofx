@@ -4,8 +4,8 @@ This is a high-level, forward-looking view of open work. It intentionally does
 not duplicate detail that already lives elsewhere and would drift out of sync:
 
 - Granular, checkbox-level tooling status (CI, packaging, coverage gate) is
-  tracked in [docs/mvp.md](docs/mvp.md)'s Status table.
-- Landed changes are tracked in [docs/CHANGELOG.md](docs/CHANGELOG.md).
+  tracked in [mvp.md](mvp.md)'s Status table.
+- Landed changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 - The authoritative list of known gaps is `CLAUDE.md`'s "Known gaps" section.
 
 Update this file when a workstream starts, finishes, or is dropped. Don't let
