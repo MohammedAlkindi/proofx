@@ -1,0 +1,22 @@
+# Git stores text blobs as LF. Without an explicit working-tree setting,
+# core.autocrlf=true checks generated site files out as CRLF while
+# scripts/build_site.py writes them back as LF. Every local site build then
+# marks a dozen unchanged files as modified, which buries real drift in noise
+# and makes a "generated output matches source" check impossible to run.
+* text=auto eol=lf
+
+# Shell scripts must stay LF on every platform: a CRLF shebang makes the kernel
+# look for an interpreter named "bash\r". CI and the Vercel build both run
+# scripts/build.sh under Linux.
+*.sh text eol=lf
+
+# PowerShell scripts are Windows-native tooling and keep the platform convention.
+*.ps1 text eol=crlf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.ico binary
+*.pdf binary
+*.zst binary
+*.pkl binary
+*.olean binary
