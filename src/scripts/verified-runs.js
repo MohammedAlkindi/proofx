@@ -57,9 +57,52 @@
       '<p class="verified-run__summary">' + escapeHtml(run.summary || '') + '</p>',
       '<div class="metric-grid verified-run__metrics">' + metrics + '</div>',
       '<div class="verified-run__bounds">' + bounds + '</div>',
+      provenance(run.environment),
       '<details class="verified-run__details">',
       '<summary>Reproduce this run</summary>',
       '<pre class="code-block"><code>' + escapeHtml(run.reproduce || '') + '</code></pre>',
+      '</details>',
+    ].join('');
+  }
+
+  // The artifact records the environment its numbers came from. Rendering it
+  // matters most when it is incomplete: an unresolved dependency means the
+  // snapshot cannot support the reproducibility claim, and a reader who cannot
+  // see that has no way to tell a full record from an empty one.
+  function provenance(environment) {
+    if (!environment) return '';
+
+    var unresolved = Array.isArray(environment.dependencies_unresolved)
+      ? environment.dependencies_unresolved
+      : [];
+    var deps = environment.dependencies || {};
+    var names = Object.keys(deps).sort();
+
+    var rows = names.map(function (name) {
+      return '<li><code>' + escapeHtml(name) + '</code> ' + escapeHtml(deps[name]) + '</li>';
+    }).join('');
+
+    var warning = '';
+    if (unresolved.length) {
+      warning = '<p class="verified-run__provenance-warn">Incomplete dependency snapshot: ' +
+        'this artifact was built in an environment that could not resolve ' +
+        escapeHtml(unresolved.join(', ')) +
+        '. Treat its dependency record as partial.</p>';
+    }
+
+    return [
+      '<details class="verified-run__details verified-run__provenance">',
+      '<summary>Environment provenance' +
+        (unresolved.length ? ' <span class="tag tag--warn">incomplete</span>' : '') +
+        '</summary>',
+      warning,
+      '<ul class="verified-run__env">',
+      '<li><code>python</code> ' + escapeHtml(environment.python || 'unknown') + '</li>',
+      '<li><code>platform</code> ' + escapeHtml(environment.platform || 'unknown') + '</li>',
+      '</ul>',
+      names.length
+        ? '<ul class="verified-run__env">' + rows + '</ul>'
+        : '<p class="muted">No dependency versions were resolved.</p>',
       '</details>',
     ].join('');
   }
@@ -79,6 +122,7 @@
         '<p>' + escapeHtml(run.summary || '') + '</p>',
         '<p class="muted">Status: <code>' + escapeHtml(run.status || 'unknown') +
         '</code> · commit ' + escapeHtml(commitText(run.commit)) + '</p>',
+        provenance(run.environment),
         '</article>',
       ].join('');
     }).join('');
