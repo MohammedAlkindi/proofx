@@ -52,12 +52,23 @@ CLAIM_LEVEL = "kernel_checked_certificate"
 DEFAULT_LEDGER = Path("results/ledger.jsonl")
 DEFAULT_OUTPUT = Path("ProofX/Generated/LedgerCertificates.lean")
 
-# Wall-clock fields excluded from the provenance digest. Two runs at the same
-# seed agree on every candidate, score, seed, and witness but differ in these,
-# so hashing them would change the header on every regeneration and train
-# everyone to ignore the drift check.
-_VOLATILE_ROW_FIELDS = frozenset({"timestamp"})
-_VOLATILE_DETAIL_FIELDS = frozenset({"computation_time_s"})
+# Fields the provenance digest covers: the ledger facts each certificate is
+# actually built from, plus the run identity that produced them.
+#
+# This is an allow-list rather than a list of exclusions because the material it
+# leaves out is the part that breaks the check. `features` and `near_miss_score`
+# are floating-point ranking data that no certificate reads, and they differ in
+# the last place across platforms: an ubuntu-latest run and a Windows run of
+# `falsify --budget 500 --seed 42 --target both`, at identical dependency pins,
+# agree on all 500 certificates byte for byte but disagree on `autocorrelation`
+# in 32 rows, `hurst_exponent` in 3, and `near_miss_score` in 2. Hashing those
+# made the drift check fail on every pull request while nothing a certificate
+# depends on had moved -- a false alarm on the one gate guarding the Lean layer.
+#
+# Anything a certificate is derived from stays in, so a changed candidate,
+# witness, stopping time, strategy, or seed still fails the check.
+_DIGEST_ROW_FIELDS = ("schema_version", "conjecture", "candidate", "strategy", "rng_seed")
+_DIGEST_DETAIL_FIELDS = ("stopping_time", "witness")
 
 # Rough kernel cost model, used only for the budget guard. Collatz costs one
 # unfolding per step of fuel; each bounded primality check costs one unfolding
@@ -172,19 +183,19 @@ def load_ledger(path: Path) -> list[dict[str, Any]]:
 
 
 def canonical_digest(rows: list[dict[str, Any]]) -> str:
-    """SHA-256 over a canonical projection of the ledger.
+    """SHA-256 over the ledger facts the certificates are derived from.
 
-    Excludes wall-clock fields so the digest is stable across regenerations of
-    the same seeded run. Keys are sorted so dict ordering cannot affect it.
+    Covers `_DIGEST_ROW_FIELDS` and `_DIGEST_DETAIL_FIELDS` only, so the digest
+    is stable across regenerations of the same seeded run on a different
+    platform while still moving if any certificate would change. Keys are
+    sorted so dict ordering cannot affect it.
     """
     projected = []
     for row in rows:
-        clean = {k: v for k, v in row.items() if k not in _VOLATILE_ROW_FIELDS}
-        details = clean.get("details")
+        clean: dict[str, Any] = {k: row[k] for k in _DIGEST_ROW_FIELDS if k in row}
+        details = row.get("details")
         if isinstance(details, dict):
-            clean["details"] = {
-                k: v for k, v in details.items() if k not in _VOLATILE_DETAIL_FIELDS
-            }
+            clean["details"] = {k: details[k] for k in _DIGEST_DETAIL_FIELDS if k in details}
         projected.append(clean)
     payload = json.dumps(projected, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
@@ -385,9 +396,11 @@ def render_lean(
         f"    est_unfoldings   : {cost}",
         f"    max_rec_depth    : {depth}",
         "",
-        "  The digest covers a canonical projection of the ledger that excludes",
-        "  wall-clock fields, so it is stable across regenerations of the same",
-        "  seeded run.",
+        "  The digest covers the ledger facts these certificates are built from",
+        "  -- candidate, witness, stopping time, strategy, and seed -- and not",
+        "  wall-clock fields or floating-point ranking scores, which differ in",
+        "  the last place across platforms without changing any certificate. It",
+        "  moves if a certificate would change, and not otherwise.",
         "",
         "  Each theorem below is a bounded, finite fact checked by the Lean",
         "  kernel. None of them states or implies the Collatz or Goldbach",

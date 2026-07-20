@@ -182,6 +182,54 @@ class TestCanonicalDigest:
         b = dict(reversed(list(a.items())))
         assert canonical_digest([a]) == canonical_digest([b])
 
+    # The values below are the real divergence observed between an ubuntu-latest
+    # run and a Windows run of `falsify --budget 500 --seed 42 --target both` at
+    # identical dependency pins. Every certificate was byte-identical; only these
+    # last-place float differences moved, and they were enough to fail the drift
+    # check on every pull request.
+    def test_ignores_platform_float_noise_in_ranking_features(self):
+        a = _collatz_row(27, 111)
+        b = _collatz_row(27, 111)
+        a["features"] = {"autocorrelation": 0.5848844681042942}
+        b["features"] = {"autocorrelation": 0.5848844681042943}
+        assert canonical_digest([a]) == canonical_digest([b])
+
+    def test_ignores_platform_float_noise_in_hurst_exponent(self):
+        a = _collatz_row(27, 111)
+        b = _collatz_row(27, 111)
+        a["features"] = {"hurst_exponent": 0.5738830602504089}
+        b["features"] = {"hurst_exponent": 0.5738830602504101}
+        assert canonical_digest([a]) == canonical_digest([b])
+
+    def test_ignores_platform_float_noise_in_near_miss_score(self):
+        a = _collatz_row(27, 111)
+        b = _collatz_row(27, 111)
+        a["near_miss_score"] = 0.39007914579983305
+        b["near_miss_score"] = 0.3900791457998335
+        assert canonical_digest([a]) == canonical_digest([b])
+
+    def test_detects_changed_goldbach_witness(self):
+        a = _goldbach_row(28, 5, 23)
+        b = _goldbach_row(28, 11, 17)
+        assert canonical_digest([a]) != canonical_digest([b])
+
+    def test_detects_changed_candidate(self):
+        assert canonical_digest([_collatz_row(27, 111)]) != canonical_digest(
+            [_collatz_row(31, 111)]
+        )
+
+    def test_detects_changed_strategy(self):
+        a = _collatz_row(27, 111)
+        b = _collatz_row(27, 111)
+        b["strategy"] = "some_other_search"
+        assert canonical_digest([a]) != canonical_digest([b])
+
+    def test_detects_changed_rng_seed(self):
+        a = _collatz_row(27, 111)
+        b = _collatz_row(27, 111)
+        b["rng_seed"] = 99
+        assert canonical_digest([a]) != canonical_digest([b])
+
 
 # ── Certificate construction ──────────────────────────────────────────────────
 

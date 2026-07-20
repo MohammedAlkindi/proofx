@@ -10,16 +10,18 @@
   Provenance
     exporter_version : proofx.lean_export.v1
     ledger_path      : results/ledger.jsonl
-    ledger_digest    : sha256:123aa82d6f25e9799c7f5d6b4ca6f9c0877ce6f952f416d123304698f517a42b
+    ledger_digest    : sha256:2c5b1935b868905ddfef4c5843d33fa276a912972d7561e59501a09fd0cbeb95
     ledger_rows      : 500
     certificates     : 500 (250 collatz, 250 goldbach)
     claim_level      : kernel_checked_certificate
     est_unfoldings   : 92699
     max_rec_depth    : 444
 
-  The digest covers a canonical projection of the ledger that excludes
-  wall-clock fields, so it is stable across regenerations of the same
-  seeded run.
+  The digest covers the ledger facts these certificates are built from
+  -- candidate, witness, stopping time, strategy, and seed -- and not
+  wall-clock fields or floating-point ranking scores, which differ in
+  the last place across platforms without changing any certificate. It
+  moves if a certificate would change, and not otherwise.
 
   Each theorem below is a bounded, finite fact checked by the Lean
   kernel. None of them states or implies the Collatz or Goldbach
