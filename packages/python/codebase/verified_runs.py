@@ -181,6 +181,41 @@ def environment_is_complete(bundle: dict[str, Any]) -> bool:
     )
 
 
+def publish_bundle(bundle: dict[str, Any], output_path: Path) -> tuple[bool, str]:
+    """Write ``bundle`` unless doing so would downgrade published provenance.
+
+    The site build regenerates this artifact on every deploy. A deploy
+    environment without the Python requirements installed still produces a
+    structurally valid bundle, just one that resolved no dependency versions.
+    Writing it would replace a complete committed snapshot with a weaker one,
+    so an incomplete rebuild yields to whatever complete artifact is already
+    on disk.
+
+    Returns ``(written, reason)``.
+    """
+    if environment_is_complete(bundle):
+        write_bundle(bundle, output_path)
+        return True, "environment resolved every declared dependency"
+
+    unresolved = ", ".join(bundle.get("environment", {}).get("dependencies_unresolved", []))
+    if _existing_bundle_is_complete(output_path):
+        return False, (
+            f"kept the existing artifact: this environment could not resolve {unresolved}, "
+            "so rebuilding would publish weaker provenance than what is committed"
+        )
+
+    write_bundle(bundle, output_path)
+    return True, f"wrote an incomplete snapshot: could not resolve {unresolved}"
+
+
+def _existing_bundle_is_complete(output_path: Path) -> bool:
+    try:
+        existing = json.loads(output_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return isinstance(existing, dict) and environment_is_complete(existing)
+
+
 def run_collatz_artifact(
     *,
     seed: int,

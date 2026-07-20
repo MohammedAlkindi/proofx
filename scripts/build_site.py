@@ -140,9 +140,11 @@ def render_page(slug: str) -> str:
 
 
 def main() -> None:
-    from codebase.verified_runs import build_verified_run_bundle, write_bundle
+    from codebase.verified_runs import build_verified_run_bundle, publish_bundle
 
-    write_bundle(build_verified_run_bundle(), SRC / "verified-runs.json")
+    written, reason = publish_bundle(build_verified_run_bundle(), SRC / "verified-runs.json")
+    verb = "Regenerated" if written else "Preserved"
+    print(f"{verb} src/verified-runs.json: {reason}")
 
     for slug in PAGES:
         html = render_page(slug)

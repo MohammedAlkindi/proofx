@@ -113,6 +113,73 @@ def test_validate_bundle_rejects_an_environment_missing_completeness_fields():
         validate_bundle(bundle)
 
 
+def _bundle(monkeypatch, dependencies):
+    monkeypatch.setattr(verified_runs, "DEFAULT_DEPENDENCIES", dependencies)
+    return build_verified_run_bundle(engines=("goldbach",), goldbach_start=4, goldbach_end=20)
+
+
+def test_publish_bundle_writes_when_no_artifact_exists_yet(tmp_path, monkeypatch):
+    bundle = _bundle(monkeypatch, ("numpy",))
+    output = tmp_path / "verified-runs.json"
+
+    written, _ = verified_runs.publish_bundle(bundle, output)
+
+    assert written is True
+    assert json.loads(output.read_text(encoding="utf-8"))["schema_version"] == SCHEMA_VERSION
+
+
+def test_publish_bundle_keeps_complete_provenance_over_an_incomplete_rebuild(tmp_path, monkeypatch):
+    output = tmp_path / "verified-runs.json"
+    complete = _bundle(monkeypatch, ("numpy",))
+    write_bundle(complete, output)
+
+    degraded = _bundle(monkeypatch, ("numpy", "proofx-not-a-real-package"))
+    written, reason = verified_runs.publish_bundle(degraded, output)
+
+    assert written is False
+    assert "proofx-not-a-real-package" in reason
+    kept = json.loads(output.read_text(encoding="utf-8"))
+    assert kept["environment"]["dependencies_complete"] is True
+    assert kept["generated_at"] == complete["generated_at"]
+
+
+def test_publish_bundle_replaces_an_existing_incomplete_artifact(tmp_path, monkeypatch):
+    output = tmp_path / "verified-runs.json"
+    write_bundle(_bundle(monkeypatch, ("numpy", "proofx-not-a-real-package")), output)
+
+    fresh = _bundle(monkeypatch, ("numpy",))
+    written, _ = verified_runs.publish_bundle(fresh, output)
+
+    assert written is True
+    assert json.loads(output.read_text(encoding="utf-8"))["generated_at"] == fresh["generated_at"]
+
+
+def test_publish_bundle_writes_incomplete_artifact_when_nothing_better_is_on_disk(
+    tmp_path, monkeypatch
+):
+    degraded = _bundle(monkeypatch, ("numpy", "proofx-not-a-real-package"))
+    output = tmp_path / "verified-runs.json"
+
+    written, _ = verified_runs.publish_bundle(degraded, output)
+
+    assert written is True
+    assert (
+        json.loads(output.read_text(encoding="utf-8"))["environment"]["dependencies_complete"]
+        is False
+    )
+
+
+def test_publish_bundle_replaces_an_unreadable_existing_artifact(tmp_path, monkeypatch):
+    output = tmp_path / "verified-runs.json"
+    output.write_text("{ not json", encoding="utf-8")
+
+    fresh = _bundle(monkeypatch, ("numpy",))
+    written, _ = verified_runs.publish_bundle(fresh, output)
+
+    assert written is True
+    assert json.loads(output.read_text(encoding="utf-8"))["schema_version"] == SCHEMA_VERSION
+
+
 def test_write_bundle_round_trips_json(tmp_path):
     bundle = build_verified_run_bundle(
         engines=("goldbach",),
