@@ -76,9 +76,12 @@ jobs:
 
       # results/ is gitignored, so there is no committed ledger to compare
       # against. Regenerate it from the seed instead: the search is
-      # deterministic, so a fresh run is a sound reference -- and a stronger
-      # one, since it checks the certificates against what the engine produces
-      # now rather than against a stale snapshot.
+      # deterministic in every field a certificate is built from, so a fresh
+      # run is a sound reference -- and a stronger one, since it checks the
+      # certificates against what the engine produces now rather than against
+      # a stale snapshot. Ranking scores drift in the last place across
+      # platforms and are deliberately outside the digest; see
+      # canonical_digest in packages/python/codebase/lean_export.py.
       - name: Regenerate ledger
         run: |
           python -m codebase.cli falsify \
@@ -90,3 +93,51 @@ jobs:
       # expensive ledger hang the Lean build.
       - name: Check certificates match the ledger
         run: python -m codebase.cli export lean --check
+
+  site:
+    name: Site build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt -e .
+      - run: npm ci
+      - run: ./scripts/build.sh
+
+      # The files at the src/ root are deploy artifacts committed to the repo;
+      # Vercel serves them as-is with no server build step, so a page whose
+      # source fragment changed without a rebuild ships stale and silently.
+      # verified-runs.json is excluded because it records its own generation
+      # time and commit, so it differs on every run by design.
+      - name: Generated pages match their sources
+        run: git diff --exit-code -- src/ ':!src/verified-runs.json'
+
+      # Vercel installs npm dependencies only, so its build cannot resolve the
+      # Python requirements and publishes a bundle with no dependency versions.
+      # CI does install them, so this is where an incomplete snapshot is caught.
+      - name: Verified run provenance is complete
+        run: |
+          python - <<'PY'
+          import json, sys
+          from codebase.verified_runs import environment_is_complete, validate_bundle
+
+          with open("src/verified-runs.json", encoding="utf-8") as handle:
+              bundle = json.load(handle)
+          validate_bundle(bundle)
+          if not environment_is_complete(bundle):
+              unresolved = bundle["environment"]["dependencies_unresolved"]
+              sys.exit(f"incomplete provenance: could not resolve {', '.join(unresolved)}")
+          print("verified-runs.json resolved every declared dependency")
+          PY
+
+      - run: ./scripts/validate-links.sh
