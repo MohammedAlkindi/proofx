@@ -1,7 +1,7 @@
 {
   "commit": {
     "dirty": true,
-    "sha": "eb3cbb42a857",
+    "sha": "6db6ef50e2c7",
     "source": "git"
   },
   "environment": {
@@ -14,10 +14,12 @@
       "scipy": "1.18.0",
       "sympy": "1.14.0"
     },
+    "dependencies_complete": true,
+    "dependencies_unresolved": [],
     "platform": "Windows-11-10.0.26200-SP0",
     "python": "3.13.13"
   },
-  "generated_at": "2026-07-14T18:57:27Z",
+  "generated_at": "2026-07-20T09:57:00Z",
   "runs": [
     {
       "bounds": {
@@ -29,10 +31,10 @@
       "claim_level": "bounded_run",
       "commit": {
         "dirty": true,
-        "sha": "eb3cbb42a857",
+        "sha": "6db6ef50e2c7",
         "source": "git"
       },
-      "elapsed_s": 0.001471,
+      "elapsed_s": 0.00062,
       "engine": "CollatzX",
       "environment": {
         "dependencies": {
@@ -44,6 +46,8 @@
           "scipy": "1.18.0",
           "sympy": "1.14.0"
         },
+        "dependencies_complete": true,
+        "dependencies_unresolved": [],
         "platform": "Windows-11-10.0.26200-SP0",
         "python": "3.13.13"
       },
@@ -135,10 +139,10 @@
       "claim_level": "bounded_run",
       "commit": {
         "dirty": true,
-        "sha": "eb3cbb42a857",
+        "sha": "6db6ef50e2c7",
         "source": "git"
       },
-      "elapsed_s": 0.000788,
+      "elapsed_s": 0.000361,
       "engine": "GoldbachX",
       "environment": {
         "dependencies": {
@@ -150,6 +154,8 @@
           "scipy": "1.18.0",
           "sympy": "1.14.0"
         },
+        "dependencies_complete": true,
+        "dependencies_unresolved": [],
         "platform": "Windows-11-10.0.26200-SP0",
         "python": "3.13.13"
       },
@@ -248,10 +254,10 @@
       "claim_level": "numerical_diagnostic",
       "commit": {
         "dirty": true,
-        "sha": "eb3cbb42a857",
+        "sha": "6db6ef50e2c7",
         "source": "git"
       },
-      "elapsed_s": 0.001089,
+      "elapsed_s": 0.000494,
       "engine": "RiemannX",
       "environment": {
         "dependencies": {
@@ -263,6 +269,8 @@
           "scipy": "1.18.0",
           "sympy": "1.14.0"
         },
+        "dependencies_complete": true,
+        "dependencies_unresolved": [],
         "platform": "Windows-11-10.0.26200-SP0",
         "python": "3.13.13"
       },
@@ -365,5 +373,5 @@
       "summary": "Computed exact prime counts through 10000 and compared sampled values with x/log(x)."
     }
   ],
-  "schema_version": "proofx.verified_run.v1"
+  "schema_version": "proofx.verified_run.v2"
 }

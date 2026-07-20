@@ -1,8 +1,11 @@
 import json
 
+import pytest
+from codebase import verified_runs
 from codebase.verified_runs import (
     SCHEMA_VERSION,
     build_verified_run_bundle,
+    environment_is_complete,
     validate_bundle,
     write_bundle,
 )
@@ -51,6 +54,63 @@ def test_validate_bundle_rejects_missing_run_fields():
         assert "missing" in str(exc)
     else:
         raise AssertionError("validate_bundle should reject incomplete run entries")
+
+
+def test_environment_names_unresolved_dependencies_instead_of_recording_null(monkeypatch):
+    monkeypatch.setattr(
+        verified_runs, "DEFAULT_DEPENDENCIES", ("numpy", "proofx-not-a-real-package")
+    )
+
+    environment = verified_runs._environment()
+
+    assert None not in environment["dependencies"].values()
+    assert "proofx-not-a-real-package" not in environment["dependencies"]
+    assert environment["dependencies_unresolved"] == ["proofx-not-a-real-package"]
+    assert environment["dependencies_complete"] is False
+
+
+def test_environment_is_complete_when_every_declared_dependency_resolves(monkeypatch):
+    monkeypatch.setattr(verified_runs, "DEFAULT_DEPENDENCIES", ("numpy",))
+
+    environment = verified_runs._environment()
+
+    assert environment["dependencies_unresolved"] == []
+    assert environment["dependencies_complete"] is True
+    assert environment["dependencies"]["numpy"]
+
+
+def test_environment_is_complete_rejects_a_bundle_with_unresolved_dependencies(monkeypatch):
+    monkeypatch.setattr(
+        verified_runs, "DEFAULT_DEPENDENCIES", ("numpy", "proofx-not-a-real-package")
+    )
+
+    bundle = build_verified_run_bundle(engines=("goldbach",), goldbach_start=4, goldbach_end=20)
+
+    assert environment_is_complete(bundle) is False
+
+
+def test_environment_is_complete_accepts_a_fully_resolved_bundle(monkeypatch):
+    monkeypatch.setattr(verified_runs, "DEFAULT_DEPENDENCIES", ("numpy",))
+
+    bundle = build_verified_run_bundle(engines=("goldbach",), goldbach_start=4, goldbach_end=20)
+
+    assert environment_is_complete(bundle) is True
+
+
+def test_validate_bundle_rejects_null_dependency_versions():
+    bundle = build_verified_run_bundle(engines=("goldbach",), goldbach_start=4, goldbach_end=20)
+    bundle["environment"]["dependencies"]["numpy"] = None
+
+    with pytest.raises(ValueError, match="dependency"):
+        validate_bundle(bundle)
+
+
+def test_validate_bundle_rejects_an_environment_missing_completeness_fields():
+    bundle = build_verified_run_bundle(engines=("goldbach",), goldbach_start=4, goldbach_end=20)
+    del bundle["environment"]["dependencies_complete"]
+
+    with pytest.raises(ValueError, match="environment"):
+        validate_bundle(bundle)
 
 
 def test_write_bundle_round_trips_json(tmp_path):

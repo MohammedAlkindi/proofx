@@ -18,7 +18,10 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "proofx.verified_run.v1"
+# v2 replaced null dependency versions with an explicit dependencies_unresolved
+# list plus a dependencies_complete flag, so a degraded build environment can no
+# longer masquerade as a complete provenance snapshot.
+SCHEMA_VERSION = "proofx.verified_run.v2"
 DEFAULT_DEPENDENCIES = (
     "mpmath",
     "numpy",
@@ -132,6 +135,50 @@ def validate_bundle(bundle: dict[str, Any]) -> None:
         missing = sorted(required - run.keys())
         if missing:
             raise ValueError(f"Run {run.get('id', '<unknown>')} missing: {', '.join(missing)}")
+
+    # Structural checks above report the absent field by name; environment
+    # checks run afterwards so a wholly missing block is reported as a missing
+    # field rather than as a malformed environment.
+    _validate_environment(bundle.get("environment"), "bundle")
+    for run in runs:
+        _validate_environment(run.get("environment"), f"run {run.get('id', '<unknown>')}")
+
+
+def _validate_environment(environment: Any, where: str) -> None:
+    """Reject an environment block that cannot support a provenance claim."""
+    if not isinstance(environment, dict):
+        raise ValueError(f"Verified run environment for {where} must be an object")
+
+    missing = sorted(
+        {"python", "platform", "dependencies", "dependencies_complete"} - environment.keys()
+    )
+    if missing:
+        raise ValueError(f"Verified run environment for {where} missing: {', '.join(missing)}")
+
+    dependencies = environment["dependencies"]
+    if not isinstance(dependencies, dict):
+        raise ValueError(f"Verified run dependencies for {where} must be an object")
+
+    nulls = sorted(name for name, version in dependencies.items() if version is None)
+    if nulls:
+        raise ValueError(
+            f"Verified run dependency versions for {where} must not be null: {', '.join(nulls)}. "
+            "Unresolved packages belong in dependencies_unresolved."
+        )
+
+
+def environment_is_complete(bundle: dict[str, Any]) -> bool:
+    """Report whether every declared dependency resolved when the bundle was built.
+
+    An incomplete bundle is still a valid artifact -- it just cannot claim a full
+    dependency snapshot, so callers that publish provenance should say so.
+    """
+    environments = [bundle.get("environment")]
+    environments.extend(run.get("environment") for run in bundle.get("runs", []))
+    return all(
+        isinstance(environment, dict) and environment.get("dependencies_complete") is True
+        for environment in environments
+    )
 
 
 def run_collatz_artifact(
@@ -406,10 +453,28 @@ def _sample_points(limit: int, *, count: int) -> list[int]:
 
 
 def _environment() -> dict[str, Any]:
+    """Snapshot the interpreter, platform, and resolvable dependency versions.
+
+    A package that cannot be resolved is named in ``dependencies_unresolved``
+    rather than recorded as a ``null`` version. A null would be indistinguishable
+    from "this dependency genuinely has no version", and silently turns a
+    degraded build environment into a provenance claim the artifact cannot back.
+    """
+    resolved: dict[str, str] = {}
+    unresolved: list[str] = []
+    for package in DEFAULT_DEPENDENCIES:
+        version = _package_version(package)
+        if version is None:
+            unresolved.append(package)
+        else:
+            resolved[package] = version
+
     return {
         "python": platform.python_version(),
         "platform": platform.platform(),
-        "dependencies": {package: _package_version(package) for package in DEFAULT_DEPENDENCIES},
+        "dependencies": resolved,
+        "dependencies_unresolved": unresolved,
+        "dependencies_complete": not unresolved,
     }
 
 
