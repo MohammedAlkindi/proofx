@@ -57,3 +57,7 @@ packages/germinal/frontend/tsconfig.tsbuildinfo
 
 .vercel
 .env*
+
+.next/
+*.tsbuildinfo
+*.old
