@@ -86,15 +86,13 @@ We prioritize readability over cleverness.
 Example:
 
 ```python
-def iterate(n: int) -> int:
-    ...
+def iterate(n: int) -> int: ...
 ```
 
 instead of
 
 ```python
-def iterate(n):
-    ...
+def iterate(n): ...
 ```
 
 ---
