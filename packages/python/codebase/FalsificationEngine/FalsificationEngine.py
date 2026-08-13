@@ -715,8 +715,8 @@ class GoldbachFalsifier:
         Returns
         ───────
         FalsificationLedger, with near-miss scores measuring structural anomaly.
-        If any candidate with score 1.0 is found, a CRITICAL log is emitted
-        — this would be an actual counterexample to Goldbach's conjecture.
+        If any evaluated even n ≥ 4 has zero partitions — an actual
+        counterexample to Goldbach's conjecture — a CRITICAL log is emitted.
         """
         rng = np.random.default_rng(seed)
         ledger = FalsificationLedger()
@@ -729,7 +729,16 @@ class GoldbachFalsifier:
             ledger.append(entry)
             evaluated += 1
 
-            if entry.near_miss_score >= 1.0:
+            # A zero-partition even n ≥ 4 is exactly a Goldbach counterexample.
+            # The blended score cannot express that: structural hardness caps
+            # at 0.88, so 0.85·deficit + 0.15·hardness stays below 1.0 even
+            # when the deficit is exactly 1.0. Key the alert on the
+            # mathematical condition, not the ranking score.
+            if (
+                entry.candidate >= 4
+                and entry.candidate % 2 == 0
+                and entry.details["actual_partitions"] == 0
+            ):
                 logger.critical(
                     "POTENTIAL GOLDBACH COUNTEREXAMPLE: n=%d, G(n)=%d, G̃(n)=%.2f",
                     candidate,
