@@ -37,6 +37,13 @@ Tracks tested ranges, methodology changes, and notable discoveries for the Colla
 
 ## 2025-04-01 — Initial large-scale scan
 
+> **Marked unverified 2026-08-13.** No run ledger, command, code revision, or
+> hardware context for this entry exists in this repository, and nothing in the
+> current codebase can scan at this scale — at the stated 100M numbers/sec, a
+> uniform pass over 2^64 values is roughly 5,800 machine-years. Per
+> docs/research-standards.md, treat this entry as illustrative output, not a
+> tested range.
+
 **Tested range:** 1 to 2^64 (uniform linear scan)
 **Throughput:** 100M+ numbers/sec (parallelized)
 **Method:** Direct iteration with memoized stopping times

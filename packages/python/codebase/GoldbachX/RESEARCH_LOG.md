@@ -28,9 +28,20 @@ C₂ = 0.6601618158 (twin prime constant)
 
 **Result:** No counterexample found in tested range up to 10^18.
 
+> **Scale caveat, added 2026-08-13.** The methodology above matches the current
+> engine, but the top-candidate and "up to 10^18" figures predate it and have
+> no surviving ledger; current candidate generation caps at n ≤ 10^5
+> (`_generate_sparse_candidates`). Treat the figures as illustrative output.
+
 ---
 
 ## 2025-04-01 — Initial linear scan
+
+> **Marked unverified 2026-08-13.** No run ledger, command, code revision, or
+> hardware context for this entry exists in this repository — at the stated
+> 200M numbers/sec, scanning the 5 × 10^17 even numbers below 10^18 is roughly
+> 79 machine-years. Per docs/research-standards.md, treat this entry as
+> illustrative output, not a tested range.
 
 **Tested range:** 4 to 10^18 (step 2, even numbers only)
 **Throughput:** 200M+ numbers/sec
