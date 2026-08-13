@@ -2,6 +2,7 @@
 GoldbachFalsifier, and FalsificationEngine."""
 
 import json
+import logging
 import sys
 import time
 from pathlib import Path
@@ -318,6 +319,26 @@ class TestGoldbachFalsifierSearch:
     def test_search_candidates_at_least_4(self):
         for e in GoldbachFalsifier(sieve_limit=1_000).search(budget=5, seed=0)._entries:
             assert e.candidate >= 4
+
+    def test_zero_partition_candidate_emits_critical_alert(self, monkeypatch, caplog):
+        # No genuine counterexample is known, so simulate one by stubbing the
+        # partition counter. The blended near-miss score cannot reach 1.0
+        # (structural hardness caps at 0.88), so an alert keyed to the score
+        # stays silent on exactly the event it exists for; the alert must key
+        # on the mathematical condition itself.
+        falsifier = GoldbachFalsifier(sieve_limit=1_000)
+        monkeypatch.setattr(falsifier, "_partition_count_and_witness", lambda n: (0, None))
+        with caplog.at_level(logging.CRITICAL, logger="proofx.falsification"):
+            falsifier.search(budget=3, seed=0)
+        assert any(
+            "POTENTIAL GOLDBACH COUNTEREXAMPLE" in rec.getMessage() for rec in caplog.records
+        )
+
+    def test_normal_candidates_emit_no_critical_alert(self, caplog):
+        with caplog.at_level(logging.CRITICAL, logger="proofx.falsification"):
+            GoldbachFalsifier(sieve_limit=1_000).search(budget=5, seed=0)
+        critical = [r for r in caplog.records if r.levelno >= logging.CRITICAL]
+        assert critical == []
 
 
 # ── FalsificationEngine ───────────────────────────────────────────────────────
