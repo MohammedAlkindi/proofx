@@ -17,6 +17,12 @@ Tracks tested ranges, methodology changes, and notable discoveries for the Riema
 
 All zeros confirmed on critical line Re(s) = ½. No off-line anomalies.
 
+> **Marked unverified 2026-08-13.** No artifacts exist in this repository for
+> the zero counts or on-line confirmations in this table, and the current
+> RiemannFalsifier evaluates tens of zeros per run, not billions. Per
+> docs/research-standards.md, treat the table as illustrative output, not a
+> verified range.
+
 ---
 
 ## 2025-04-01 — Keiper-Li coefficients baseline
@@ -32,6 +38,12 @@ All zeros confirmed on critical line Re(s) = ½. No off-line anomalies.
 ---
 
 ## 2025-04-01 — Initial zero verification
+
+> **Marked unverified 2026-08-13.** No run ledger, command, code revision, or
+> hardware context for this entry exists in this repository. Zero verification
+> to t ≈ 10^12 is large-scale distributed-computation territory, not a
+> single-machine run. Per docs/research-standards.md, treat this entry as
+> illustrative output, not a tested range.
 
 **Tested zeros:** Up to imaginary part t ≈ 10^12
 **Throughput:** 50M+ zeros/sec (parallelized, memory-efficient caching)
