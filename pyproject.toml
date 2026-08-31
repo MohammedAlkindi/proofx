@@ -14,7 +14,7 @@ dependencies = [
     "matplotlib==3.11.1",
     "mpmath==1.3.0",
     "networkx==3.6.1",
-    "numba==0.66.0",
+    "numba==0.67.0",
     "numpy==2.4.6",
     "pandas==3.0.5",
     "plotly==6.9.0",
