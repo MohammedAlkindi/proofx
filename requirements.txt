@@ -13,7 +13,7 @@ rich==15.0.0
 scikit-learn==1.9.0
 scipy==1.18.0
 shap==0.52.0
-statsmodels==0.14.6
+statsmodels==0.15.0
 sympy==1.14.0
 torch==2.13.0
 tqdm==4.70.0
