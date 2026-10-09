@@ -11,6 +11,7 @@ Subcommands
   collatz   Run the CollatzX pipeline
   goldbach  Run the GoldbachX partition analysis
   run       Write verified run artifacts for the public site
+  benchmark Compare bounded Goldbach policies or independently check a bundle
 
 All subcommands share:
   --log-level   DEBUG | INFO | WARNING | ERROR  (default INFO)
@@ -556,6 +557,39 @@ def _build_export(sub: argparse._SubParsersAction) -> None:
     lean.set_defaults(func=_cmd_export_lean)
 
 
+def _cmd_benchmark(args: argparse.Namespace) -> int:
+    import json
+
+    from codebase.benchmark import BenchmarkConfig, run_benchmark, verify_bundle
+
+    if args.benchmark_cmd == "verify":
+        print(json.dumps(verify_bundle(Path(args.directory)), indent=2))
+    else:
+        config = BenchmarkConfig(max_n=args.max_n, budget=args.budget, seeds=tuple(args.seeds))
+        manifest = run_benchmark(config, Path(args.output_dir))
+        print(f"Wrote {len(manifest['runs'])} runs to {args.output_dir}")
+        print(json.dumps(verify_bundle(Path(args.output_dir)), indent=2))
+    return 0
+
+
+def _build_benchmark(sub: argparse._SubParsersAction) -> None:
+    parser = sub.add_parser("benchmark", help="Reproduce and verify a bounded policy comparison")
+    commands = parser.add_subparsers(dest="benchmark_cmd", required=True)
+    run = commands.add_parser("goldbach", help="Compare directed, uniform and sequential selection")
+    run.add_argument("--max-n", type=int, default=10_000)
+    run.add_argument("--budget", type=int, default=64)
+    run.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
+    run.add_argument(
+        "--output-dir", required=True, help="New directory; existing runs are never overwritten"
+    )
+    run.set_defaults(func=_cmd_benchmark)
+    verify = commands.add_parser(
+        "verify", help="Independently recount a downloaded experiment bundle"
+    )
+    verify.add_argument("directory")
+    verify.set_defaults(func=_cmd_benchmark)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="proofx",
@@ -573,13 +607,17 @@ def main() -> None:
     _build_goldbach(sub)
     _build_run(sub)
     _build_export(sub)
+    _build_benchmark(sub)
 
     args = parser.parse_args()
     if not hasattr(args, "func"):
         parser.print_help()
         sys.exit(0)
 
-    sys.exit(args.func(args) or 0)
+    try:
+        sys.exit(args.func(args) or 0)
+    except (ValueError, OSError, KeyError) as exc:
+        parser.exit(2, f"proofx: {exc}\n")
 
 
 if __name__ == "__main__":
