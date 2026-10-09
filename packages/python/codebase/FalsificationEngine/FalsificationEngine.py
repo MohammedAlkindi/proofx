@@ -114,6 +114,12 @@ def json_default(value: Any) -> Any:
 LEDGER_SCHEMA_VERSION = "proofx.ledger.v2"
 
 
+def validate_budget(budget: int) -> None:
+    """A budget counts evaluations; zero is a valid no-op."""
+    if isinstance(budget, bool) or not isinstance(budget, int) or budget < 0:
+        raise ValueError("budget must be a non-negative integer")
+
+
 @dataclass
 class LedgerEntry:
     """Immutable record of one falsification test.
@@ -126,7 +132,7 @@ class LedgerEntry:
     conjecture: str  # "collatz" | "goldbach"
     strategy: str  # search strategy name that produced this candidate
     features: dict[str, float]  # full feature vector at test time
-    near_miss_score: float  # ∈ [0, 1]; 1 = confirmed counterexample
+    near_miss_score: float  # ranking heuristic in [0, 1], never a truth claim
     details: dict[str, Any]  # conjecture-specific diagnostics
     timestamp: float  # epoch seconds
     rng_seed: int  # seed in effect when generated (for full replay)
@@ -385,6 +391,7 @@ class CollatzFalsifier:
         FalsificationLedger populated with `budget` entries, ordered internally
         by near-miss score.
         """
+        validate_budget(budget)
         rng = np.random.default_rng(seed)
         ledger = FalsificationLedger()
         visited: set[int] = set()
@@ -513,6 +520,9 @@ class GoldbachFalsifier:
     """
 
     def __init__(self, sieve_limit: int = _SIEVE_LIMIT) -> None:
+        if isinstance(sieve_limit, bool) or not isinstance(sieve_limit, int) or sieve_limit < 4:
+            raise ValueError("sieve_limit must be an integer >= 4")
+        self.sieve_limit = sieve_limit
         self._primes: list[int] = eratosthenes(sieve_limit)
         self._prime_set: set[int] = set(self._primes)
         # Small primes used in the H-L Euler product correction (up to sqrt of max n)
@@ -523,7 +533,9 @@ class GoldbachFalsifier:
     def _hardy_littlewood_expected(self, n: int) -> float:
         """Predict G(n) via Hardy-Littlewood Conjecture B.
 
-        G(n) ≈ 2·C₂ · ∏_{p|n, p≥3 prime} (p-1)/(p-2) · n / (log n)²
+        G(n) ≈ C₂ · ∏_{p|n, p≥3 prime} (p-1)/(p-2) · n / (log n)²
+
+        This counts unordered pairs. The ordered-pair asymptotic has 2·C₂.
 
         The Euler product factor ∏(p-1)/(p-2) is > 1 for every odd prime divisor,
         meaning that numbers with small odd prime factors are predicted to have
@@ -541,19 +553,19 @@ class GoldbachFalsifier:
         # Compute Euler product correction over odd prime factors of n.
         correction = 1.0
         temp = n
-        for p in self._small_primes:
-            if p * p > temp and temp > 1:
-                # temp itself is a prime factor > sqrt(n); add its correction.
-                correction *= (temp - 1) / max(1, temp - 2)
-                break
+        while temp % 2 == 0:
+            temp //= 2
+        p = 3
+        while p * p <= temp:
             if temp % p == 0:
                 correction *= (p - 1) / (p - 2)
                 while temp % p == 0:
                     temp //= p
-            if temp == 1:
-                break
+            p += 2
+        if temp > 1:
+            correction *= (temp - 1) / (temp - 2)
 
-        return 2.0 * _C2 * correction * n / (ln_n**2)
+        return _C2 * correction * n / (ln_n**2)
 
     def _partition_count_and_witness(self, n: int) -> tuple[int, tuple[int, int] | None]:
         """Count Goldbach pairs (p, q) with p + q = n, p ≤ q, both prime, and
@@ -572,6 +584,8 @@ class GoldbachFalsifier:
         """
         if n < 4 or n % 2 != 0:
             return 0, None
+        if n > self.sieve_limit:
+            raise ValueError(f"candidate {n} exceeds complete sieve bound {self.sieve_limit}")
         count = 0
         witness: tuple[int, int] | None = None
         for p in self._primes:
@@ -597,9 +611,7 @@ class GoldbachFalsifier:
           0.9 — actual is only 10% of prediction (highly anomalous)
           1.0 — actual = 0, which is a confirmed counterexample
 
-        We use a log-ratio to avoid extreme sensitivity when expected is small:
-          deficit = 1 - actual / max(1, expected)
-        Floored at 0 to keep scores non-negative.
+        deficit = 1 - actual / expected, floored at 0.
         """
         if expected <= 0:
             # No prediction available — assign 0 rather than fabricating evidence
@@ -718,10 +730,11 @@ class GoldbachFalsifier:
         If any evaluated even n ≥ 4 has zero partitions — an actual
         counterexample to Goldbach's conjecture — a CRITICAL log is emitted.
         """
+        validate_budget(budget)
         rng = np.random.default_rng(seed)
         ledger = FalsificationLedger()
 
-        gen = self._generate_sparse_candidates(budget, rng)
+        gen = self._generate_sparse_candidates(budget, rng, max_n=min(100_000, self.sieve_limit))
         evaluated = 0
 
         for candidate in gen:
@@ -798,6 +811,8 @@ class GoldbachFalsifier:
                 # consumer can tell "this run found none" from "this row
                 # predates the witness field."
                 "witness": ({"p": witness[0], "q": witness[1]} if witness else None),
+                "score_version": "goldbach.unordered.v2",
+                "sieve_limit": self.sieve_limit,
             },
             timestamp=time.time(),
             rng_seed=base_seed,
@@ -859,6 +874,9 @@ class FalsificationEngine:
         }
         """
         _VALID_TARGETS = {"collatz", "goldbach", "riemann", "both", "all"}
+        validate_budget(budget)
+        if not math.isfinite(min_score) or not 0 <= min_score <= 1:
+            raise ValueError("min_score must be finite and in [0, 1]")
         if target not in _VALID_TARGETS:
             raise ValueError(f"target must be one of {sorted(_VALID_TARGETS)}; got {target!r}")
 
@@ -882,12 +900,13 @@ class FalsificationEngine:
 
         # Split budget across active engines.
         n_active = sum([run_collatz, run_goldbach, run_riemann])
-        per_engine = max(1, budget // n_active)
-        remainder = budget - per_engine * n_active
-
-        collatz_budget = (per_engine + remainder) if run_collatz else 0
-        goldbach_budget = per_engine if run_goldbach else 0
-        riemann_budget = per_engine if run_riemann else 0
+        per_engine, remainder = divmod(budget, n_active)
+        allocations = []
+        for active in (run_collatz, run_goldbach, run_riemann):
+            allocations.append(per_engine + remainder if active else 0)
+            if active:
+                remainder = 0
+        collatz_budget, goldbach_budget, riemann_budget = allocations
 
         if run_collatz and run_goldbach and not run_riemann:
             # Original "both" path: run the two fast engines in parallel.
