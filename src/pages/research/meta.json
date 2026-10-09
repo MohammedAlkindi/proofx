@@ -1,9 +1,9 @@
 {
-  "title": "Research | ProofX",
-  "description": "ProofX research notes, method documentation, and reproducibility standards for bounded number-theory experiments.",
+  "title": "Experiments and Data | ProofX",
+  "description": "Compare Goldbach selection policies, inspect per-seed results, download complete ledgers, and independently verify the published experiment.",
   "canonical_path": "/research",
-  "og_title": "Research | ProofX",
-  "og_description": "Method documentation and reproducibility standards for ProofX experiments.",
+  "og_title": "Experiments and Data | ProofX",
+  "og_description": "Reproducible number theory experiments with complete data, methods, and independent checks.",
   "og_image": true,
   "twitter_card": "summary_large_image",
   "nav_active": "research",

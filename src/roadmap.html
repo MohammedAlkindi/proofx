@@ -73,7 +73,7 @@
         <a href="/goldbachx.html">GoldbachX</a>
         <a href="/riemannx.html">RiemannX</a>
         <a href="/results.html">Results</a>
-        <a href="/research.html">Research</a>
+        <a href="/research.html">Experiments</a>
         <a href="/germinal.html">Germinal</a>
         <hr class="nav__divider">
         <a class="nav__link--secondary" href="/ledger-viewer.html">Ledger Viewer</a>
@@ -86,56 +86,28 @@
   </header>
 
   <main id="main">
-    <section class="section hero">
-      <div class="container hero__wrap">
-        <h1 class="hero__h1">Roadmap</h1>
-        <p class="hero__sub">
-          Near-term work is about making the repository easier to run, audit, and review. The goal is not bigger claims; it is clearer evidence.
-        </p>
-      </div>
-    </section>
-
-    <section class="section" id="roadmap">
-      <div class="container">
-        <div class="grid grid--2">
-          <article class="card">
-            <h3>Make Checks Green</h3>
-            <ul class="bullets bullets--tight">
-              <li>Fix current pytest failures.</li>
-              <li>Bring coverage back to the configured gate or revise scope explicitly.</li>
-              <li>Reduce ruff and mypy noise in small, reviewable batches.</li>
-            </ul>
-          </article>
-
-          <article class="card">
-            <h3>Improve Reproducibility</h3>
-            <ul class="bullets bullets--tight">
-              <li>Publish sample ledgers generated from documented commands.</li>
-              <li>Record commit SHA and dependency context in result summaries.</li>
-              <li>Keep browser demos visibly separate from engine runs.</li>
-            </ul>
-          </article>
-
-          <article class="card">
-            <h3>Tighten Engine Docs</h3>
-            <ul class="bullets bullets--tight">
-              <li>Document input ranges and failure modes for each engine.</li>
-              <li>Keep score derivations aligned with code.</li>
-              <li>Add examples that show both successful and inconclusive runs.</li>
-            </ul>
-          </article>
-
-          <article class="card">
-            <h3>Formal Boundary</h3>
-            <ul class="bullets bullets--tight">
-              <li>Maintain the root Lean package for bounded certificates.</li>
-              <li>Keep toolchains pinned before publishing formal artifacts.</li>
-              <li>Reject accepted proof artifacts that contain `sorry`.</li>
-            </ul>
-          </article>
-        </div>
-      </div>
-    </section>
+    <section class="section hero"><div class="container hero__wrap">
+      <p class="kicker">Open work</p><h1 class="hero__h1">Questions worth testing next.</h1>
+      <p class="hero__sub">ProofX grows through reproducible experiments, independent checks, and corrections to its assumptions.</p>
+    </div></section>
+    <section class="section"><div class="container">
+      <h2>Research priorities</h2>
+      <div class="table-scroll"><table class="results-table">
+        <caption>Concrete next contributions</caption>
+        <thead><tr><th scope="col">Question</th><th scope="col">Useful contribution</th><th scope="col">Evidence to attach</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Does GB-001 reproduce elsewhere?</th><td>Run the published configuration on another platform.</td><td>Manifest, ledger hashes, verifier output</td></tr>
+          <tr><th scope="row">Does the result survive a different size range?</th><td>Prespecify held-out intervals and more seeds.</td><td>Protocol, every run, size-stratified comparisons</td></tr>
+          <tr><th scope="row">Which structural family helps?</th><td>Remove one family at a time under equal budgets.</td><td>Ablation configuration and complete ledgers</td></tr>
+          <tr><th scope="row">Does Collatz ranking beat a baseline?</th><td>Define an independent anomaly target and compare selection policies.</td><td>Matched domains and budgets; treatment of shared suffixes</td></tr>
+        </tbody>
+      </table></div>
+      <h2>Tooling priorities</h2>
+      <p>Resumable long-run search, external calibration evaluation split by run or family, and incremental tests for older excluded modules. See the <a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/quality-scope.md">quality-scope inventory</a> before building on a legacy module.</p>
+      <h2>Available now</h2>
+      <p><a href="/research.html#gb-001">GB-001</a> includes a protocol, equal-budget baselines, a full reference, and independent recounting. Calibration reports held-out annotation metrics. Search budgets and sieve bounds are enforced. The Lean layer checks finite trajectory and prime-pair certificates.</p>
+      <p><a class="btn" href="https://github.com/MohammedAlkindi/ProofX/issues">Discuss a reproducible contribution</a></p>
+    </div></section>
   </main>
 
   <footer class="footer" role="contentinfo">

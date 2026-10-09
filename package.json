@@ -5,9 +5,11 @@
   "description": "TypeScript helpers for ProofX's static research site.",
   "scripts": {
     "build:ts": "tsc -p tsconfig.json",
-    "build:site": "npm run build:ts && python scripts/build_site.py"
+    "build:site": "npm run build:ts && python scripts/build_site.py",
+    "test:site": "node scripts/test-research-page.cjs"
   },
   "devDependencies": {
+    "jsdom": "^30.1.2",
     "typescript": "^5.9.3"
   }
 }

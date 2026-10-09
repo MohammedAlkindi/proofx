@@ -8,10 +8,10 @@
     "riemann_evaluated": 0,
     "total_evaluated": 500,
     "collatz_max_near_miss": 0.5058557333793884,
-    "goldbach_max_near_miss": 0.775795474555694,
+    "goldbach_max_near_miss": 0.36338642366708185,
     "riemann_max_near_miss": 0.0,
     "seed": 42,
-    "elapsed_s": 6.899
+    "elapsed_s": 55.585
   },
   "top_collatz": [
     {
@@ -55,7 +55,7 @@
         "sequence_length": 50,
         "converged": 1,
         "cycle_detected": 0,
-        "computation_time_s": 3.7499936297535896e-05,
+        "computation_time_s": 2.970000059576705e-05,
         "expected_stopping_time": 19.991534301755603
       }
     },
@@ -100,7 +100,7 @@
         "sequence_length": 141,
         "converged": 1,
         "cycle_detected": 0,
-        "computation_time_s": 0.00011000002268701792,
+        "computation_time_s": 0.00013420000323094428,
         "expected_stopping_time": 51.999952274419684
       }
     },
@@ -145,7 +145,7 @@
         "sequence_length": 174,
         "converged": 1,
         "cycle_detected": 0,
-        "computation_time_s": 8.809997234493494e-05,
+        "computation_time_s": 0.00015859999984968454,
         "expected_stopping_time": 55.99995446723392
       }
     },
@@ -161,7 +161,7 @@
         "median_value": 2768.0,
         "std_dev": 7571.373167643359,
         "skewness": 2.0518361051862057,
-        "kurtosis": 4.583476329879465,
+        "kurtosis": 4.5834763298794625,
         "entropy": 6.629356619936781,
         "parity_ratio": 0.35353535353535354,
         "even_streak_max": 7.0,
@@ -190,7 +190,7 @@
         "sequence_length": 99,
         "converged": 1,
         "cycle_detected": 0,
-        "computation_time_s": 4.770001396536827e-05,
+        "computation_time_s": 7.220000406960025e-05,
         "expected_stopping_time": 19.611487744303236
       }
     },
@@ -205,7 +205,7 @@
         "mean_value": 25962.3918128655,
         "median_value": 13211.0,
         "std_dev": 35992.00830697406,
-        "skewness": 2.689890593430589,
+        "skewness": 2.689890593430588,
         "kurtosis": 10.09407581054476,
         "entropy": 7.417852514639197,
         "parity_ratio": 0.3684210526315789,
@@ -235,7 +235,7 @@
         "sequence_length": 171,
         "converged": 1,
         "cycle_detected": 0,
-        "computation_time_s": 6.959994789212942e-05,
+        "computation_time_s": 8.740000339457765e-05,
         "expected_stopping_time": 18.91476175814507
       }
     }
@@ -243,102 +243,132 @@
   "top_goldbach": [
     {
       "candidate": 4,
-      "near_miss_score": 0.775795474555694,
+      "near_miss_score": 0.36338642366708185,
       "strategy": "hardy_littlewood_deficit_search",
       "features": {
         "actual_partitions": 1.0,
-        "expected_partitions": 4.122120977551374,
-        "deficit_ratio": 0.7574064406537576,
+        "expected_partitions": 1.3740403258504579,
+        "deficit_ratio": 0.27221932196127274,
         "structural_hardness": 0.88
       },
       "details": {
         "actual_partitions": 1,
-        "expected_partitions": 4.1221,
-        "deficit_ratio": 0.757406,
+        "expected_partitions": 1.374,
+        "deficit_ratio": 0.272219,
         "structural_hardness": 0.88,
         "is_power_of_two": true,
         "mod_6_residue": 4,
-        "mod_30_residue": 4
+        "mod_30_residue": 4,
+        "witness": {
+          "p": 2,
+          "q": 2
+        },
+        "score_version": "goldbach.unordered.v2",
+        "sieve_limit": 200000
       }
     },
     {
       "candidate": 8,
-      "near_miss_score": 0.683739882839486,
+      "near_miss_score": 0.2860597266254672,
       "strategy": "hardy_littlewood_deficit_search",
       "features": {
         "actual_partitions": 1.0,
-        "expected_partitions": 2.8498614165787277,
-        "deficit_ratio": 0.6491057445170423,
+        "expected_partitions": 1.2213691785337406,
+        "deficit_ratio": 0.18124673720643203,
         "structural_hardness": 0.88
       },
       "details": {
         "actual_partitions": 1,
-        "expected_partitions": 2.8499,
-        "deficit_ratio": 0.649106,
+        "expected_partitions": 1.2214,
+        "deficit_ratio": 0.181247,
         "structural_hardness": 0.88,
         "is_power_of_two": true,
         "mod_6_residue": 2,
-        "mod_30_residue": 8
+        "mod_30_residue": 8,
+        "witness": {
+          "p": 3,
+          "q": 5
+        },
+        "score_version": "goldbach.unordered.v2",
+        "sieve_limit": 200000
       }
     },
     {
       "candidate": 128,
-      "near_miss_score": 0.6295774895165382,
+      "near_miss_score": 0.2715609709301644,
       "strategy": "hardy_littlewood_deficit_search",
       "features": {
         "actual_partitions": 3.0,
-        "expected_partitions": 7.235633150963733,
-        "deficit_ratio": 0.5853852817841626,
+        "expected_partitions": 3.5893298307930332,
+        "deficit_ratio": 0.16418937756489926,
         "structural_hardness": 0.88
       },
       "details": {
         "actual_partitions": 3,
-        "expected_partitions": 7.2356,
-        "deficit_ratio": 0.585385,
+        "expected_partitions": 3.5893,
+        "deficit_ratio": 0.164189,
         "structural_hardness": 0.88,
         "is_power_of_two": true,
         "mod_6_residue": 2,
-        "mod_30_residue": 8
+        "mod_30_residue": 8,
+        "witness": {
+          "p": 19,
+          "q": 109
+        },
+        "score_version": "goldbach.unordered.v2",
+        "sieve_limit": 200000
       }
     },
     {
-      "candidate": 692,
-      "near_miss_score": 0.5449846735977659,
+      "candidate": 16,
+      "near_miss_score": 0.132,
       "strategy": "hardy_littlewood_deficit_search",
       "features": {
-        "actual_partitions": 11.0,
-        "expected_partitions": 21.395130639867194,
-        "deficit_ratio": 0.4858643218797246,
+        "actual_partitions": 2.0,
+        "expected_partitions": 1.3740403258504579,
+        "deficit_ratio": 0.0,
         "structural_hardness": 0.88
       },
       "details": {
-        "actual_partitions": 11,
-        "expected_partitions": 21.3951,
-        "deficit_ratio": 0.485864,
+        "actual_partitions": 2,
+        "expected_partitions": 1.374,
+        "deficit_ratio": 0.0,
         "structural_hardness": 0.88,
-        "is_power_of_two": false,
-        "mod_6_residue": 2,
-        "mod_30_residue": 2
+        "is_power_of_two": true,
+        "mod_6_residue": 4,
+        "mod_30_residue": 16,
+        "witness": {
+          "p": 3,
+          "q": 13
+        },
+        "score_version": "goldbach.unordered.v2",
+        "sieve_limit": 200000
       }
     },
     {
-      "candidate": 35912,
-      "near_miss_score": 0.5441441633511155,
+      "candidate": 32,
+      "near_miss_score": 0.132,
       "strategy": "hardy_littlewood_deficit_search",
       "features": {
-        "actual_partitions": 263.0,
-        "expected_partitions": 510.556172348718,
-        "deficit_ratio": 0.48487548629543,
+        "actual_partitions": 2.0,
+        "expected_partitions": 1.758771617088586,
+        "deficit_ratio": 0.0,
         "structural_hardness": 0.88
       },
       "details": {
-        "actual_partitions": 263,
-        "expected_partitions": 510.5562,
-        "deficit_ratio": 0.484875,
+        "actual_partitions": 2,
+        "expected_partitions": 1.7588,
+        "deficit_ratio": 0.0,
         "structural_hardness": 0.88,
-        "is_power_of_two": false,
+        "is_power_of_two": true,
         "mod_6_residue": 2,
-        "mod_30_residue": 2
+        "mod_30_residue": 2,
+        "witness": {
+          "p": 3,
+          "q": 29
+        },
+        "score_version": "goldbach.unordered.v2",
+        "sieve_limit": 200000
       }
     }
   ],
