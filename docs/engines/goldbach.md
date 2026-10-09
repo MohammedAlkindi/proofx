@@ -47,7 +47,7 @@ The search uses the Hardy-Littlewood prediction as a ranking baseline:
 
 ```text
 predicted_G(n) =
-  2 * C2 * product_{p | n, p >= 3} ((p - 1) / (p - 2)) * n / (log n)^2
+  C2 * product_{p | n, p >= 3} ((p - 1) / (p - 2)) * n / (log n)^2
 ```
 
 The deficit score is:
@@ -64,7 +64,19 @@ Interpretation:
 | Positive and large | Observed count is lower than prediction. |
 | 1.0 | `G(n) = 0`; potential counterexample requiring independent review. |
 
-The prediction is asymptotic. A deficit is not a probability.
+The prediction is asymptotic. A deficit is not a probability. This is the
+unordered-pair convention; the ordered-pair asymptotic has twice this leading
+constant. See Borwein, Choi, Martin and Samuels,
+[definition of R(N) and Conjecture 3.3](https://personal.math.ubc.ca/~gerg/papers/downloads/PWCRGC.pdf).
+The diagonal pair contributes only once to the exact count. The leading-term
+approximation is especially crude for small inputs.
+
+Earlier ProofX scores used the ordered constant against unordered counts and
+incorrectly retained factors of two in the odd-prime correction. Scores from
+that implementation are not comparable to `goldbach.unordered.v2`. New rows
+record this score version and the complete sieve bound. A candidate beyond the
+sieve bound is rejected; a missing prime outside the sieve is never evidence
+of a missing partition.
 
 ## Sparse Families
 
