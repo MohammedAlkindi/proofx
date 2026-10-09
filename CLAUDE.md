@@ -23,6 +23,7 @@ ProofX is three things sharing one repo:
   - `cli.py` - unified CLI (`python -m codebase.cli <falsify|calibrate|correlate|riemann|collatz|goldbach>`).
 - `ProofX/` - root Lean 4 modules (`Certificates.lean`, `Status.lean`). Small and intentionally narrow; see `docs/lean4.md` before adding anything here.
 - `tests/` - pytest suite for the root Python toolkit.
+- `packages/python/codebase/benchmark.py` - GB-001 bounded policy comparison and independent artifact recount. CLI: `benchmark goldbach` / `benchmark verify`. Protocol: `docs/experiments/goldbach-policy-comparison.md`; published bundle: `src/experiments/gb-001/`.
 - `docs/` - architecture, deployment, content, changelog, Lean, MVP, and engine writeups.
 - `src/` - static site. `src/components/` (shared head/nav/footer partials) and `src/pages/<slug>/` (per-page `meta.json` + `content.html` + optional `script.js`) are the source inputs; `scripts/build.sh` (`scripts/build_site.py`) generates deployable `src/*.html` and `src/nav.js`. Static deploy files such as error pages, `styles.css`, `monitoring.js`, `results.json`, and `src/assets/` live directly under `src/`. Never hand-edit generated files such as `src/index.html`; edit the matching source under `src/pages/`, `src/components/`, or `src/scripts/` and rebuild. `scripts/validate-links.sh` checks links.
 - `packages/germinal/` - isolated old Germinal project. Do not re-expand it into the repository root.
@@ -67,6 +68,6 @@ On Windows, use `scripts/cleanup.ps1 -Deep` to remove local caches, coverage out
 
 ## Known gaps
 
-- The rationale for the current coverage, mypy, and ruff exclusions on older engine submodules is not fully documented. Treat the exclusions as cleanup debt, not as a pattern to expand.
+- Historical rationale for older engine exclusions is unknown. `docs/quality-scope.md` records the actual gate scope and promotion criteria; treat exclusions as cleanup debt, not as a pattern to expand.
 - `ProofX/Generated/LedgerCertificates.lean` is generated. Never hand-edit it; change `packages/python/codebase/lean_export.py` or the ledger and re-run `python -m codebase.cli export lean`. CI regenerates the ledger from seed and fails on drift.
 - RiemannX output is a numerical diagnostic and has no certificate form. The exporter reports those rows as skipped rather than dropping them silently.
