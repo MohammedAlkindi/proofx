@@ -13,11 +13,26 @@ it become a second source of truth for line-item status — link out instead.
 
 ## Now
 
-- **Document the coverage/mypy/ruff exclusion rationale.** `pyproject.toml`
-  excludes `CollatzX`, `GoldbachX`, `ReimannX`, and `cli.py` from parts of the
-  lint/type/coverage gates, but why each exclusion exists isn't written down
-  anywhere. Treat the exclusions as cleanup debt: document the reason per
-  module, then narrow or remove exclusions that no longer need to exist.
+- **Independent reproductions of GB-001.** Compare candidate-ledger hashes on
+  another platform; attach the manifest and verifier output.
+- **Held-out Goldbach intervals.** Prespecify interval bands and seeds before
+  running them. Examine finite-size effects and family ablations.
+- **A Collatz baseline study.** Define an independent target metric, match
+  domains and budgets, and separate shared trajectory suffixes in evaluation.
+- **Long-run recovery.** Add resumable search state and test interrupted runs
+  against uninterrupted runs before recommending large unattended jobs.
+- **Rehabilitate excluded modules individually.** The current exclusions and
+  promotion criteria are recorded in [quality-scope.md](quality-scope.md).
+  Historical rationale is unknown; their presence is not evidence of support.
+
+## Research workbench
+
+- [GB-001](experiments/goldbach-policy-comparison.md): an executable Goldbach
+  policy comparison, complete reference dataset, per-seed ledgers, and independent recount.
+- [Annotation calibration](calibration.md): held-out metrics with explicit
+  label semantics; probability-1 ECE is included.
+- Budget-zero searches do no evaluations. Goldbach counting rejects candidates
+  beyond the complete sieve and uses the unordered-pair asymptotic convention.
 ## Recently landed
 
 - **Ledger-to-Lean exporter.** `python -m codebase.cli export lean` turns

@@ -112,7 +112,11 @@ jobs:
           cache: npm
       - run: python -m pip install -r requirements.txt -r requirements-dev.txt -e .
       - run: npm ci
+      - name: Independently verify published Goldbach experiment
+        run: python -m codebase.cli benchmark verify src/experiments/gb-001
       - run: ./scripts/build.sh
+      - name: Research page interactions
+        run: node scripts/test-research-page.cjs
 
       # The files at the src/ root are deploy artifacts committed to the repo;
       # Vercel serves them as-is with no server build step, so a page whose

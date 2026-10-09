@@ -1,0 +1,13 @@
+# ProofX
+
+> Open computational number theory experiments, bounded data, and finite certificates.
+
+## Research
+- [GB-001 experiment and data](https://www.proofx.org/research): Goldbach policy comparison, complete reference, downloadable run ledgers, and reproduction commands.
+- [Source and installation](https://github.com/MohammedAlkindi/ProofX): Python toolkit and root Lean certificate package.
+- [Protocol](https://github.com/MohammedAlkindi/ProofX/blob/main/docs/experiments/goldbach-policy-comparison.md): Definitions, baselines, timing scope, independent verifier, and limitations.
+- [Quality scope](https://github.com/MohammedAlkindi/ProofX/blob/main/docs/quality-scope.md): Included checks and experimental exclusions.
+- [Roadmap](https://www.proofx.org/roadmap): Open method and tooling questions.
+
+## Interpretation
+A negative search is unrefuted at its budget. Scores are heuristics, not probabilities of mathematical truth. Lean certificates prove finite statements only. Riemann zero calculations do not search for zeros off the critical line. Germinal is a separate vendored project.

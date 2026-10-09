@@ -73,7 +73,7 @@
         <a href="/goldbachx.html">GoldbachX</a>
         <a href="/riemannx.html">RiemannX</a>
         <a href="/results.html" aria-current="page">Results</a>
-        <a href="/research.html">Research</a>
+        <a href="/research.html">Experiments</a>
         <a href="/germinal.html">Germinal</a>
         <hr class="nav__divider">
         <a class="nav__link--secondary" href="/ledger-viewer.html">Ledger Viewer</a>
@@ -93,6 +93,7 @@
           Result tables summarize bounded runs. They report what a configured search inspected; they do not prove or verify a conjecture.
         </p>
         <div class="hero__actions btn-row">
+          <a class="btn btn--pill" href="/research.html#gb-001">Goldbach policy comparison</a>
           <a class="btn btn--primary btn--pill" href="https://github.com/MohammedAlkindi/ProofX" target="_blank" rel="noopener">Repository</a>
           <a class="btn btn--pill" href="/ledger-viewer.html">Ledger Viewer</a>
         </div>
@@ -183,6 +184,7 @@
           (<code>0.85 &times; deficit + 0.15 &times; structural_hardness</code>, see
           <a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/falsification.md" target="_blank" rel="noopener">derivation</a>).
           A deficit is a search signal, not a calibrated probability of failure.
+          Historical summaries generated before <code>goldbach.unordered.v2</code> used a different count normalization; their scores cannot be compared directly with new runs.
         </p>
         <div class="bar-chart" id="goldbach-chart" aria-hidden="true"></div>
         <div class="table-scroll">
@@ -220,7 +222,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td>zero_deviation_scan</td><td>Measures numerical deviation from the critical line.</td><td>Precision and method dependent.</td></tr>
+              <tr><td>zero_deviation_scan</td><td>Samples zeros returned by mpmath on the critical line.</td><td>The real part is 1/2 by construction; this cannot search for off-line zeros.</td></tr>
               <tr><td>keiper_li_coefficients</td><td>Computes coefficient signals for inspection.</td><td>Numerical, not certified.</td></tr>
               <tr><td>prime_counting</td><td>Compares exact capped counts to simple approximations.</td><td>Browser demo is capped.</td></tr>
             </tbody>
