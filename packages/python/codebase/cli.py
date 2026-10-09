@@ -176,10 +176,14 @@ def _cmd_calibrate_fit(args: argparse.Namespace) -> int:
         return 1
 
     scores = [e["near_miss_score"] for e in entries]
-    labels = [int(e["label"]) for e in entries]
+    labels = [e["label"] for e in entries]
     cal = IsotonicCalibrator() if args.method == "isotonic" else PlattCalibrator()
     report = cal.fit(scores, labels, seed=args.seed)
     print(report.summary())
+    if args.report:
+        path = Path(args.report)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
     cal.save(Path(args.output))
     return 0
 
@@ -204,6 +208,7 @@ def _build_calibrate(sub: argparse._SubParsersAction) -> None:
     fit.add_argument("--method", choices=["isotonic", "platt"], default="isotonic")
     fit.add_argument("--output", default="calibrator.pkl")
     fit.add_argument("--seed", type=int, default=0)
+    fit.add_argument("--report", help="Save held-out metrics as JSON")
     fit.add_argument("--log-level", default="INFO")
     fit.add_argument("--log-file", default=None)
     fit.set_defaults(func=_cmd_calibrate_fit)

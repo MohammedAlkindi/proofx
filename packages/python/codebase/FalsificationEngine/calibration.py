@@ -361,7 +361,7 @@ def main() -> None:
             )
 
         scores = [e["near_miss_score"] for e in entries]
-        labels = [int(e["label"]) for e in entries]
+        labels = [e["label"] for e in entries]
 
         cal: _BaseCalibrator = (
             IsotonicCalibrator() if args.method == "isotonic" else PlattCalibrator()
