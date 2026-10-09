@@ -54,12 +54,6 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from codebase.CollatzX.Analytics.Analytics import (
-    AlgebraicFeatureExtractor,
-    CollatzSequence,
-    FeatureUnion,
-    StatisticalFeatureExtractor,
-)
 from codebase.GoldbachX.AlgebraicExtensions.AlgebraicExtensions import (
     composite_precheck,
     mod_class_prune,
@@ -231,6 +225,12 @@ class CollatzFalsifier:
     _QUEUE_ADMIT_THRESHOLD: float = 0.05
 
     def __init__(self) -> None:
+        from codebase.CollatzX.Analytics.Analytics import (
+            AlgebraicFeatureExtractor,
+            FeatureUnion,
+            StatisticalFeatureExtractor,
+        )
+
         self._extractor = FeatureUnion([StatisticalFeatureExtractor(), AlgebraicFeatureExtractor()])
 
     # ── Core mathematics ─────────────────────────────────────────────────────
@@ -455,6 +455,8 @@ class CollatzFalsifier:
     ) -> LedgerEntry | None:
         """Fully evaluate one Collatz candidate and return a LedgerEntry."""
         try:
+            from codebase.CollatzX.Analytics.Analytics import CollatzSequence
+
             cs = CollatzSequence(starting_value=candidate)
         except (OverflowError, Exception) as exc:
             logger.debug("CollatzSequence(%d) failed: %s", candidate, exc)
