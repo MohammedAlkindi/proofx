@@ -71,9 +71,9 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
     result = engine.run(budget=args.budget, seed=args.seed, target=args.target, min_score=min_score)
 
     stats = result["stats"]
-    print(f"\n{'═' * 62}")
+    print(f"\n{'=' * 62}")
     print(f"  ProofX FalsificationEngine  (seed={args.seed})")
-    print(f"{'═' * 62}")
+    print(f"{'=' * 62}")
     print(f"  Collatz evaluated  : {stats['collatz_evaluated']}")
     print(f"  Goldbach evaluated : {stats['goldbach_evaluated']}")
     print(f"  Elapsed            : {stats['elapsed_s']:.2f}s")
