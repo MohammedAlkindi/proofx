@@ -16,6 +16,32 @@ analytic number theory. It currently focuses on Collatz, Goldbach, and Riemann
 Hypothesis-adjacent numerical experiments. The project is deliberately framed as
 search and evidence tooling, not as a proof system.
 
+## Start with a reproducible experiment
+
+[GB-001](docs/experiments/goldbach-policy-comparison.md) compares directed,
+uniform, and sequential Goldbach candidate selection over the same finite
+domain. It publishes an exhaustive reference, per-seed ledgers, source and data
+hashes, environment metadata, and an independent trial-division recount.
+
+After installing the dependencies below:
+
+```sh
+python -m codebase.cli benchmark goldbach --max-n 10000 --budget 64 --seeds 0 1 2 --output-dir results/my-comparison
+python -m codebase.cli benchmark verify results/my-comparison
+```
+
+Browse the experiment at the site's [research notebook](https://www.proofx.org/research).
+The complete published bundle is also under `src/experiments/gb-001/`.
+The comparison measures retrieval of low observed-to-asymptotic partition
+ratios, not progress toward disproving Goldbach. It is a small methodological
+example, not a claim of a competitive search bound or statistical superiority.
+
+Other modules have different maturity levels. Collatz ranking has no published
+baseline study yet. Riemann calculations are numerical diagnostics;
+`mpmath.zetazero` returns zeros on the critical line by construction and cannot
+search for off-line zeros. Older experimental modules remain excluded from
+some quality gates; see [quality scope](docs/quality-scope.md).
+
 The central rule is simple: when a run finds no counterexample, the result is
 reported as **unrefuted at this budget**. That does not mean true, verified,
 validated, likely, or proved. It only means that the configured search did not
