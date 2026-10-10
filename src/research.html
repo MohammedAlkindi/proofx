@@ -8,10 +8,10 @@
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#0a0a14" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
-  <meta name="description" content="ProofX research notes, method documentation, and reproducibility standards for bounded number-theory experiments." />
+  <meta name="description" content="Compare Goldbach selection policies, inspect per-seed results, download complete ledgers, and independently verify the published experiment." />
   <link rel="canonical" href="https://www.proofx.org/research" />
 
-  <title>Research | ProofX</title>
+  <title>Experiments and Data | ProofX</title>
 
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
@@ -26,15 +26,15 @@
   </noscript>
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Research | ProofX" />
-  <meta property="og:description" content="Method documentation and reproducibility standards for ProofX experiments." />
+  <meta property="og:title" content="Experiments and Data | ProofX" />
+  <meta property="og:description" content="Reproducible number theory experiments with complete data, methods, and independent checks." />
   <meta property="og:url" content="https://www.proofx.org/research" />
   <meta property="og:site_name" content="ProofX" />
   <meta property="og:image" content="https://www.proofx.org/assets/og.png" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Research | ProofX" />
-  <meta name="twitter:description" content="Method documentation and reproducibility standards for ProofX experiments." />
+  <meta name="twitter:title" content="Experiments and Data | ProofX" />
+  <meta name="twitter:description" content="Reproducible number theory experiments with complete data, methods, and independent checks." />
   <meta name="twitter:image" content="https://www.proofx.org/assets/og.png" />
 
   <script type="application/ld+json">
@@ -73,7 +73,7 @@
         <a href="/goldbachx.html">GoldbachX</a>
         <a href="/riemannx.html">RiemannX</a>
         <a href="/results.html">Results</a>
-        <a href="/research.html" aria-current="page">Research</a>
+        <a href="/research.html" aria-current="page">Experiments</a>
         <a href="/germinal.html">Germinal</a>
         <hr class="nav__divider">
         <a class="nav__link--secondary" href="/ledger-viewer.html">Ledger Viewer</a>
@@ -88,62 +88,79 @@
   <main id="main">
     <section class="section hero">
       <div class="container hero__wrap">
-        <h1 class="hero__h1">Research Notes</h1>
-        <p class="hero__sub">
-          ProofX documentation records what the engines check, how candidates are ranked, and what should not be inferred from a negative search.
-        </p>
+        <p class="kicker">Research notebook</p>
+        <h1 class="hero__h1">Methods, data, and reproduction.</h1>
+        <p class="hero__sub">Each experiment links its question to a fixed protocol, candidate-level data, and an executable check. Start with the bounded Goldbach comparison below.</p>
       </div>
     </section>
-
-    <section class="section" aria-labelledby="docs-title">
+    <article id="gb-001" class="section" aria-labelledby="gb-title">
       <div class="container">
-        <h2 id="docs-title">Core Documentation</h2>
+        <p class="kicker">GB-001 · Goldbach partition selection</p>
+        <h2 id="gb-title">Finding small observed-to-expected partition ratios</h2>
+        <p>Does ProofX's structural candidate selection recover more low-ratio integers than uniform sampling or an ascending scan, given the same evaluation budget?</p>
+        <dl class="experiment-facts">
+          <div><dt>Domain</dt><dd>Even integers 4–10,000</dd></div>
+          <div><dt>Budget</dt><dd>64 distinct candidates / run</dd></div>
+          <div><dt>Seeds</dt><dd>0, 1, 2</dd></div>
+          <div><dt>Metric</dt><dd>Recall of the bottom 5% of ratios</dd></div>
+        </dl>
+        <p>For each integer, <code>G(n)</code> counts unordered prime pairs, including equal primes. The ratio is <code>G(n) / H(n)</code>, where <code>H(n)</code> is the leading unordered Hardy–Littlewood approximation. An exhaustive reference defines the lowest 5%, including boundary ties. Policies select candidates without reading that reference.</p>
+        <p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/experiments/goldbach-policy-comparison.md">Full protocol and counting convention</a> · <a href="/experiments/gb-001/manifest.json" download>Manifest</a> · <a href="/experiments/gb-001/reference.jsonl" download>Full reference (JSONL)</a> · <a href="/experiments/gb-001/bundle.zip" download>Complete bundle (ZIP)</a></p>
+        <h3>Results by seed</h3>
+        <p id="experiment-status" role="status">Loading the published manifest…</p>
+        <noscript><p>JavaScript is needed for the interactive tables. All data and reproduction commands are available through the download links above.</p></noscript>
+        <div id="experiment-controls" class="experiment-controls" hidden>
+          <label for="experiment-seed">Seed <select id="experiment-seed"><option value="all">All seeds</option></select></label>
+          <button id="experiment-csv" class="btn" type="button">Download summary CSV</button>
+        </div>
+        <div class="table-scroll">
+          <table class="results-table" id="experiment-table" hidden>
+            <caption>Every run, without selecting a favorable seed. Timings exclude shared setup and the exhaustive reference.</caption>
+            <thead><tr><th scope="col">Policy</th><th scope="col">Seed</th><th scope="col">Hits</th><th scope="col">Recall</th><th scope="col">Min ratio</th><th scope="col">Median n</th><th scope="col">Seconds</th><th scope="col">Data</th></tr></thead>
+            <tbody id="experiment-rows"></tbody>
+          </table>
+        </div>
+        <p class="muted">Sequential selection is deterministic: its three seed rows are the same control. These are small descriptive experiments, with no significance or speedup claim. Median candidate size helps reveal differences in where policies search.</p>
+        <details class="card"><summary>Revision and environment</summary><pre class="code-block" id="experiment-provenance">Available in the manifest.</pre></details>
+        <section id="candidate-inspector" class="experiment-inspector" hidden aria-labelledby="candidate-title">
+          <h3 id="candidate-title">Candidate ledger</h3>
+          <p id="candidate-status" role="status"></p>
+          <div class="table-scroll"><table class="results-table">
+            <caption id="candidate-caption">Candidates in evaluation order</caption>
+            <thead><tr><th scope="col">Step</th><th scope="col">n</th><th scope="col">G(n)</th><th scope="col">H(n)</th><th scope="col">Ratio</th><th scope="col">Smallest witness</th></tr></thead>
+            <tbody id="candidate-rows"></tbody>
+          </table></div>
+        </section>
+        <h3>Interpretation limits</h3>
+        <p>In this published run, directed selection finds 19, 12, and 19 low-ratio inputs across the three seeds; uniform sampling finds 8, 4, and 4. The ascending control finds 26 in each row. Directed selection therefore does not beat both baselines here. The ascending control concentrates on small integers, where the approximation has the largest finite-size error; this result motivates comparisons within held-out size intervals.</p>
+        <p>The approximation has finite-size error, especially for small integers. Finding low ratios measures alignment with this chosen heuristic; it does not measure progress toward a counterexample. The policies visit different size distributions. Repeating this protocol on prespecified held-out intervals is necessary before arguing that a pattern generalizes.</p>
+        <p>The verifier independently checks every exact count and witness, hashes, domain, budget, and summary. It does not authenticate authorship or certify timings. Rerun the recorded policies and compare ledger hashes to check policy provenance.</p>
+        <h3>Reproduce or verify</h3>
+        <pre class="code-block"><code>python -m codebase.cli benchmark goldbach --max-n 10000 --budget 64 --seeds 0 1 2 --output-dir results/reproduction
+python -m codebase.cli benchmark verify results/reproduction</code></pre>
+        <p>To check the published data, extract the ZIP to a new directory and pass that directory to <code>benchmark verify</code>. To compare a reproduction, compare the <code>artifacts</code> hashes in both manifests; timing and environment fields will differ.</p>
+      </div>
+    </article>
+    <section class="section" aria-labelledby="library-title">
+      <div class="container">
+        <h2 id="library-title">Method library</h2>
         <div class="grid grid--2">
-          <article class="card">
-            <h3>Architecture</h3>
-            <p>Project boundaries, data flow, status semantics, and ledger expectations.</p>
-            <a class="engine__link" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/architecture.md" target="_blank" rel="noopener">Read architecture</a>
-          </article>
-          <article class="card">
-            <h3>Research Standards</h3>
-            <p>Claim levels, verified run artifacts, public-copy rules, and wording that keeps results honest.</p>
-            <a class="engine__link" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/research-standards.md" target="_blank" rel="noopener">Read standards</a>
-          </article>
-          <article class="card">
-            <h3>Lean Boundary</h3>
-            <p>Root Lean package scope, bounded certificate rules, and acceptance criteria.</p>
-            <a class="engine__link" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/lean4.md" target="_blank" rel="noopener">Read Lean notes</a>
-          </article>
-          <article class="card">
-            <h3>FalsificationEngine</h3>
-            <p>Shared scoring, ledger schema, and directed-search assumptions.</p>
-            <a class="engine__link" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/falsification.md" target="_blank" rel="noopener">Read engine notes</a>
-          </article>
-          <article class="card">
-            <h3>Content Strategy</h3>
-            <p>Guidance for keeping the public site sober, specific, and traceable.</p>
-            <a class="engine__link" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/content-strategy.md" target="_blank" rel="noopener">Read copy guide</a>
-          </article>
+          <article class="card"><h3>Goldbach</h3><p>Exact counting, unordered-pair conventions, finite sieve bounds, and the asymptotic ratio.</p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/goldbach.md">Method and implementation</a></article>
+          <article class="card"><h3>Collatz</h3><p>Trajectory features and inverse-tree selection. Benchmark validation remains open.</p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/engines/collatz.md">Method and limitations</a></article>
+          <article class="card"><h3>Finite certificates</h3><p>Export search witnesses to named Lean theorems, checked by the kernel and an axiom audit.</p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/lean4.md">Certificate boundary</a></article>
+          <article class="card"><h3>Annotation calibration</h3><p>Held-out metrics for a user-defined binary label. Anomaly labels carry no probability of a conjecture being false.</p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/calibration.md">Calibration protocol</a></article>
         </div>
       </div>
     </section>
-
-    <section class="section" aria-labelledby="collab-title">
-      <div class="container card">
-        <h2 id="collab-title">Collaboration</h2>
-        <p class="muted">
-          Useful collaboration starts with review: run commands, ledgers, failing tests, assumptions, and better candidate-generation ideas.
-        </p>
-        <ul class="bullets bullets--tight">
-          <li>Review scoring assumptions and documentation.</li>
-          <li>Reproduce a run from its command and ledger.</li>
-          <li>Contribute tests for engine behavior and edge cases.</li>
-          <li>Suggest clearer ways to separate search evidence from proof claims.</li>
-        </ul>
-        <div class="contact__actions">
-          <a class="btn btn--primary btn--pill" href="/contact.html">Contact</a>
-          <a class="btn btn--pill" href="/contribute.html">Contribute</a>
-        </div>
+    <section class="section" aria-labelledby="references-title">
+      <div class="container">
+        <h2 id="references-title">Sources and related computation</h2>
+        <ol class="bullets">
+          <li>Borwein, Choi, Martin &amp; Samuels. <a href="https://personal.math.ubc.ca/~gerg/papers/downloads/PWCRGC.pdf">Polynomials whose reducibility is related to the Goldbach conjecture</a>. Ordered-count definition and Hardy–Littlewood formulation.</li>
+          <li>Oliveira e Silva. <a href="https://sweet.ua.pt/tos/goldbach.html">Goldbach conjecture verification</a>. Established large-scale computation and published data; ProofX's small comparison does not extend those bounds.</li>
+          <li>mpmath. <a href="https://mpmath.org/doc/current/functions/zeta.html#zetazero">Zeta-zero documentation</a>. <code>zetazero</code> returns zeros on the critical line; measuring their real part does not search for off-line zeros.</li>
+        </ol>
+        <p>For reproductions and corrections, <a href="https://github.com/MohammedAlkindi/ProofX/issues">open a repository issue</a> with the experiment ID, revision, command, and artifact. See the <a href="/contribute.html">contribution guide</a>.</p>
       </div>
     </section>
   </main>
@@ -163,6 +180,110 @@
     </div>
   </footer>
 
+  <script>
+"use strict";
+(() => {
+    const base = '/experiments/gb-001/';
+    const status = document.getElementById('experiment-status');
+    const seedSelect = document.getElementById('experiment-seed');
+    const rows = document.getElementById('experiment-rows');
+    const candidateRows = document.getElementById('candidate-rows');
+    let manifest;
+    let request = 0;
+    function cell(row, value) {
+        row.insertCell().textContent = value;
+    }
+    async function inspect(run) {
+        const current = ++request;
+        const panel = document.getElementById('candidate-inspector');
+        const message = document.getElementById('candidate-status');
+        panel.hidden = false;
+        message.textContent = `Loading ${run.policy}, seed ${run.seed}…`;
+        candidateRows.replaceChildren();
+        try {
+            const response = await fetch(base + encodeURIComponent(run.ledger));
+            if (!response.ok)
+                throw new Error(`HTTP ${response.status}`);
+            const entries = (await response.text()).trim().split('\n').map(line => JSON.parse(line));
+            if (current !== request)
+                return;
+            entries.forEach((entry, i) => {
+                const tr = document.createElement('tr');
+                [String(i + 1), entry.candidate.toLocaleString(), String(entry.actual_partitions),
+                    entry.expected_partitions.toFixed(4), entry.ratio.toFixed(4),
+                    entry.witness ? entry.witness.join(' + ') : 'None found'].forEach(value => cell(tr, value));
+                candidateRows.append(tr);
+            });
+            message.textContent = `${entries.length} candidates · ${run.policy} · seed ${run.seed}`;
+            document.getElementById('candidate-caption').textContent = `${run.policy}, seed ${run.seed}: evaluation order`;
+            panel.scrollIntoView({ block: 'start' });
+        }
+        catch {
+            if (current === request)
+                message.textContent = 'Could not load this ledger. Download the complete bundle to inspect it locally.';
+        }
+    }
+    function visibleRuns() {
+        return manifest.runs.filter(run => seedSelect.value === 'all' || String(run.seed) === seedSelect.value);
+    }
+    function render() {
+        rows.replaceChildren();
+        visibleRuns().forEach(run => {
+            const tr = document.createElement('tr');
+            [run.policy, String(run.seed), String(run.rare_hits), `${(run.rare_recall * 100).toFixed(1)}%`,
+                run.min_ratio.toFixed(4), run.median_candidate.toLocaleString(), run.elapsed_s.toFixed(4)]
+                .forEach(value => cell(tr, value));
+            const td = tr.insertCell();
+            const button = document.createElement('button');
+            button.className = 'btn btn--sm';
+            button.type = 'button';
+            button.textContent = 'Inspect';
+            button.setAttribute('aria-label', `Inspect ${run.policy}, seed ${run.seed}`);
+            button.addEventListener('click', () => void inspect(run));
+            const download = document.createElement('a');
+            download.href = base + encodeURIComponent(run.ledger);
+            download.download = run.ledger;
+            download.textContent = 'JSONL';
+            download.setAttribute('aria-label', `Download ${run.policy}, seed ${run.seed}`);
+            td.append(button, document.createTextNode(' '), download);
+            rows.append(tr);
+        });
+    }
+    seedSelect.addEventListener('change', render);
+    document.getElementById('experiment-csv').addEventListener('click', () => {
+        const csv = ['policy,seed,rare_hits,rare_recall,min_ratio,median_candidate,elapsed_s',
+            ...visibleRuns().map(run => [run.policy, run.seed, run.rare_hits, run.rare_recall,
+                run.min_ratio, run.median_candidate, run.elapsed_s].join(','))].join('\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'proofx-gb-001-summary.csv';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    void (async () => {
+        try {
+            const response = await fetch(base + 'manifest.json');
+            if (!response.ok)
+                throw new Error(`HTTP ${response.status}`);
+            manifest = await response.json();
+            if (manifest.schema_version !== 'proofx.goldbach_benchmark.v1' || !manifest.runs.length ||
+                manifest.config.max_n !== 10000 || manifest.config.budget !== 64 ||
+                manifest.config.seeds.join(',') !== '0,1,2')
+                throw new Error('Unexpected experiment');
+            status.textContent = `${manifest.reference_size.toLocaleString()} reference candidates · ${manifest.rare_set_size} in the low-ratio set · ${manifest.runs.length} runs. Download the bundle and run the verifier to check these results.`;
+            manifest.config.seeds.forEach(seed => seedSelect.add(new Option(String(seed), String(seed))));
+            document.getElementById('experiment-provenance').textContent = JSON.stringify(manifest.provenance, null, 2);
+            render();
+            document.getElementById('experiment-table').hidden = false;
+            document.getElementById('experiment-controls').hidden = false;
+        }
+        catch {
+            status.textContent = 'The published results could not be loaded. Use the manifest or complete-bundle download above; no substitute values are displayed.';
+        }
+    })();
+})();
+  </script>
   <script src="/verified-runs.js"></script>
   <script src="/nav.js"></script>
 </body>

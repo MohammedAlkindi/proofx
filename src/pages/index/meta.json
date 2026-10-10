@@ -1,8 +1,8 @@
 {
-  "title": "ProofX | Directed Search For Number Theory Experiments",
+  "title": "ProofX | Reproducible Number Theory Experiments",
   "description": "ProofX is a research toolkit for directed counterexample search, reproducible ledgers, and bounded computational experiments in number theory.",
   "canonical_path": "/",
-  "og_title": "ProofX | Directed Search For Number Theory Experiments",
+  "og_title": "ProofX | Reproducible Number Theory Experiments",
   "og_description": "Open Python tooling for candidate ranking, search ledgers, and bounded experiments around Collatz, Goldbach, and Riemann-adjacent diagnostics.",
   "og_image": true,
   "twitter_card": "summary_large_image",

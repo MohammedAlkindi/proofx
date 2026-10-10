@@ -11,7 +11,7 @@
   <meta name="description" content="ProofX is a research toolkit for directed counterexample search, reproducible ledgers, and bounded computational experiments in number theory." />
   <link rel="canonical" href="https://www.proofx.org/" />
 
-  <title>ProofX | Directed Search For Number Theory Experiments</title>
+  <title>ProofX | Reproducible Number Theory Experiments</title>
 
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
@@ -26,14 +26,14 @@
   </noscript>
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="ProofX | Directed Search For Number Theory Experiments" />
+  <meta property="og:title" content="ProofX | Reproducible Number Theory Experiments" />
   <meta property="og:description" content="Open Python tooling for candidate ranking, search ledgers, and bounded experiments around Collatz, Goldbach, and Riemann-adjacent diagnostics." />
   <meta property="og:url" content="https://www.proofx.org/" />
   <meta property="og:site_name" content="ProofX" />
   <meta property="og:image" content="https://www.proofx.org/assets/og.png" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="ProofX | Directed Search For Number Theory Experiments" />
+  <meta name="twitter:title" content="ProofX | Reproducible Number Theory Experiments" />
   <meta name="twitter:description" content="Open Python tooling for candidate ranking, search ledgers, and bounded experiments around Collatz, Goldbach, and Riemann-adjacent diagnostics." />
   <meta name="twitter:image" content="https://www.proofx.org/assets/og.png" />
 
@@ -73,7 +73,7 @@
         <a href="/goldbachx.html">GoldbachX</a>
         <a href="/riemannx.html">RiemannX</a>
         <a href="/results.html">Results</a>
-        <a href="/research.html">Research</a>
+        <a href="/research.html">Experiments</a>
         <a href="/germinal.html">Germinal</a>
         <hr class="nav__divider">
         <a class="nav__link--secondary" href="/ledger-viewer.html">Ledger Viewer</a>
@@ -86,160 +86,62 @@
   </header>
 
   <main id="main">
-    <section id="top" class="section hero" aria-labelledby="hero-title">
+    <section class="section hero" aria-labelledby="hero-title">
       <div class="container hero__wrap">
-        <h1 id="hero-title" class="hero__h1">Directed search for mathematical counterexamples.</h1>
-        <p class="hero__sub">
-          ProofX is an open Python research toolkit for ranking candidates, running bounded experiments, and publishing replayable ledgers. It is a search system, not a proof system.
-        </p>
-
-        <div class="hero__actions" role="group" aria-label="Primary actions">
-          <a class="btn btn--primary btn--lg btn--pill" href="https://github.com/MohammedAlkindi/ProofX" target="_blank" rel="noopener">View Code</a>
-          <a class="btn btn--lg btn--pill" href="/research.html">Read Docs</a>
-          <a class="btn btn--lg btn--pill" href="/results.html">Inspect Results</a>
+        <p class="kicker">Computational number theory · open methods &amp; data</p>
+        <h1 id="hero-title" class="hero__h1">Experiments you can rerun.</h1>
+        <p class="hero__sub">Compare candidate-selection methods, inspect exact prime-pair counts, and check the data behind a result. ProofX publishes small, reproducible experiments in Goldbach and Collatz, with a separate Lean layer for finite certificates.</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="/research.html#gb-001">Explore the Goldbach experiment</a>
+          <a class="btn" href="https://github.com/MohammedAlkindi/ProofX">Get the source</a>
         </div>
       </div>
     </section>
-
-    <section id="scope" class="section" aria-labelledby="scope-title">
-      <div class="container card">
-        <h2 id="scope-title">Scope</h2>
-        <p>
-          A ProofX run evaluates a finite set of candidates under a fixed command, budget, seed, and code revision. If no counterexample is found, the result is reported as unrefuted at that budget.
-        </p>
-        <ul class="bullets bullets--tight">
-          <li><strong>It can</strong> rank candidates, compute features, and write an audit ledger.</li>
-          <li><strong>It can</strong> help compare search strategies and reproduce bounded runs.</li>
-          <li><strong>It cannot</strong> prove Collatz, Goldbach, the Riemann Hypothesis, or any open conjecture.</li>
-        </ul>
-      </div>
-    </section>
-
-    <section id="workflow" class="section" aria-labelledby="workflow-title">
-      <div class="container card">
-        <h2 id="workflow-title">Research Workflow</h2>
-        <p class="muted">
-          The useful artifact is the ledger: every evaluated candidate, feature vector, near-miss score, strategy label, and seed.
-        </p>
-        <ul class="bullets bullets--tight">
-          <li>Run a directed search with a pinned command and seed.</li>
-          <li>Save the JSONL ledger, not only the top-k summary.</li>
-          <li>Inspect high-ranking candidates and failed assumptions manually.</li>
-          <li>Publish the command and limits next to any result table.</li>
-        </ul>
-        <div class="hero__actions" role="group" aria-label="Workflow links">
-          <a class="btn btn--primary btn--pill" href="/ledger-viewer.html">Open Ledger Viewer</a>
-          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/research-standards.md" target="_blank" rel="noopener">Claim Standards</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="engines" class="section" aria-labelledby="engines-title">
+    <section class="section" aria-labelledby="experiment-title">
       <div class="container">
-        <h2 id="engines-title">Engines</h2>
-        <div class="grid grid--3">
-          <article class="card engine">
-            <h3>CollatzX</h3>
-            <p>Computes Collatz trajectories, stopping-time features, parity ratios, and near-miss rankings for bounded runs.</p>
-            <a class="engine__link" href="/collatzx.html">Inspect CollatzX</a>
-          </article>
-
-          <article class="card engine">
-            <h3>GoldbachX</h3>
-            <p>Counts prime-pair partitions and ranks sparse even-number families by Hardy-Littlewood deficit.</p>
-            <a class="engine__link" href="/goldbachx.html">Inspect GoldbachX</a>
-          </article>
-
-          <article class="card engine">
-            <h3>RiemannX</h3>
-            <p>Runs numerical diagnostics around zeta zeros, prime-counting approximations, and Keiper-Li coefficients.</p>
-            <a class="engine__link" href="/riemannx.html">Inspect RiemannX</a>
-          </article>
-        </div>
+        <div class="section-heading"><p class="kicker">Published experiment / GB-001</p><span class="tag">Bounded comparison</span></div>
+        <h2 id="experiment-title">Does structural selection find sparse Goldbach partitions?</h2>
+        <p>Three policies. The same finite domain and candidate budget. A complete reference dataset makes the outcome inspectable, including when a baseline performs better.</p>
+        <dl class="experiment-facts">
+          <div><dt>Domain</dt><dd>Even integers 4–10,000</dd></div>
+          <div><dt>Policies</dt><dd>Directed, uniform, sequential</dd></div>
+          <div><dt>Budget</dt><dd>64 unique candidates per run</dd></div>
+          <div><dt>Repetitions</dt><dd>Seeds 0, 1, 2</dd></div>
+        </dl>
+        <p><a class="engine__link" href="/research.html#gb-001">Read the protocol, compare results, and download every row →</a></p>
       </div>
     </section>
-
-    <section id="germinal" class="section" aria-labelledby="germinal-title">
-      <div class="container card card--row">
-        <div>
-          <h2 id="germinal-title">Germinal</h2>
-          <p class="muted">
-            Germinal is a separate, isolated project vendored in this repository. It proposes conjectures with Claude, formalizes them in Lean 4, attempts automated proofs, and searches for counterexamples with three independent methods. It is not a ProofX engine and shares no code, dependencies, or build pipeline with the toolkit.
-          </p>
-        </div>
-        <div class="contact__actions" role="group" aria-label="Germinal links">
-          <a class="btn btn--primary btn--pill" href="/germinal.html">Open Germinal</a>
-          <a class="btn btn--pill" href="https://github.com/MohammedAlkindi/ProofX/tree/main/packages/germinal" target="_blank" rel="noopener">Source</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="results" class="section" aria-labelledby="results-title">
+    <section class="section" aria-labelledby="start-title">
       <div class="container card">
-        <h2 id="results-title">Results</h2>
-        <p class="muted">
-          Result pages should be read as run summaries. A table can show what a specific configuration found; it does not certify a conjecture.
-        </p>
-        <ul class="bullets bullets--tight">
-          <li>Near-miss scores rank candidates inside a strategy.</li>
-          <li>Browser demos are small inspectors, capped for responsiveness.</li>
-          <li>Unsupported benchmark claims are intentionally avoided.</li>
-        </ul>
-        <div class="hero__actions" role="group" aria-label="Result links">
-          <a class="btn btn--primary btn--pill" href="/results.html">View Results</a>
-          <a class="btn btn--pill" href="/roadmap.html">Roadmap</a>
-        </div>
+        <h2 id="start-title">Start with a reproducible comparison</h2>
+        <p>After <a href="https://github.com/MohammedAlkindi/ProofX#quickstart">installing the Python toolkit</a>, run:</p>
+        <pre class="code-block"><code>python -m codebase.cli benchmark goldbach --max-n 10000 --budget 64 --seeds 0 1 2 --output-dir results/my-comparison
+python -m codebase.cli benchmark verify results/my-comparison</code></pre>
+        <p class="muted">The first command writes the reference, candidate ledgers, hashes, and environment metadata. The second recounts every reference value with independent trial-division primality. Use a new output directory for each experiment.</p>
       </div>
     </section>
-
-    <section id="faq" class="section" aria-labelledby="faq-title">
+    <section class="section" aria-labelledby="tools-title">
       <div class="container">
-        <h2 id="faq-title">FAQ</h2>
-
-        <details class="card faq__item">
-          <summary class="faq__q">Does ProofX prove conjectures?</summary>
-          <p>No. ProofX runs bounded searches and records the results. A negative run means no counterexample was found under that configuration.</p>
-        </details>
-
-        <details class="card faq__item">
-          <summary class="faq__q">What should I trust?</summary>
-          <p>Trust the command, code revision, dependency environment, and ledger more than any summary sentence. Summaries are only views over run data.</p>
-        </details>
-
-        <details class="card faq__item">
-          <summary class="faq__q">Where does Lean 4 fit?</summary>
-          <p>The root ProofX repository now includes a small Lean 4 package for bounded certificates. <a href="/germinal.html">Germinal</a> remains a separate vendored project with its own Claude, Lean 4, and counterexample-search pipeline.</p>
-        </details>
+        <h2 id="tools-title">Choose a research tool</h2>
+        <div class="table-scroll"><table class="results-table">
+          <caption>Available workflows and their evidence boundaries</caption>
+          <thead><tr><th scope="col">Workflow</th><th scope="col">Use it for</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><a href="/research.html">Goldbach comparison</a></th><td>Compare selection policies against a complete bounded reference.</td><td>Protocol, data, independent recount</td></tr>
+            <tr><th scope="row"><a href="/collatzx.html">Collatz inspector</a></th><td>Inspect trajectories and run directed searches through the CLI.</td><td>Experimental ranking; no baseline study yet</td></tr>
+            <tr><th scope="row"><a href="/ledger-viewer.html">Search ledger viewer</a></th><td>Explore exported candidate features locally in your browser.</td><td>Exploration tool</td></tr>
+            <tr><th scope="row"><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/lean4.md">Lean certificates</a></th><td>Kernel-check specific Collatz trajectories and Goldbach witnesses.</td><td>Finite statements only</td></tr>
+            <tr><th scope="row"><a href="/riemannx.html">Riemann diagnostics</a></th><td>Inspect numerical zero spacing and coefficient calculations.</td><td>Experimental; no off-line zero search</td></tr>
+          </tbody>
+        </table></div>
       </div>
     </section>
-
-    <section id="founder" class="section" aria-labelledby="founder-title">
-      <div class="container card card--row founder">
-        <div class="founder__bio">
-          <p class="kicker">Founder</p>
-          <h2 id="founder-title">Mohammed Alkindi</h2>
-          <p class="muted">
-            Building ProofX as a small, open research codebase for reproducible mathematical experiments and careful public reporting.
-          </p>
-          <ul class="bullets">
-            <li>Maintains directed-search engines for Collatz and Goldbach experiments.</li>
-            <li>Focuses on ledgers, replay, and explicit limitations.</li>
-            <li>Welcomes review from researchers and engineers interested in computational number theory.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section id="contact" class="section" aria-labelledby="contact-title">
-      <div class="container card card--row">
-        <div>
-          <h2 id="contact-title">Contact</h2>
-          <p class="muted">For research review, collaboration, or code questions.</p>
-        </div>
-        <div class="contact__actions" role="group" aria-label="Contact actions">
-          <a class="btn btn--primary btn--pill" href="mailto:alkindi.proofx@gmail.com?subject=ProofX%20Inquiry">Email</a>
-          <a class="btn btn--pill" href="https://www.linkedin.com/in/alkindi-network" target="_blank" rel="noopener">LinkedIn</a>
-        </div>
+    <section class="section" aria-labelledby="contribute-title">
+      <div class="container card">
+        <h2 id="contribute-title">Help test a method</h2>
+        <p>The next useful contributions are independent reproductions, alternative baselines, held-out size intervals, and counterexamples to implementation assumptions. Include the command, environment, manifest, and a minimal failing case.</p>
+        <div class="hero__actions"><a class="btn" href="/contribute.html">Contribution guide</a><a class="btn" href="/roadmap.html">Open research questions</a></div>
+        <p class="muted">ProofX is maintained by Mohammed Alkindi. Its experiments do not prove an open conjecture. <a href="/germinal.html">Germinal</a> is a separate vendored project.</p>
       </div>
     </section>
   </main>

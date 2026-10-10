@@ -3,6 +3,7 @@ GoldbachFalsifier, and FalsificationEngine."""
 
 import json
 import logging
+import math
 import sys
 import time
 from pathlib import Path
@@ -19,6 +20,77 @@ from codebase.FalsificationEngine.FalsificationEngine import (
     GoldbachFalsifier,
     LedgerEntry,
 )
+
+
+@pytest.mark.parametrize("target", ["collatz", "goldbach", "riemann", "both", "all"])
+@pytest.mark.parametrize("budget", [0, 1, 2, 5])
+def test_orchestrator_allocates_exact_nonnegative_budget(monkeypatch, target, budget):
+    from types import SimpleNamespace
+
+    allocations = []
+
+    def search(budget, seed):
+        allocations.append(budget)
+        return FalsificationLedger()
+
+    engine = FalsificationEngine(sieve_limit=100)
+    monkeypatch.setattr(engine._collatz, "search", search)
+    monkeypatch.setattr(engine._goldbach, "search", search)
+    monkeypatch.setattr(engine, "_get_riemann", lambda: SimpleNamespace(search=search))
+    engine.run(budget=budget, seed=0, target=target)
+    assert sum(allocations) == budget
+    assert all(n >= 0 for n in allocations)
+
+
+@pytest.mark.parametrize("budget", [-1, 0.5, True])
+def test_invalid_budgets_rejected_at_every_search_entrypoint(budget):
+    from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+
+    for engine in (CollatzFalsifier(), GoldbachFalsifier(100), RiemannFalsifier(15)):
+        with pytest.raises(ValueError, match="budget"):
+            engine.search(budget, seed=0)
+    with pytest.raises(ValueError, match="budget"):
+        FalsificationEngine(100).run(budget, seed=0)
+
+
+def test_zero_budget_evaluates_nothing():
+    from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+
+    for engine in (CollatzFalsifier(), GoldbachFalsifier(100), RiemannFalsifier(15)):
+        assert len(engine.search(0, seed=0)) == 0
+
+
+@pytest.mark.parametrize(
+    ("n", "odd_factors"),
+    [(4, []), (128, []), (18, [3]), (50, [5]), (210, [3, 5, 7]), (2 * 1009 * 1013, [1009, 1013])],
+)
+def test_goldbach_estimate_uses_unordered_pairs_and_distinct_odd_prime_factors(n, odd_factors):
+    correction = math.prod((p - 1) / (p - 2) for p in odd_factors)
+    expected = 0.6601618158 * correction * n / math.log(n) ** 2
+    assert GoldbachFalsifier(100)._hardy_littlewood_expected(n) == pytest.approx(expected)
+
+
+def test_incomplete_sieve_is_rejected_and_search_stays_within_bound():
+    engine = GoldbachFalsifier(20)
+    with pytest.raises(ValueError, match="sieve bound"):
+        engine._partition_count_and_witness(100)
+    ledger = engine.search(20, seed=42)
+    assert len(ledger) > 0
+    for entry in ledger._entries:
+        assert entry.candidate <= 20
+        assert entry.details["actual_partitions"] > 0
+        assert entry.details["score_version"] == "goldbach.unordered.v2"
+
+
+def test_goldbach_counts_match_independent_trial_division():
+    def prime(n):
+        return n >= 2 and all(n % d for d in range(2, math.isqrt(n) + 1))
+
+    engine = GoldbachFalsifier(200)
+    for n in range(4, 201, 2):
+        pairs = [(p, n - p) for p in range(2, n // 2 + 1) if prime(p) and prime(n - p)]
+        assert engine._partition_count_and_witness(n) == (len(pairs), pairs[0])
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

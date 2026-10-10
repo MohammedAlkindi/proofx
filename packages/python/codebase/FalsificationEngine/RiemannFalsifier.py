@@ -78,7 +78,12 @@ class RiemannFalsifier:
         Budget is split: half to zero-deviation scan, the remainder (up to
         _MAX_KEIPER_LI) to Keiper-Li coefficient analysis.
         """
+        from codebase.FalsificationEngine.FalsificationEngine import validate_budget
+
+        validate_budget(budget)
         ledger = FalsificationLedger()
+        if budget == 0:
+            return ledger
         half = max(1, budget // 2)
         kl_budget = min(_MAX_KEIPER_LI, budget - half)
 

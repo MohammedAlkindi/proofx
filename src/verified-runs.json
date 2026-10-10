@@ -1,7 +1,7 @@
 {
   "commit": {
     "dirty": true,
-    "sha": "6db6ef50e2c7",
+    "sha": "c53ed23fd94f",
     "source": "git"
   },
   "environment": {
@@ -9,7 +9,7 @@
       "mpmath": "1.3.0",
       "numba": "0.66.0",
       "numpy": "2.4.6",
-      "pandas": "3.0.3",
+      "pandas": "3.0.5",
       "scikit-learn": "1.9.0",
       "scipy": "1.18.0",
       "sympy": "1.14.0"
@@ -19,7 +19,7 @@
     "platform": "Windows-11-10.0.26200-SP0",
     "python": "3.13.13"
   },
-  "generated_at": "2026-07-20T09:57:00Z",
+  "generated_at": "2026-10-09T22:06:22Z",
   "runs": [
     {
       "bounds": {
@@ -31,17 +31,17 @@
       "claim_level": "bounded_run",
       "commit": {
         "dirty": true,
-        "sha": "6db6ef50e2c7",
+        "sha": "c53ed23fd94f",
         "source": "git"
       },
-      "elapsed_s": 0.00062,
+      "elapsed_s": 0.000986,
       "engine": "CollatzX",
       "environment": {
         "dependencies": {
           "mpmath": "1.3.0",
           "numba": "0.66.0",
           "numpy": "2.4.6",
-          "pandas": "3.0.3",
+          "pandas": "3.0.5",
           "scikit-learn": "1.9.0",
           "scipy": "1.18.0",
           "sympy": "1.14.0"
@@ -139,17 +139,17 @@
       "claim_level": "bounded_run",
       "commit": {
         "dirty": true,
-        "sha": "6db6ef50e2c7",
+        "sha": "c53ed23fd94f",
         "source": "git"
       },
-      "elapsed_s": 0.000361,
+      "elapsed_s": 0.000785,
       "engine": "GoldbachX",
       "environment": {
         "dependencies": {
           "mpmath": "1.3.0",
           "numba": "0.66.0",
           "numpy": "2.4.6",
-          "pandas": "3.0.3",
+          "pandas": "3.0.5",
           "scikit-learn": "1.9.0",
           "scipy": "1.18.0",
           "sympy": "1.14.0"
@@ -254,17 +254,17 @@
       "claim_level": "numerical_diagnostic",
       "commit": {
         "dirty": true,
-        "sha": "6db6ef50e2c7",
+        "sha": "c53ed23fd94f",
         "source": "git"
       },
-      "elapsed_s": 0.000494,
+      "elapsed_s": 0.001252,
       "engine": "RiemannX",
       "environment": {
         "dependencies": {
           "mpmath": "1.3.0",
           "numba": "0.66.0",
           "numpy": "2.4.6",
-          "pandas": "3.0.3",
+          "pandas": "3.0.5",
           "scikit-learn": "1.9.0",
           "scipy": "1.18.0",
           "sympy": "1.14.0"
