@@ -262,3 +262,49 @@ class TestAnnotateLedger:
         annotate_ledger(ledger_path, self._fitted_calibrator())
         expected = tmp_path / "my_ledger.calibrated.jsonl"
         assert expected.exists()
+
+
+def test_ece_includes_wrong_predictions_at_probability_one():
+    from codebase.FalsificationEngine.calibration import _BaseCalibrator
+
+    assert _BaseCalibrator._ece(np.ones(10), np.zeros(10)) == pytest.approx(1.0)
+    assert _BaseCalibrator._ece(np.array([0.0, 1.0]), np.array([0, 0])) == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize("method", ["isotonic", "platt"])
+def test_report_uses_held_out_predictions(method):
+    from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
+    scores = np.linspace(0, 1, 40)
+    labels = np.tile([0, 1], 20)
+    cal = IsotonicCalibrator() if method == "isotonic" else PlattCalibrator()
+    report = cal.fit(scores, labels, seed=7)
+    train_x, _, test_x, test_y = cal._split_data(scores, labels, 7)
+    assert set(train_x).isdisjoint(test_x)
+    assert len(train_x) + len(test_x) == 40
+    assert report.n_train == 32
+    assert report.n_evaluation == 8
+    assert report.brier_score == pytest.approx(np.mean((cal.predict(test_x) - test_y) ** 2))
+    assert report.target == "user_defined_label_1"
+    assert report == (IsotonicCalibrator() if method == "isotonic" else PlattCalibrator()).fit(
+        scores, labels, seed=7
+    )
+
+
+@pytest.mark.parametrize(
+    ("scores", "labels"),
+    [
+        ([0.5] * 10, [0] * 9),
+        ([float("nan")] * 10, [0, 1] * 5),
+        ([1.1] * 10, [0, 1] * 5),
+        ([0.5] * 10, [0.5, 1] * 5),
+        ([0.5] * 10, [0] * 10),
+        ([], []),
+    ],
+)
+def test_calibration_rejects_invalid_training_data(scores, labels):
+    from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+
+    for cal in (IsotonicCalibrator(), PlattCalibrator()):
+        with pytest.raises(ValueError):
+            cal.fit(scores, labels)

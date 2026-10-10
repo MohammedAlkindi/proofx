@@ -2,13 +2,14 @@
 Score Calibration for FalsificationEngine
 ══════════════════════════════════════════
 Converts raw near-miss scores (heuristic composites in [0,1]) into
-interpretable probability estimates P(counterexample | score).
+estimates of P(label=1 | score) for a user-defined binary annotation task.
+An anomaly label is not a counterexample label. These estimates say nothing
+about whether an open conjecture is false.
 
 Two calibration methods are provided:
 
   IsotonicCalibrator — sklearn's IsotonicRegression constrained to be
-      monotone non-decreasing.  Fits perfectly to any arbitrary score
-      distribution without parametric assumptions.  Preferred when you
+      monotone non-decreasing, without a parametric curve assumption. Use when you
       have ≥ 100 ledger entries.
 
   PlattCalibrator — logistic regression (Platt scaling) on the raw scores.
@@ -31,8 +32,9 @@ Workflow
 
 Reproducibility
 ───────────────
-fit() accepts a seed for the cross-validation split so calibrated
-probability estimates are reproducible across machines.
+fit() uses a seeded, stratified 80/20 train/holdout split. Reported metrics
+use only the holdout; the saved model remains fitted to the training subset.
+Correlated trajectories need a separate run- or family-level validation set.
 """
 
 from __future__ import annotations
@@ -65,13 +67,18 @@ class CalibrationReport:
     score_min: float
     score_max: float
     seed: int
+    n_train: int = 0
+    n_evaluation: int = 0
+    evaluation: str = "stratified_holdout"
+    target: str = "user_defined_label_1"
 
     def to_dict(self):
         return asdict(self)
 
     def summary(self) -> str:
         return (
-            f"[{self.method}] n={self.n_samples} | "
+            f"[{self.method}] n={self.n_samples} train={self.n_train} "
+            f"holdout={self.n_evaluation} target=label_1 | "
             f"Brier={self.brier_score:.4f} | LogLoss={self.log_loss:.4f} | "
             f"ECE={self.expected_calibration_error:.4f}"
         )
@@ -108,6 +115,32 @@ class _BaseCalibrator:
     # ── Shared metrics ────────────────────────────────────────────────────────
 
     @staticmethod
+    def _split_data(
+        scores: Sequence[float], labels: Sequence[int], seed: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        X = np.asarray(scores, dtype=float)
+        y = np.asarray(labels, dtype=float)
+        if X.ndim != 1 or y.ndim != 1 or len(X) != len(y):
+            raise ValueError("Scores and labels must be one-dimensional with equal lengths")
+        if len(X) < 10:
+            raise ValueError("Need at least 10 labelled entries for a held-out evaluation")
+        if not np.all(np.isfinite(X) & (X >= 0) & (X <= 1)):
+            raise ValueError("Scores must be finite values in [0, 1]")
+        if not np.all((y == 0) | (y == 1)):
+            raise ValueError("Labels must be binary (0 or 1)")
+        rng = np.random.default_rng(seed)
+        train, holdout = [], []
+        for label in (0, 1):
+            indices = np.flatnonzero(y == label)
+            if len(indices) < 2:
+                raise ValueError("Need at least two examples of each label for stratification")
+            rng.shuffle(indices)
+            n_holdout = max(1, round(0.2 * len(indices)))
+            holdout.extend(indices[:n_holdout].tolist())
+            train.extend(indices[n_holdout:].tolist())
+        return X[train], y[train], X[holdout], y[holdout]
+
+    @staticmethod
     def _brier(probs: np.ndarray, labels: np.ndarray) -> float:
         return float(np.mean((probs - labels) ** 2))
 
@@ -121,8 +154,8 @@ class _BaseCalibrator:
         """Expected Calibration Error across equal-width bins."""
         bins = np.linspace(0.0, 1.0, n_bins + 1)
         ece = 0.0
-        for lo, hi in zip(bins[:-1], bins[1:], strict=False):
-            mask = (probs >= lo) & (probs < hi)
+        for i, (lo, hi) in enumerate(zip(bins[:-1], bins[1:], strict=True)):
+            mask = (probs >= lo) & ((probs <= hi) if i == n_bins - 1 else (probs < hi))
             if mask.sum() == 0:
                 continue
             acc = labels[mask].mean()
@@ -137,16 +170,19 @@ class _BaseCalibrator:
         labels: np.ndarray,
         probs: np.ndarray,
         seed: int,
+        n_train: int,
     ) -> CalibrationReport:
         return CalibrationReport(
             method=method,
-            n_samples=len(scores),
+            n_samples=n_train + len(scores),
             brier_score=self._brier(probs, labels),
             log_loss=self._log_loss(probs, labels),
             expected_calibration_error=self._ece(probs, labels),
             score_min=float(scores.min()),
             score_max=float(scores.max()),
             seed=seed,
+            n_train=n_train,
+            n_evaluation=len(scores),
         )
 
 
@@ -158,8 +194,7 @@ class IsotonicCalibrator(_BaseCalibrator):
 
     Preferred for ≥ 100 labelled entries.  Makes no parametric assumption
     about the score→probability mapping beyond monotonicity, which is a
-    physically reasonable constraint: a higher near-miss score should never
-    correspond to a lower counterexample probability.
+    modelling assumption that must be checked against the annotation task.
     """
 
     def __init__(self) -> None:
@@ -173,19 +208,13 @@ class IsotonicCalibrator(_BaseCalibrator):
         except ImportError as e:
             raise ImportError("scikit-learn is required for IsotonicCalibrator") from e
 
-        X = np.asarray(scores, dtype=float)
-        y = np.asarray(labels, dtype=float)
-
-        if len(X) < 10:
-            raise ValueError(f"Need at least 10 labelled entries; got {len(X)}")
-        if not np.all((y == 0) | (y == 1)):
-            raise ValueError("Labels must be binary (0 or 1)")
+        X, y, X_test, y_test = self._split_data(scores, labels, seed)
 
         self._model = IsotonicRegression(out_of_bounds="clip")
         self._model.fit(X, y)
-        probs = self._model.predict(X)
+        probs = self._model.predict(X_test)
 
-        report = self._report("isotonic", X, y, probs, seed)
+        report = self._report("isotonic", X_test, y_test, probs, seed, len(X))
         logger.info("IsotonicCalibrator fit: %s", report.summary())
         return report
 
@@ -219,11 +248,7 @@ class PlattCalibrator(_BaseCalibrator):
         except ImportError as e:
             raise ImportError("scipy is required for PlattCalibrator") from e
 
-        X = np.asarray(scores, dtype=float)
-        y = np.asarray(labels, dtype=float)
-
-        if not np.all((y == 0) | (y == 1)):
-            raise ValueError("Labels must be binary (0 or 1)")
+        X, y, X_test, y_test = self._split_data(scores, labels, seed)
 
         # Platt's prior-corrected targets to avoid over-fitting on edges
         n_pos = y.sum()
@@ -241,10 +266,12 @@ class PlattCalibrator(_BaseCalibrator):
         result = minimize(
             neg_log_likelihood, x0=[0.0, math.log((n_neg + 1) / (n_pos + 1))], method="L-BFGS-B"
         )
+        if not result.success:
+            raise ValueError(f"Platt optimization did not converge: {result.message}")
         self._A, self._B = float(result.x[0]), float(result.x[1])
 
-        probs = self.predict(X.tolist())
-        report = self._report("platt", X, y, probs, seed)
+        probs = self.predict(X_test.tolist())
+        report = self._report("platt", X_test, y_test, probs, seed, len(X))
         logger.info("PlattCalibrator fit: A=%.4f B=%.4f | %s", self._A, self._B, report.summary())
         return report
 
@@ -283,6 +310,7 @@ def annotate_ledger(
     with open(output_path, "w", encoding="utf-8") as fh:
         for entry, prob in zip(entries, probs, strict=False):
             entry["calibrated_prob"] = round(float(prob), 6)
+            entry["calibration_target"] = "user_defined_label_1"
             fh.write(json.dumps(entry) + "\n")
 
     logger.info("Annotated %d entries → %s", len(entries), output_path)
@@ -333,7 +361,7 @@ def main() -> None:
             )
 
         scores = [e["near_miss_score"] for e in entries]
-        labels = [int(e["label"]) for e in entries]
+        labels = [e["label"] for e in entries]
 
         cal: _BaseCalibrator = (
             IsotonicCalibrator() if args.method == "isotonic" else PlattCalibrator()
