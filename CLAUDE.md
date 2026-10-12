@@ -24,6 +24,8 @@ ProofX is three things sharing one repo:
 - `ProofX/` - root Lean 4 modules (`Certificates.lean`, `Status.lean`). Small and intentionally narrow; see `docs/lean4.md` before adding anything here.
 - `tests/` - pytest suite for the root Python toolkit.
 - `packages/python/codebase/benchmark.py` - GB-001 bounded policy comparison and independent artifact recount. CLI: `benchmark goldbach` / `benchmark verify`. Protocol: `docs/experiments/goldbach-policy-comparison.md`; published bundle: `src/experiments/gb-001/`.
+- `packages/python/codebase/study.py` - GB-002 size-matched selection study; `study_stats.py` computes exact rational moments and `study_check.py` independently checks arithmetic. Frozen protocol: `docs/experiments/gb-002-protocol.md`; outcomes and limits: `docs/experiments/gb-002-results.md`.
+- `packages/python/codebase/experiments.py` - checksum-pinned registry and reproduction CLI. `python -m codebase.experiments reproduce GB-002 results/reproduction --bundle src/experiments/gb-002/bundle.zip` checks and reruns the published study. Core install requires only NumPy; other engines use `.[research]`.
 - `docs/` - architecture, deployment, content, changelog, Lean, MVP, and engine writeups.
 - `src/` - static site. `src/components/` (shared head/nav/footer partials) and `src/pages/<slug>/` (per-page `meta.json` + `content.html` + optional `script.js`) are the source inputs; `scripts/build.sh` (`scripts/build_site.py`) generates deployable `src/*.html` and `src/nav.js`. Static deploy files such as error pages, `styles.css`, `monitoring.js`, `results.json`, and `src/assets/` live directly under `src/`. Never hand-edit generated files such as `src/index.html`; edit the matching source under `src/pages/`, `src/components/`, or `src/scripts/` and rebuild. `scripts/validate-links.sh` checks links.
 - `packages/germinal/` - isolated old Germinal project. Do not re-expand it into the repository root.
@@ -32,7 +34,7 @@ ProofX is three things sharing one repo:
 ## Stack
 
 - Python 3.13, pinned runtime dependencies in `requirements.txt`, and dev tools in `requirements-dev.txt`.
-- Package metadata in `pyproject.toml`; keep its dependency list synchronized with `requirements.txt`.
+- Package metadata in `pyproject.toml`; core installation needs NumPy for the controlled study. The `research` extra plus core dependencies must match the full stack in `requirements.txt`.
 - Lean 4, pinned by `lean-toolchain` (`leanprover/lean4:v4.31.0`), built with `lake build`.
 - Static site: plain HTML/CSS/JS, deployed on Vercel via `vercel.json`.
 

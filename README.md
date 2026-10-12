@@ -18,6 +18,25 @@ search and evidence tooling, not as a proof system.
 
 ## Start with a reproducible experiment
 
+[GB-002](docs/experiments/gb-002-protocol.md) compares structural selection and
+four ablations under identical budgets within narrow integer-size strata.
+It computes exact expected recall with rational arithmetic and publishes every
+replicate for simulation checks. The protocol was committed before outcomes.
+
+The study and experiment verifier need only Python 3.13+ and NumPy:
+
+```sh
+pip install .
+python -m codebase.experiments list
+python -m codebase.experiments reproduce GB-002 results/my-gb002
+```
+
+The reproduction command downloads the checksum-pinned bundle, checks all
+counts and selections, reruns the study, and compares scientific artifacts.
+Use `--bundle src/experiments/gb-002/bundle.zip` to work from this checkout
+without downloading. Archived source is never executed. For the other research
+engines, install `pip install '.[research]'` or the full requirements below.
+
 [GB-001](docs/experiments/goldbach-policy-comparison.md) compares directed,
 uniform, and sequential Goldbach candidate selection over the same finite
 domain. It publishes an exhaustive reference, per-seed ledgers, source and data

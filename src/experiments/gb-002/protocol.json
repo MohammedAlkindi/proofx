@@ -1,0 +1,19 @@
+{
+  "schema_version": "proofx.controlled_goldbach.v1",
+  "experiment_id": "GB-002",
+  "version": 1,
+  "intervals": [[10002, 12000], [15002, 17000], [18002, 20000]],
+  "stratum_width": 200,
+  "budgets": [20, 50, 100],
+  "replicates": 2048,
+  "seed_start": 0,
+  "alpha": 0.05,
+  "target_fraction": 0.05,
+  "family_order": ["power_two", "twice_prime", "mod30", "mod6"],
+  "policies": ["uniform", "ascending", "priority", "without_power_two", "without_twice_prime", "without_mod30", "without_mod6"],
+  "rng": "Generator(PCG64DXSM(SeedSequence([seed,lower,upper,stratum_lower]))).random(N)",
+  "endpoint": "recall_of_within_stratum_low_ratio_targets",
+  "primary_analysis": "exact_finite_population_policy_expectation_and_variance",
+  "interval_method": "paired_empirical_bernstein_bonferroni_two_sided",
+  "stopping_rule": "fixed_replicates_no_optional_stopping"
+}
