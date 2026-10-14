@@ -20,7 +20,7 @@ serves the new page. The previous GB-001 work was merged in pull request 56.
 
 ## Validation completed locally
 
-Python 3.13.13: 431 tests passed, 75.94% coverage. Ruff lint and formatting,
+Python 3.13.5: 432 tests passed, 76.02% coverage. Ruff lint and formatting,
 mypy, TypeScript compilation, research-page interaction tests, and 250 internal
 link checks passed. The page was loaded in a real browser; interval/budget
 selection and rendered results were checked. A full responsive or site-wide
@@ -35,6 +35,11 @@ summaries. All 54 diagnostic intervals contained the exact contrasts.
 The CI workflow also includes a Linux core-install reproduction job. Consult
 the pull request's current checks for its latest result rather than inferring
 CI status from this static note.
+
+The first Linux reproduction exposed last-bit platform differences in floating
+diagnostics. The bundle was regenerated after canonicalizing those fields to 14
+significant digits. Exact rational results are unchanged; a fresh local
+reproduction matched all scientific artifacts byte-for-byte.
 
 ## Resume safely
 
