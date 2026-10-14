@@ -23,6 +23,11 @@ def test_prime_algorithms_agree():
     assert study.prime_set(300) == study.prime_set(300, independent=True)
 
 
+def test_float_encoding_is_stable_below_published_precision():
+    assert study.encode({"x": 0.123456789012341}) == study.encode({"x": 0.123456789012342})
+    assert study.encode({"x": -1e-20}) != study.encode({"x": 1e-20})
+
+
 def test_family_precedence_and_ablation():
     primes = study.prime_set(100)
     domain = [8, 10, 14, 20, 30, 32]

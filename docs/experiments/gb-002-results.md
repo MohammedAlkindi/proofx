@@ -48,9 +48,10 @@ those labels. The study measures selection quality per reference query, not
 elapsed-time efficiency, scalability, or progress on Goldbach's conjecture.
 
 The bundled source snapshot records the implementation used. Its manifest
-reports the source checkout as dirty because implementation files had not all
-been committed when the run started. Source hashes identify the included code;
-the protocol's prospective commit remains independently inspectable in Git.
+records the source revision and source hashes. Floating diagnostic fields use
+14 significant digits so reproductions are byte-stable across supported
+platform math libraries; exact expectations remain stored as rational numbers.
+The protocol's prospective commit remains independently inspectable in Git.
 
 ## Reproduction
 
