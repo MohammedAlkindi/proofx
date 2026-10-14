@@ -85,15 +85,15 @@
     </div>
   </header>
 
-  <main id="main">
-    <section class="section hero">
+  <main id="main" class="research-page">
+    <section class="section hero research-hero">
       <div class="container hero__wrap">
         <p class="kicker">Research notebook</p>
         <h1 class="hero__h1">Methods, data, and reproduction.</h1>
         <p class="hero__sub">Each experiment links its question to a fixed protocol, candidate-level data, and an executable check. Compare exact policy performance, inspect ablations, and reproduce the published artifacts.</p>
       </div>
     </section>
-    <article id="gb-002" class="section" aria-labelledby="controlled-title">
+    <article id="gb-002" class="section research-study research-study--featured" aria-labelledby="controlled-title">
       <div class="container">
         <p class="kicker">GB-002 · Controlled Goldbach selection</p>
         <h2 id="controlled-title">Which structural rules actually help?</h2>
@@ -105,24 +105,27 @@
           <div><dt>Simulation check</dt><dd>2,048 seeds × 7 policies × 3 intervals</dd></div>
         </dl>
         <p>The target is the lowest 5% of partition-count ratios within each band, including ties. Uniform ordering inside a policy's priority groups makes expected recall exactly calculable. Simulation intervals measure Monte Carlo error on these fixed inputs; they do not estimate performance on larger integers.</p>
-        <p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/experiments/gb-002-protocol.md">Prospective protocol</a> · <a href="/experiments/gb-002/analysis.json" download>All results and exact fractions</a> · <a href="/experiments/gb-002/manifest.json" download>Source and data hashes</a> · <a href="/experiments/gb-002/bundle.zip" download>Complete bundle (3.8 MB ZIP)</a> · <a href="/experiments/registry.json" download>Experiment registry</a></p>
+        <nav class="research-links" aria-label="GB-002 research artifacts"><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/experiments/gb-002-protocol.md">Prospective protocol</a><a href="/experiments/gb-002/analysis.json" download>Results &amp; exact fractions</a><a href="/experiments/gb-002/manifest.json" download>Source &amp; data hashes</a><a href="/experiments/gb-002/bundle.zip" download>Complete bundle · 3.8 MB</a><a href="/experiments/registry.json" download>Experiment registry</a></nav>
         <h3>Full policy and every ablation</h3>
         <p id="controlled-status" role="status">Loading the controlled study…</p>
         <div id="controlled-controls" class="experiment-controls" hidden>
           <label for="controlled-interval">Interval <select id="controlled-interval"><option value="10002">10,002–12,000</option><option value="15002">15,002–17,000</option><option value="18002">18,002–20,000</option></select></label>
           <label for="controlled-budget">Budget <select id="controlled-budget"><option value="20">20</option><option value="50">50</option><option value="100" selected>100</option></select></label>
         </div>
-        <div class="table-scroll"><table id="controlled-table" class="results-table" hidden>
+        <div class="table-scroll research-table-shell"><table id="controlled-table" class="results-table" hidden>
           <caption>Expected recall is exact under ideal random ordering. A positive difference means the full priority policy performs better than that row.</caption>
           <thead><tr><th scope="col">Policy</th><th scope="col">Expected recall</th><th scope="col">Exact fraction</th><th scope="col">Simulation mean</th><th scope="col">Priority minus policy (percentage points)</th><th scope="col">Monte Carlo interval (percentage points)</th></tr></thead>
           <tbody id="controlled-rows"></tbody>
         </table></div>
         <noscript><p>Download the analysis JSON for all results; the interpretation below is available without JavaScript.</p></noscript>
-        <h3>What the study found</h3>
-        <p>The full priority policy has higher expected recall than uniform and ascending selection in all nine interval/budget combinations. At budget 100, its expected recall is 12.90%, 20.64%, and 20.68%, compared with uniform's 10% in each interval.</p>
-        <p><strong>The twice-prime rule hurts this objective.</strong> Removing it raises expected recall to 33.04%, 34.46%, and 28.71% at budget 100, and improves every tested combination. Removing the modulo-6 rule changes no selections because earlier groups already fill the quotas. An inactive ablation says nothing about that rule outside this ordering and budget.</p>
+        <section class="research-finding" aria-labelledby="controlled-finding-title">
+          <p class="kicker">Primary result</p>
+          <h3 id="controlled-finding-title">What the study found</h3>
+          <p>The full priority policy has higher expected recall than uniform and ascending selection in all nine interval/budget combinations. At budget 100, its expected recall is 12.90%, 20.64%, and 20.68%, compared with uniform's 10% in each interval.</p>
+          <p><strong>The twice-prime rule hurts this objective.</strong> Removing it raises expected recall to 33.04%, 34.46%, and 28.71% at budget 100, and improves every tested combination. Removing the modulo-6 rule changes no selections because earlier groups already fill the quotas. An inactive ablation says nothing about that rule outside this ordering and budget.</p>
+        </section>
         <p>This revised policy is different from GB-001's generator. Narrow bands match size allocation but leave possible within-band size effects. The study measures reference-query selection quality, not runtime, mathematical progress, or generalization. Selecting a better policy from these results requires a new prospective study on other domains.</p>
-        <details class="card"><summary>How the evidence is checked</summary><p>The verifier recounts every reference and replays every seed. A separate implementation enumerates prime pairs using trial division and checks exact moments through inclusion-indicator covariances. All 54 simultaneous Monte Carlo intervals contain the exact contrasts. Source snapshots, environment versions, all 43,008 policy-replicate records, and all 30 stratum thresholds are in the bundle. Checksums identify files; they do not authenticate authorship or establish peer review. The protocol was committed before outcomes, without an external preregistration service.</p></details>
+        <details class="card evidence-card"><summary>How the evidence is checked</summary><p>The verifier recounts every reference and replays every seed. A separate implementation enumerates prime pairs using trial division and checks exact moments through inclusion-indicator covariances. All 54 simultaneous Monte Carlo intervals contain the exact contrasts. Source snapshots, environment versions, all 43,008 policy-replicate records, and all 30 stratum thresholds are in the bundle. Checksums identify files; they do not authenticate authorship or establish peer review. The protocol was committed before outcomes, without an external preregistration service.</p></details>
         <h3>Reproduce from a fresh checkout</h3>
         <pre class="code-block"><code>python -m venv .venv
 # Activate .venv, then install the lightweight study package:
@@ -131,7 +134,7 @@ python -m codebase.experiments reproduce GB-002 results/gb002 --bundle src/exper
         <p>The command checks the pinned archive, verifies it, reruns the study, and compares scientific artifacts. Omitting <code>--bundle</code> downloads the registered public bundle. Other research engines use the <code>research</code> installation extra.</p>
       </div>
     </article>
-    <article id="gb-001" class="section" aria-labelledby="gb-title">
+    <article id="gb-001" class="section research-study" aria-labelledby="gb-title">
       <div class="container">
         <p class="kicker">GB-001 · Goldbach partition selection</p>
         <h2 id="gb-title">Finding small observed-to-expected partition ratios</h2>
@@ -143,7 +146,7 @@ python -m codebase.experiments reproduce GB-002 results/gb002 --bundle src/exper
           <div><dt>Metric</dt><dd>Recall of the bottom 5% of ratios</dd></div>
         </dl>
         <p>For each integer, <code>G(n)</code> counts unordered prime pairs, including equal primes. The ratio is <code>G(n) / H(n)</code>, where <code>H(n)</code> is the leading unordered Hardy–Littlewood approximation. An exhaustive reference defines the lowest 5%, including boundary ties. Policies select candidates without reading that reference.</p>
-        <p><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/experiments/goldbach-policy-comparison.md">Full protocol and counting convention</a> · <a href="/experiments/gb-001/manifest.json" download>Manifest</a> · <a href="/experiments/gb-001/reference.jsonl" download>Full reference (JSONL)</a> · <a href="/experiments/gb-001/bundle.zip" download>Complete bundle (ZIP)</a></p>
+        <nav class="research-links" aria-label="GB-001 research artifacts"><a href="https://github.com/MohammedAlkindi/ProofX/blob/main/docs/experiments/goldbach-policy-comparison.md">Protocol &amp; counting convention</a><a href="/experiments/gb-001/manifest.json" download>Manifest</a><a href="/experiments/gb-001/reference.jsonl" download>Full reference · JSONL</a><a href="/experiments/gb-001/bundle.zip" download>Complete bundle · ZIP</a></nav>
         <h3>Results by seed</h3>
         <p id="experiment-status" role="status">Loading the published manifest…</p>
         <noscript><p>JavaScript is needed for the interactive tables. All data and reproduction commands are available through the download links above.</p></noscript>
@@ -151,7 +154,7 @@ python -m codebase.experiments reproduce GB-002 results/gb002 --bundle src/exper
           <label for="experiment-seed">Seed <select id="experiment-seed"><option value="all">All seeds</option></select></label>
           <button id="experiment-csv" class="btn" type="button">Download summary CSV</button>
         </div>
-        <div class="table-scroll">
+        <div class="table-scroll research-table-shell">
           <table class="results-table" id="experiment-table" hidden>
             <caption>Every run, without selecting a favorable seed. Timings exclude shared setup and the exhaustive reference.</caption>
             <thead><tr><th scope="col">Policy</th><th scope="col">Seed</th><th scope="col">Hits</th><th scope="col">Recall</th><th scope="col">Min ratio</th><th scope="col">Median n</th><th scope="col">Seconds</th><th scope="col">Data</th></tr></thead>
@@ -159,11 +162,11 @@ python -m codebase.experiments reproduce GB-002 results/gb002 --bundle src/exper
           </table>
         </div>
         <p class="muted">Sequential selection is deterministic: its three seed rows are the same control. These are small descriptive experiments, with no significance or speedup claim. Median candidate size helps reveal differences in where policies search.</p>
-        <details class="card"><summary>Revision and environment</summary><pre class="code-block" id="experiment-provenance">Available in the manifest.</pre></details>
+        <details class="card evidence-card"><summary>Revision and environment</summary><pre class="code-block" id="experiment-provenance">Available in the manifest.</pre></details>
         <section id="candidate-inspector" class="experiment-inspector" hidden aria-labelledby="candidate-title">
           <h3 id="candidate-title">Candidate ledger</h3>
           <p id="candidate-status" role="status"></p>
-          <div class="table-scroll"><table class="results-table">
+          <div class="table-scroll research-table-shell"><table class="results-table">
             <caption id="candidate-caption">Candidates in evaluation order</caption>
             <thead><tr><th scope="col">Step</th><th scope="col">n</th><th scope="col">G(n)</th><th scope="col">H(n)</th><th scope="col">Ratio</th><th scope="col">Smallest witness</th></tr></thead>
             <tbody id="candidate-rows"></tbody>
