@@ -29,8 +29,23 @@ BUDGETS = (20, 50, 100)
 REPLICATES = 2048
 
 
+def canonicalize(value: object) -> object:
+    """Normalize floating diagnostics for byte-stable cross-platform artifacts."""
+    if isinstance(value, float):
+        normalized = float(format(value, ".14g"))
+        return 0.0 if normalized == 0 else normalized
+    if isinstance(value, dict):
+        return {key: canonicalize(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [canonicalize(item) for item in value]
+    return value
+
+
 def encode(value: object) -> str:
-    return json.dumps(value, sort_keys=True, allow_nan=False, separators=(",", ":")) + "\n"
+    return (
+        json.dumps(canonicalize(value), sort_keys=True, allow_nan=False, separators=(",", ":"))
+        + "\n"
+    )
 
 
 def digest(path: Path) -> str:

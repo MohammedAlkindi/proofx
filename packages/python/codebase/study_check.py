@@ -42,8 +42,8 @@ def check_arithmetic(directory: Path) -> None:
             correction *= (residue - 1) / (residue - 2)
         expected = 0.6601618158 * n / math.log(n) ** 2 * correction
         ratios[n] = len(pairs) / expected
-        if not math.isclose(row["expected"], expected, rel_tol=1e-14) or not math.isclose(
-            row["ratio"], ratios[n], rel_tol=1e-14
+        if not math.isclose(row["expected"], expected, rel_tol=1e-13) or not math.isclose(
+            row["ratio"], ratios[n], rel_tol=1e-13
         ):
             raise ValueError(f"independent factorization failed at {n}")
 
