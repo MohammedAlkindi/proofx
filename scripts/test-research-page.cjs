@@ -23,7 +23,7 @@ async function load(fail = false) {
     beforeParse(window) {
       window.fetch = async url => {
         if (fail) return { ok: false, status: 503 };
-        assert.match(url, /^\/experiments\/gb-001\/[a-z0-9.-]+$/);
+        assert.match(url, /^\/experiments\/gb-00[12]\/[a-z0-9.-]+$/);
         const data = await fs.readFile(path.join(root, url), 'utf8');
         return { ok: true, json: async () => JSON.parse(data), text: async () => data };
       };
@@ -43,6 +43,17 @@ async function load(fail = false) {
   await waitFor(() => doc.querySelectorAll('#experiment-rows tr').length === 9);
   assert.equal(doc.querySelector('#experiment-table').hidden, false);
   assert.equal(doc.querySelectorAll('h1').length, 1);
+  await waitFor(() => doc.querySelectorAll('#controlled-rows tr').length === 7);
+  assert.equal(doc.querySelectorAll('#controlled-rows tr')[2].cells[1].textContent, '12.90%');
+  const interval = doc.querySelector('#controlled-interval');
+  interval.value = '15002';
+  interval.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(doc.querySelectorAll('#controlled-rows tr')[2].cells[1].textContent, '20.64%');
+  const budget = doc.querySelector('#controlled-budget');
+  budget.value = '20';
+  budget.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(doc.querySelectorAll('#controlled-rows tr').length, 7);
+  assert.equal(doc.querySelectorAll('#controlled-rows tr')[0].cells[1].textContent, '2.00%');
   const seed = doc.querySelector('#experiment-seed');
   seed.value = '1';
   seed.dispatchEvent(new dom.window.Event('change'));
@@ -61,6 +72,8 @@ async function load(fail = false) {
   await waitFor(() => failed.dom.window.document.querySelector('#experiment-status').textContent.includes('could not be loaded'));
   assert.equal(failed.dom.window.document.querySelector('#experiment-table').hidden, true);
   assert.equal(failed.dom.window.document.querySelectorAll('#experiment-rows tr').length, 0);
+  assert.equal(failed.dom.window.document.querySelector('#controlled-table').hidden, true);
+  assert.equal(failed.dom.window.document.querySelectorAll('#controlled-rows tr').length, 0);
   failed.dom.window.close();
   console.log('Research page: data loading, seed filtering, inspection, CSV and error state passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
