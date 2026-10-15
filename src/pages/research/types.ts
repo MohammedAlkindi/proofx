@@ -25,3 +25,31 @@ interface ProofXBenchmarkRow {
   ratio: number;
   witness: [number, number] | null;
 }
+interface ProofXControlledFraction {
+  numerator: number;
+  denominator: number;
+  value: number;
+}
+
+interface ProofXControlledResult {
+  lower: number;
+  upper: number;
+  budget: number;
+  policy: string;
+  expected_recall: ProofXControlledFraction;
+  sample_mean: number;
+}
+
+interface ProofXControlledContrast {
+  lower: number;
+  budget: number;
+  comparison: string;
+  exact_difference: ProofXControlledFraction;
+  monte_carlo_interval: [number, number];
+  contains_exact: boolean;
+}
+
+interface ProofXControlledAnalysis {
+  policies: ProofXControlledResult[];
+  contrasts: ProofXControlledContrast[];
+}

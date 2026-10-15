@@ -1,0 +1,16 @@
+[
+  {
+    "id": "GB-001",
+    "version": 1,
+    "question": "How do directed, uniform and ascending policies retrieve low-ratio inputs?",
+    "bundle_url": "https://www.proofx.org/experiments/gb-001/bundle.zip",
+    "sha256": "04291823d61e67fac2dcdb3481073e59f50552281f58d8323ce4f762d0a60c3a"
+  },
+  {
+    "id": "GB-002",
+    "version": 1,
+    "question": "Do structural families help after matching allocation across integer-size strata?",
+    "bundle_url": "https://www.proofx.org/experiments/gb-002/bundle.zip",
+    "sha256": "8266290afde010336224847793bd733d27e43bd4a818d7862a1d866a712def44"
+  }
+]

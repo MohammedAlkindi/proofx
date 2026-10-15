@@ -14,6 +14,18 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
+  study:
+    name: Lightweight study reproduction
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: python -m pip install .
+      - name: Reproduce the checksum-pinned controlled study
+        run: python -m codebase.experiments reproduce GB-002 results/gb002-ci --bundle src/experiments/gb-002/bundle.zip
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
