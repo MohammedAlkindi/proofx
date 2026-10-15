@@ -100,3 +100,44 @@
         }
     })();
 })();
+(() => {
+    const status = document.getElementById('controlled-status');
+    const interval = document.getElementById('controlled-interval');
+    const budget = document.getElementById('controlled-budget');
+    const rows = document.getElementById('controlled-rows');
+    let data;
+    function render() {
+        rows.replaceChildren();
+        data.policies.filter(row => row.lower === Number(interval.value) && row.budget === Number(budget.value)).forEach(row => {
+            const contrast = data.contrasts.find(c => c.lower === row.lower && c.budget === row.budget && c.comparison === row.policy);
+            const tr = document.createElement('tr');
+            const fraction = row.expected_recall;
+            const values = [row.policy.replace(/_/g, ' '), `${(100 * fraction.value).toFixed(2)}%`,
+                `${fraction.numerator}/${fraction.denominator}`, `${(100 * row.sample_mean).toFixed(2)}%`,
+                contrast ? (100 * contrast.exact_difference.value).toFixed(2) : 'Reference',
+                contrast ? contrast.monte_carlo_interval.map(n => (100 * n).toFixed(2)).join(' to ') : 'Reference'];
+            values.forEach(value => { tr.insertCell().textContent = value; });
+            rows.append(tr);
+        });
+    }
+    interval.addEventListener('change', render);
+    budget.addEventListener('change', render);
+    void (async () => {
+        try {
+            const response = await fetch('/experiments/gb-002/analysis.json');
+            if (!response.ok)
+                throw new Error('Study unavailable');
+            data = await response.json();
+            if (data.policies.length !== 63 || data.contrasts.length !== 54)
+                throw new Error('Incomplete study');
+            render();
+            status.textContent = `${data.policies.length} policy/budget results · ${data.contrasts.filter(c => c.contains_exact).length} of 54 Monte Carlo intervals contain the exact contrast. Download and verify the complete bundle to check the evidence.`;
+            document.getElementById('controlled-controls').hidden = false;
+            document.getElementById('controlled-table').hidden = false;
+        }
+        catch {
+            rows.replaceChildren();
+            status.textContent = 'The controlled study could not be loaded. Download the analysis or complete bundle above.';
+        }
+    })();
+})();
