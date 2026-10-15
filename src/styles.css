@@ -1197,6 +1197,8 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
 /* Research notebook: readable data and native controls. */
 [hidden] { display: none !important; }
 .research-page {
+  --research-radius: 1.25rem;
+  --research-radius-lg: 1.75rem;
   position: relative;
   overflow: hidden;
   background:
@@ -1226,7 +1228,7 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   position: absolute;
   z-index: -1;
   inset: 1.5rem max(1rem, calc((100vw - 1240px) / 2)) 0;
-  border-radius: var(--radius-xl);
+  border-radius: var(--research-radius-lg);
   background: linear-gradient(145deg, var(--bg-card), transparent 72%);
   box-shadow: inset 0 1px 0 var(--bd-2);
   opacity: .68;
@@ -1256,7 +1258,7 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   min-width: 0;
   padding: var(--space-md);
   border: 1px solid var(--bd-2);
-  border-radius: var(--radius-md);
+  border-radius: var(--research-radius);
   background: linear-gradient(145deg, var(--bg-elev), var(--bg-card));
   box-shadow: inset 0 1px 0 var(--bd-1);
 }
@@ -1274,8 +1276,8 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   min-height: 2.5rem;
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--bd-1);
-  border-radius: var(--radius-md);
-  background: var(--bg-card);
+  border-radius: var(--radius-full);
+  background: transparent;
   color: var(--fg-2);
   font-size: .875rem;
   font-weight: var(--fw-medium);
@@ -1289,18 +1291,19 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
 }
 .experiment-controls select {
   min-height: var(--control-height);
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-xs) var(--space-lg);
   margin-inline-start: var(--space-xs);
   color: var(--fg-1);
   background: var(--bg-card);
   border: 1px solid var(--bd-1);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font: inherit;
 }
+.research-page .btn { border-radius: var(--radius-full); }
 .research-table-shell {
   margin-block: var(--space-lg) var(--space-xl);
   border: 1px solid var(--bd-2);
-  border-radius: var(--radius-xl);
+  border-radius: var(--research-radius);
   background: var(--bg-card);
   box-shadow: var(--shadow-md), inset 0 1px 0 var(--bd-1);
 }
@@ -1326,7 +1329,7 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   margin-block: var(--space-xxl);
   padding: var(--space-xl);
   border: 1px solid var(--bd-2);
-  border-radius: var(--radius-xl);
+  border-radius: var(--research-radius-lg);
   background:
     radial-gradient(32rem 14rem at 0 0, var(--accent-glow), transparent 72%),
     var(--bg-card);
@@ -1340,6 +1343,7 @@ details .card { border-radius: 0 0 var(--radius-md) var(--radius-md); border-top
   margin-block: var(--space-xl);
   padding: var(--space-md) var(--space-lg);
   border-color: var(--bd-2);
+  border-radius: var(--research-radius);
   background: linear-gradient(145deg, var(--bg-card), var(--bg-elev));
   box-shadow: var(--shadow-sm), inset 0 1px 0 var(--bd-1);
 }
