@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.GoldbachX.PartitionEnumerator.PartitionEnumerator import (
+from codebase.goldbachx.partition_enumerator.partition_enumerator import (
     _validate_input,
     discover,
     enumerate_partitions,
@@ -42,7 +42,7 @@ class TestValidateInput:
 
 class TestEnumeratePartitions:
     def setup_method(self):
-        from codebase.GoldbachX.SieveEngine.SieveEngine import eratosthenes
+        from codebase.goldbachx.sieve_engine.sieve_engine import eratosthenes
 
         self.primes_100 = eratosthenes(100)
 

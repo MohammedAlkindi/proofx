@@ -120,11 +120,11 @@ feature vector, score, details, timestamp, and RNG seed.
 ```text
 ProofX/
   packages/python/codebase/
-    FalsificationEngine/     Directed search orchestration and ledgers
-    CollatzX/                Collatz sequence features and related experiments
-    GoldbachX/               Prime sieve, partitions, and structural filters
-    ReimannX/                Riemann-related numerical experiments
-    CrossEngineAnalysis/     Correlation tooling for ledgers
+    falsification_engine/     Directed search orchestration and ledgers
+    collatzx/                Collatz sequence features and related experiments
+    goldbachx/               Prime sieve, partitions, and structural filters
+    reimannx/                Riemann-related numerical experiments
+    cross_engine_analysis/     Correlation tooling for ledgers
     cli.py                   Unified CLI
   ProofX/                    Root Lean 4 certificate definitions
   ProofX.lean                Root Lean import file

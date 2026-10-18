@@ -166,7 +166,7 @@ the smaller of the two is a divisor in `[2, b]`, contradicting `hnd`.
 
 ### Phase 3 — Record the Goldbach witness
 
-Scope: `packages/python/codebase/FalsificationEngine/`, `results/ledger.jsonl`,
+Scope: `packages/python/codebase/falsification_engine/`, `results/ledger.jsonl`,
 `src/results.json`.
 
 `GoldbachCertificate` requires the explicit prime pair `(p, q)`. Ledger rows

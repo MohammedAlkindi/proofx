@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.FalsificationEngine.calibration import (
+from codebase.falsification_engine.calibration import (
     CalibrationReport,
     PlattCalibrator,
     annotate_ledger,
@@ -156,14 +156,14 @@ class TestPlattCalibrator:
 class TestIsotonicCalibrator:
     def test_fit_requires_10_samples(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
-        from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+        from codebase.falsification_engine.calibration import IsotonicCalibrator
 
         with pytest.raises(ValueError, match="10"):
             IsotonicCalibrator().fit([0.1, 0.9], [0, 1])
 
     def test_fit_returns_calibration_report(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
-        from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+        from codebase.falsification_engine.calibration import IsotonicCalibrator
 
         scores, labels = _synthetic(n=30)
         report = IsotonicCalibrator().fit(scores, labels)
@@ -171,7 +171,7 @@ class TestIsotonicCalibrator:
 
     def test_report_method_is_isotonic(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
-        from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+        from codebase.falsification_engine.calibration import IsotonicCalibrator
 
         scores, labels = _synthetic(n=30)
         report = IsotonicCalibrator().fit(scores, labels)
@@ -179,7 +179,7 @@ class TestIsotonicCalibrator:
 
     def test_predict_output_in_unit_interval(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
-        from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+        from codebase.falsification_engine.calibration import IsotonicCalibrator
 
         scores, labels = _synthetic(n=30)
         cal = IsotonicCalibrator()
@@ -189,14 +189,14 @@ class TestIsotonicCalibrator:
 
     def test_predict_before_fit_raises_runtime_error(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
-        from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+        from codebase.falsification_engine.calibration import IsotonicCalibrator
 
         with pytest.raises(RuntimeError):
             IsotonicCalibrator().predict([0.5])
 
     def test_labels_must_be_binary(self):
         pytest.importorskip("sklearn", reason="scikit-learn not installed")
-        from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+        from codebase.falsification_engine.calibration import IsotonicCalibrator
 
         scores = list(range(15))
         labels = list(range(15))  # not binary
@@ -265,7 +265,7 @@ class TestAnnotateLedger:
 
 
 def test_ece_includes_wrong_predictions_at_probability_one():
-    from codebase.FalsificationEngine.calibration import _BaseCalibrator
+    from codebase.falsification_engine.calibration import _BaseCalibrator
 
     assert _BaseCalibrator._ece(np.ones(10), np.zeros(10)) == pytest.approx(1.0)
     assert _BaseCalibrator._ece(np.array([0.0, 1.0]), np.array([0, 0])) == pytest.approx(0.5)
@@ -273,7 +273,7 @@ def test_ece_includes_wrong_predictions_at_probability_one():
 
 @pytest.mark.parametrize("method", ["isotonic", "platt"])
 def test_report_uses_held_out_predictions(method):
-    from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+    from codebase.falsification_engine.calibration import IsotonicCalibrator
 
     scores = np.linspace(0, 1, 40)
     labels = np.tile([0, 1], 20)
@@ -303,7 +303,7 @@ def test_report_uses_held_out_predictions(method):
     ],
 )
 def test_calibration_rejects_invalid_training_data(scores, labels):
-    from codebase.FalsificationEngine.calibration import IsotonicCalibrator
+    from codebase.falsification_engine.calibration import IsotonicCalibrator
 
     for cal in (IsotonicCalibrator(), PlattCalibrator()):
         with pytest.raises(ValueError):

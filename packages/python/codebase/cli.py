@@ -59,7 +59,7 @@ def _cmd_falsify(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
     import json
 
-    from codebase.FalsificationEngine.FalsificationEngine import (
+    from codebase.falsification_engine.engine import (
         _SIEVE_LIMIT,
         FalsificationEngine,
         json_default,
@@ -165,7 +165,7 @@ def _cmd_calibrate_fit(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
     import json
 
-    from codebase.FalsificationEngine.calibration import IsotonicCalibrator, PlattCalibrator
+    from codebase.falsification_engine.calibration import IsotonicCalibrator, PlattCalibrator
 
     lines = Path(args.ledger).read_text(encoding="utf-8").splitlines()
     entries = [json.loads(line) for line in lines if line.strip()]
@@ -191,7 +191,7 @@ def _cmd_calibrate_fit(args: argparse.Namespace) -> int:
 
 def _cmd_calibrate_annotate(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
-    from codebase.FalsificationEngine.calibration import _BaseCalibrator, annotate_ledger
+    from codebase.falsification_engine.calibration import _BaseCalibrator, annotate_ledger
 
     cal = _BaseCalibrator.load(Path(args.calibrator))
     out = Path(args.output) if args.output else None
@@ -230,7 +230,7 @@ def _build_calibrate(sub: argparse._SubParsersAction) -> None:
 
 def _cmd_correlate(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
-    from codebase.CrossEngineAnalysis.cross_engine import CrossEngineAnalyzer
+    from codebase.cross_engine_analysis.cross_engine import CrossEngineAnalyzer
 
     analyzer = CrossEngineAnalyzer()
     report = analyzer.analyze(
@@ -272,7 +272,7 @@ def _build_correlate(sub: argparse._SubParsersAction) -> None:
 def _cmd_riemann(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
     print("Launching ReimannX ZeroProperties verifier...")
-    from codebase.ReimannX.ZeroProperties.ZeroProperties import ConfigManager
+    from codebase.reimannx.zero_properties.zero_properties import ConfigManager
 
     cfg = ConfigManager()
     print(f"  Config version : {cfg.config['version']}")
@@ -292,7 +292,7 @@ def _build_riemann(sub: argparse._SubParsersAction) -> None:
 
 def _cmd_collatz(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
-    from codebase.CollatzX.Pipeline.pipeline import run_dump, run_plot, run_stats
+    from codebase.collatzx.pipeline.pipeline import run_dump, run_plot, run_stats
 
     if args.collatz_cmd == "dump":
         run_dump(args)
@@ -352,8 +352,8 @@ def _build_collatz(sub: argparse._SubParsersAction) -> None:
 
 def _cmd_goldbach(args: argparse.Namespace) -> int:
     _setup_logging(args.log_level, args.log_file)
-    from codebase.GoldbachX.PartitionEnumerator.PartitionEnumerator import enumerate_partitions
-    from codebase.GoldbachX.SieveEngine.SieveEngine import get_primes
+    from codebase.goldbachx.partition_enumerator.partition_enumerator import enumerate_partitions
+    from codebase.goldbachx.sieve_engine.sieve_engine import get_primes
 
     primes = get_primes(args.n)
     pairs = enumerate_partitions(

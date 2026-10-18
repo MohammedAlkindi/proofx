@@ -135,7 +135,7 @@ def summarize(rows: list[dict[str, Any]], rare: set[int]) -> dict[str, Any]:
 
 
 def run_benchmark(config: BenchmarkConfig, output: Path) -> dict[str, Any]:
-    from codebase.FalsificationEngine.FalsificationEngine import GoldbachFalsifier
+    from codebase.falsification_engine.engine import GoldbachFalsifier
 
     config.validate()
     # Never overwrite a published run. A failed run leaves a directory without
