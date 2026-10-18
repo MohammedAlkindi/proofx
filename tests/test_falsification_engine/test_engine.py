@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.FalsificationEngine.FalsificationEngine import (
+from codebase.falsification_engine.engine import (
     LEDGER_SCHEMA_VERSION,
     CollatzFalsifier,
     FalsificationEngine,
@@ -44,7 +44,7 @@ def test_orchestrator_allocates_exact_nonnegative_budget(monkeypatch, target, bu
 
 @pytest.mark.parametrize("budget", [-1, 0.5, True])
 def test_invalid_budgets_rejected_at_every_search_entrypoint(budget):
-    from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+    from codebase.falsification_engine.riemann_falsifier import RiemannFalsifier
 
     for engine in (CollatzFalsifier(), GoldbachFalsifier(100), RiemannFalsifier(15)):
         with pytest.raises(ValueError, match="budget"):
@@ -54,7 +54,7 @@ def test_invalid_budgets_rejected_at_every_search_entrypoint(budget):
 
 
 def test_zero_budget_evaluates_nothing():
-    from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+    from codebase.falsification_engine.riemann_falsifier import RiemannFalsifier
 
     for engine in (CollatzFalsifier(), GoldbachFalsifier(100), RiemannFalsifier(15)):
         assert len(engine.search(0, seed=0)) == 0

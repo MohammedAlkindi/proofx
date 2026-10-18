@@ -10,7 +10,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.CrossEngineAnalysis.cross_engine import CoOccurrence, CrossEngineAnalyzer, LedgerEntry
+from codebase.cross_engine_analysis.cross_engine import (
+    CoOccurrence,
+    CrossEngineAnalyzer,
+    LedgerEntry,
+)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
