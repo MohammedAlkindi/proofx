@@ -13,8 +13,8 @@ source, for example `src/pages/ledger-viewer/script.ts`; the build emits the
 matching `script.js` before the static HTML is assembled. `scripts/build_site.py`
 (via `scripts/build.sh` / `scripts/build.ps1`) assembles those inputs into
 generated files at the `src/` root. Static deploy files such as
-`src/styles.css`, `src/monitoring.js`, `src/results.json`, error pages, and
-`src/assets/` are maintained directly at their served paths.
+`src/styles.css`, `src/results.json`, error pages, and `src/assets/` are
+maintained directly at their served paths.
 
 Edit site sources under `src/components/`, `src/pages/`, or `src/scripts/`,
 then rebuild. Do not hand-edit generated files such as `src/index.html` or
@@ -28,7 +28,7 @@ then rebuild. Do not hand-edit generated files such as `src/index.html` or
 | `src/pages/<slug>/meta.json` + `content.html` [+ `script.ts` / generated `script.js`] | Per-page source; `slug` matches the output filename. |
 | `src/scripts/nav.js` | Source for generated navigation behavior (`src/nav.js`). |
 | `package.json`, `package-lock.json`, `tsconfig.json` | Lightweight TypeScript toolchain for interactive static page scripts. |
-| `src/styles.css`, `src/monitoring.js`, `src/results.json`, `src/assets/`, error pages | Hand-authored or generated static deploy files served directly by Vercel. |
+| `src/styles.css`, `src/results.json`, `src/assets/`, error pages | Hand-authored or generated static deploy files served directly by Vercel. |
 | `src/*.html`, `src/nav.js` | Generated deploy artifact committed for Vercel. |
 | `vercel.json` | Static routing, redirects, and security headers. |
 
