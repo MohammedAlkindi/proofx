@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.GoldbachX.SieveEngine.SieveEngine import (
+from codebase.goldbachx.sieve_engine.sieve_engine import (
     _validate_limit,
     _validate_primes,
     atkin,

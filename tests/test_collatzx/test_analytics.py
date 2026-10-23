@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.CollatzX.Analytics.Analytics import (
+from codebase.collatzx.analytics.analytics import (
     AlgebraicFeatureExtractor,
     CollatzSequence,
     CollatzVariant,

@@ -7,7 +7,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 
-from codebase.ReimannX.KeiperLi.KeiperLi import analyze_coefficients, compute_li_coefficients
+from codebase.reimannx.keiper_li.keiper_li import analyze_coefficients, compute_li_coefficients
 
 
 class TestComputeLiCoefficients:
@@ -41,4 +41,4 @@ class TestAnalyzeCoefficients:
         coeffs = np.array([-1.0, 0.5, 2.0])
         analyze_coefficients(coeffs)  # should not raise even with negatives
         captured = capsys.readouterr()
-        assert "⚠️" in captured.out or "Turbulence" in captured.out
+        assert "️" in captured.out or "Turbulence" in captured.out
