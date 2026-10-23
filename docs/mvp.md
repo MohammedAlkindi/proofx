@@ -54,5 +54,5 @@ entries.
   quality, or public-site accuracy. Those have their own standards docs.
 - Reaching this bar does not make any run result a proof. The claim-level
   rules in `docs/research-standards.md` still apply regardless of CI state.
-- Closing the two remaining gaps above is not required to ship unrelated
-  engine or site work; track them, don't block on them.
+- Closing the remaining gap above is not required to ship unrelated engine or
+  site work. Track it, but don't block on it.
