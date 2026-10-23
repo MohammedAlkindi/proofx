@@ -53,8 +53,7 @@ domains; removing twice-prime improved every current cell. Runtime efficiency
 needs its own cost-controlled experiment. Neither result establishes progress
 toward disproving Goldbach or guarantees a recruiting outcome.
 
-Test environments used here live outside the checkout under
-`C:/Users/alkin/wt/proofx-study-env` and `C:/Users/alkin/wt/proofx-core-check`.
-Use a fresh explicit pytest `--basetemp` under `~/wt` if shared temporary-directory
-cleanup stalls after tests finish. No credentials or external services are
+The test environments used here lived outside the checkout. Use a fresh explicit
+pytest `--basetemp` outside the repository if shared temporary-directory cleanup
+stalls after tests finish. No credentials or external services are
 required for reproduction from the checked-in ZIP.

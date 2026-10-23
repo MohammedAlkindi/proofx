@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Agent operating rules for this repo. Commit style and branch naming follow `~/Github/CLAUDE.md`; this file covers what's specific to ProofX.
+Agent operating rules for this repo. Commits use Conventional Commits, one logical change each, with Mohammed as sole author and no AI trailers. This file covers what's specific to ProofX.
 
 ## Scope
 
@@ -10,7 +10,7 @@ Agent operating rules for this repo. Commit style and branch naming follow `~/Gi
 
 ## Branch policy
 
-- `main` is the default branch; don't commit directly to it for anything multi-commit or reviewable — follow the standard `<type>/<short-kebab-description>` naming (`claude/` prefix for agent-created branches) from `~/Github/CLAUDE.md`.
+- `main` is the default branch; don't commit directly to it for anything multi-commit or reviewable — use `<type>/<short-kebab-description>` branch names, never an agent or tool name.
 - One logical change per commit. Don't bundle a `packages/python/codebase/` engine change with a `src/` site change, or a ProofX-root change with a `packages/germinal/` change.
 
 ## What requires confirmation
