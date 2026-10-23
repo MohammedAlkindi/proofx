@@ -179,7 +179,7 @@ python -m codebase.experiments reproduce GB-002 results/gb002 --bundle src/exper
         <h3>Reproduce or verify</h3>
         <pre class="code-block"><code>python -m codebase.cli benchmark goldbach --max-n 10000 --budget 64 --seeds 0 1 2 --output-dir results/reproduction
 python -m codebase.cli benchmark verify results/reproduction</code></pre>
-        <p>To check the published data, extract the ZIP to a new directory and pass that directory to <code>benchmark verify</code>. To compare a reproduction, compare the <code>artifacts</code> hashes in both manifests; timing and environment fields will differ.</p>
+        <p>To check the published data, extract the ZIP to a new directory and pass that directory to <code>benchmark verify</code>. To compare a reproduction, compare the candidate-ledger hashes under <code>artifacts</code> in both manifests. Timing and environment fields will differ. On another platform, <code>reference.jsonl</code> can also differ in the last digit of a few floating-point values.</p>
       </div>
     </article>
     <section class="section" aria-labelledby="library-title">
