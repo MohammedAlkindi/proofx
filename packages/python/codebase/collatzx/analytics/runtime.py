@@ -12,7 +12,7 @@ import numpy as np
 try:
     import torch
 except ImportError:  # pragma: no cover - optional dependency
-    torch = None
+    torch = None  # type: ignore[assignment]
 
 
 class EnhancedConfig:
