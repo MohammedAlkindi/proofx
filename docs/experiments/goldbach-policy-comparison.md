@@ -78,6 +78,8 @@ the author, prove timing measurements, or certify that a claimed policy produced
 its ledger. Re-run the experiment and compare artifact hashes for that last check.
 Different timestamps, environment metadata, and elapsed times are expected;
 candidate-ledger hashes should match under the recorded implementation and RNG.
+On another platform, `reference.jsonl` can differ in the last digit of a few
+floating-point values while its exact counts and witnesses match.
 
 ## Interpretation and next experiments
 
