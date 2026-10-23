@@ -209,7 +209,7 @@ combined run at the same master seed.
 
 ```python
 rng_master = np.random.default_rng(seed)
-collatz_seed, goldbach_seed = rng_master.integers(0, 2**31, size=2)
+collatz_seed, goldbach_seed, riemann_seed = rng_master.integers(0, 2**31, size=3)
 ```
 
 Every evaluated candidate can be written to JSONL:
