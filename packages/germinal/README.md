@@ -288,10 +288,12 @@ curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh 
 ## Testing
 
 ```bash
-python -m pytest tests/ -v
+python -m pytest -o addopts="" tests/ -v
 ```
 
-No live Lean install or Anthropic API key is required. All `lake build` subprocess calls and all Claude API calls are mocked. Every pipeline module has a corresponding test file. `tests/test_symbolic_counterexample.py` is the reference example for new test files.
+Inside ProofX, pytest reads the root `pyproject.toml`. The `-o addopts=""` flag drops its coverage options, which Germinal's requirements do not install.
+
+No live Lean install or Anthropic API key is required. All `lake build` subprocess calls and all Claude API calls are mocked. Test files cover complexity routing, novelty, formalization, the counterexample ensemble, the failure registry, and snapshot locking. The conjecture generator and verifier have no dedicated test file. `tests/test_symbolic_counterexample.py` is the reference example for new test files.
 
 ```bash
 # Backend lint
