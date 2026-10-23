@@ -10,9 +10,9 @@ def test_goldbach_does_not_import_collatz_analytics():
             sys.executable,
             "-c",
             "import sys; "
-            "from codebase.FalsificationEngine.FalsificationEngine import GoldbachFalsifier; "
+            "from codebase.falsification_engine.engine import GoldbachFalsifier; "
             "assert GoldbachFalsifier(sieve_limit=10)._partition_count_and_witness(10)[0] == 2; "
-            "assert 'codebase.CollatzX.Analytics.Analytics' not in sys.modules; "
+            "assert 'codebase.collatzx.analytics.analytics' not in sys.modules; "
             "assert 'torch' not in sys.modules",
         ],
         capture_output=True,

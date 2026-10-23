@@ -15,11 +15,11 @@ ProofX is three things sharing one repo:
 ## Architecture
 
 - `packages/python/codebase/` - the Python research engines, each a self-contained package with its own `RESEARCH_LOG.md`:
-  - `FalsificationEngine/` - orchestrator, Riemann falsifier, calibration, ledgers, and directed counterexample search.
-  - `CollatzX/` - analytics, bifurcation, boundary, graph, processing, and rare-event experiments.
-  - `GoldbachX/` - algebraic extensions, symbolic reasoning, variants, partition enumeration, sequence generation, and sieves.
-  - `ReimannX/` - contour, Keiper-Li, prime echo, threshold, zero-property, and zeta-mirror experiments. The path is currently misspelled; keep imports stable unless a task explicitly migrates it.
-  - `CrossEngineAnalysis/` - correlates near-miss candidates across engines.
+  - `falsification_engine/` - orchestrator, Riemann falsifier, calibration, ledgers, and directed counterexample search.
+  - `collatzx/` - analytics, bifurcation, boundary, graph, processing, and rare-event experiments.
+  - `goldbachx/` - algebraic extensions, symbolic reasoning, variants, partition enumeration, sequence generation, and sieves.
+  - `reimannx/` - contour, Keiper-Li, prime echo, threshold, zero-property, and zeta-mirror experiments. The path is currently misspelled; keep imports stable unless a task explicitly migrates it.
+  - `cross_engine_analysis/` - correlates near-miss candidates across engines.
   - `cli.py` - unified CLI (`python -m codebase.cli <falsify|calibrate|correlate|riemann|collatz|goldbach>`).
 - `ProofX/` - root Lean 4 modules (`Certificates.lean`, `Status.lean`). Small and intentionally narrow; see `docs/lean4.md` before adding anything here.
 - `tests/` - pytest suite for the root Python toolkit.

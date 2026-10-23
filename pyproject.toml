@@ -62,20 +62,20 @@ omit = [
     "tests/*",
     "*/__init__.py",
     "*/results/*",
-    "packages/python/codebase/CollatzX/Bifurcation/*",
-    "packages/python/codebase/CollatzX/Boundary/*",
-    "packages/python/codebase/CollatzX/Pipeline/*",
-    "packages/python/codebase/CollatzX/PrimeGraph/*",
-    "packages/python/codebase/CollatzX/Processing/*",
-    "packages/python/codebase/CollatzX/RareEvent/*",
-    "packages/python/codebase/GoldbachX/GoldbachReasoner/*",
-    "packages/python/codebase/GoldbachX/MetaVariant/*",
-    "packages/python/codebase/GoldbachX/SequenceGenerator/*",
-    "packages/python/codebase/ReimannX/ContourTruth/*",
-    "packages/python/codebase/ReimannX/PrimeEchos/*",
-    "packages/python/codebase/ReimannX/TuringThreshold/*",
-    "packages/python/codebase/ReimannX/ZeroProperties/*",
-    "packages/python/codebase/ReimannX/ZetaMirror/*",
+    "packages/python/codebase/collatzx/bifurcation/*",
+    "packages/python/codebase/collatzx/boundary/*",
+    "packages/python/codebase/collatzx/pipeline/*",
+    "packages/python/codebase/collatzx/prime_graph/*",
+    "packages/python/codebase/collatzx/processing/*",
+    "packages/python/codebase/collatzx/rare_event/*",
+    "packages/python/codebase/goldbachx/goldbach_reasoner/*",
+    "packages/python/codebase/goldbachx/meta_variant/*",
+    "packages/python/codebase/goldbachx/sequence_generator/*",
+    "packages/python/codebase/reimannx/contour_truth/*",
+    "packages/python/codebase/reimannx/prime_echos/*",
+    "packages/python/codebase/reimannx/turing_threshold/*",
+    "packages/python/codebase/reimannx/zero_properties/*",
+    "packages/python/codebase/reimannx/zeta_mirror/*",
     "packages/python/codebase/cli.py",
 ]
 
@@ -100,20 +100,20 @@ exclude = [
     "tests/",
     "docs/",
     "packages/germinal/",
-    "packages/python/codebase/CollatzX/Bifurcation/",
-    "packages/python/codebase/CollatzX/Boundary/",
-    "packages/python/codebase/CollatzX/Pipeline/",
-    "packages/python/codebase/CollatzX/PrimeGraph/",
-    "packages/python/codebase/CollatzX/Processing/",
-    "packages/python/codebase/CollatzX/RareEvent/",
-    "packages/python/codebase/GoldbachX/GoldbachReasoner/",
-    "packages/python/codebase/GoldbachX/MetaVariant/",
-    "packages/python/codebase/GoldbachX/SequenceGenerator/",
-    "packages/python/codebase/ReimannX/ContourTruth/",
-    "packages/python/codebase/ReimannX/PrimeEchos/",
-    "packages/python/codebase/ReimannX/TuringThreshold/",
-    "packages/python/codebase/ReimannX/ZeroProperties/",
-    "packages/python/codebase/ReimannX/ZetaMirror/",
+    "packages/python/codebase/collatzx/bifurcation/",
+    "packages/python/codebase/collatzx/boundary/",
+    "packages/python/codebase/collatzx/pipeline/",
+    "packages/python/codebase/collatzx/prime_graph/",
+    "packages/python/codebase/collatzx/processing/",
+    "packages/python/codebase/collatzx/rare_event/",
+    "packages/python/codebase/goldbachx/goldbach_reasoner/",
+    "packages/python/codebase/goldbachx/meta_variant/",
+    "packages/python/codebase/goldbachx/sequence_generator/",
+    "packages/python/codebase/reimannx/contour_truth/",
+    "packages/python/codebase/reimannx/prime_echos/",
+    "packages/python/codebase/reimannx/turing_threshold/",
+    "packages/python/codebase/reimannx/zero_properties/",
+    "packages/python/codebase/reimannx/zeta_mirror/",
     "packages/python/codebase/cli.py",
 ]
 
@@ -122,20 +122,20 @@ line-length = 100
 target-version = "py313"
 extend-exclude = [
     "packages/germinal",
-    "packages/python/codebase/CollatzX/Bifurcation",
-    "packages/python/codebase/CollatzX/Boundary",
-    "packages/python/codebase/CollatzX/Pipeline",
-    "packages/python/codebase/CollatzX/PrimeGraph",
-    "packages/python/codebase/CollatzX/Processing",
-    "packages/python/codebase/CollatzX/RareEvent",
-    "packages/python/codebase/GoldbachX/GoldbachReasoner",
-    "packages/python/codebase/GoldbachX/MetaVariant",
-    "packages/python/codebase/GoldbachX/SequenceGenerator",
-    "packages/python/codebase/ReimannX/ContourTruth",
-    "packages/python/codebase/ReimannX/PrimeEchos",
-    "packages/python/codebase/ReimannX/TuringThreshold",
-    "packages/python/codebase/ReimannX/ZeroProperties",
-    "packages/python/codebase/ReimannX/ZetaMirror",
+    "packages/python/codebase/collatzx/bifurcation",
+    "packages/python/codebase/collatzx/boundary",
+    "packages/python/codebase/collatzx/pipeline",
+    "packages/python/codebase/collatzx/prime_graph",
+    "packages/python/codebase/collatzx/processing",
+    "packages/python/codebase/collatzx/rare_event",
+    "packages/python/codebase/goldbachx/goldbach_reasoner",
+    "packages/python/codebase/goldbachx/meta_variant",
+    "packages/python/codebase/goldbachx/sequence_generator",
+    "packages/python/codebase/reimannx/contour_truth",
+    "packages/python/codebase/reimannx/prime_echos",
+    "packages/python/codebase/reimannx/turing_threshold",
+    "packages/python/codebase/reimannx/zero_properties",
+    "packages/python/codebase/reimannx/zeta_mirror",
 ]
 
 [tool.ruff.lint]
@@ -151,8 +151,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"packages/python/codebase/FalsificationEngine/FalsificationEngine.py" = ["E402"]
-"packages/python/codebase/FalsificationEngine/RiemannFalsifier.py" = ["E402"]
+"packages/python/codebase/falsification_engine/engine.py" = ["E402"]
+"packages/python/codebase/falsification_engine/riemann_falsifier.py" = ["E402"]
 "tests/*" = ["S101", "E402"]  # assert and import-after-skip are fine in tests
 
 [tool.ruff.format]

@@ -16,8 +16,8 @@ mpmath = pytest.importorskip(
     "mpmath", reason="mpmath not installed — skipping RiemannFalsifier tests"
 )
 
-from codebase.FalsificationEngine.FalsificationEngine import FalsificationLedger
-from codebase.FalsificationEngine.RiemannFalsifier import RiemannFalsifier
+from codebase.falsification_engine.engine import FalsificationLedger
+from codebase.falsification_engine.riemann_falsifier import RiemannFalsifier
 
 # ── Fixture ───────────────────────────────────────────────────────────────────
 

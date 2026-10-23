@@ -66,32 +66,32 @@ is a statement about a run, not a statement about mathematical truth.
 
 ## Core Modules
 
-### `packages/python/codebase/FalsificationEngine/`
+### `packages/python/codebase/falsification_engine/`
 
 Owns shared run orchestration, ledger records, top-k ranking, calibration, and
 the Collatz/Goldbach directed searches. `RiemannFalsifier.py` adds numerical
 Riemann-adjacent diagnostics. All engines should write enough metadata for a
 reader to understand what was checked and under what assumptions.
 
-### `packages/python/codebase/CollatzX/`
+### `packages/python/codebase/collatzx/`
 
 Contains Collatz trajectory features, graph and boundary experiments,
 high-throughput processing helpers, and rare-event analysis. The root
 FalsificationEngine uses the analytics layer for feature extraction and ranking.
 
-### `packages/python/codebase/GoldbachX/`
+### `packages/python/codebase/goldbachx/`
 
 Contains prime sieves, partition enumeration, residue-class filters, and
 heuristic symbolic reasoning. The root FalsificationEngine uses these pieces to
 rank structurally sparse even numbers.
 
-### `packages/python/codebase/ReimannX/`
+### `packages/python/codebase/reimannx/`
 
 Contains numerical experiments related to zeta zeros and Keiper-Li
 coefficients. The directory name is currently spelled `ReimannX`; use the
 existing path in imports unless the rename is handled as a separate migration.
 
-### `packages/python/codebase/CrossEngineAnalysis/`
+### `packages/python/codebase/cross_engine_analysis/`
 
 Compares near-miss neighborhoods across ledgers. This is exploratory tooling;
 correlation between score families should be presented as a hypothesis generator,
