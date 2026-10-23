@@ -7,7 +7,6 @@
 ![Wolfram Alpha](https://img.shields.io/badge/Wolfram-Integrated-red.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg?logo=docker&logoColor=white)
 ![Tests](https://img.shields.io/badge/Tests-pytest-green.svg)
-![CI](https://github.com/MohammedAlkindi/Germinal/actions/workflows/ci.yml/badge.svg)
 
 Germinal is an end-to-end pipeline for AI-assisted mathematical conjecture generation and formal verification. It proposes conjectures via Claude, grounds each one in recent arXiv literature and Mathlib4 lemma context, formalizes them in Lean 4 with compiler-error repair loops, attempts automated proofs using tactic racing and extended thinking, and searches for counterexamples using a three-method ensemble. Every experiment is committed as a reproducible Git snapshot with full metadata.
 
@@ -141,9 +140,9 @@ See [docs/architecture.md](docs/architecture.md) for per-module implementation d
 ## Quickstart
 
 ```bash
-# 1. Clone
-git clone https://github.com/MohammedAlkindi/Germinal.git
-cd Germinal
+# 1. Clone ProofX, which carries Germinal under packages/germinal
+git clone https://github.com/MohammedAlkindi/proofx.git
+cd proofx/packages/germinal
 
 # 2. Configure
 cp .env.example .env
@@ -303,7 +302,7 @@ ruff format --check src/ api/
 cd frontend && npx tsc --noEmit
 ```
 
-CI runs on every push to `main` and on all pull requests (`.github/workflows/ci.yml`): backend runs ruff and pytest; frontend runs `tsc --noEmit`.
+`.github/workflows/ci.yml` defines ruff and pytest for the backend and `tsc --noEmit` for the frontend. GitHub only runs workflows from a repository's root `.github/` folder, so this workflow does not run inside ProofX.
 
 ## Project structure
 
