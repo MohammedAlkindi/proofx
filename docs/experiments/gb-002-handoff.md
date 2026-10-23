@@ -1,9 +1,7 @@
 # GB-002 implementation handoff
 
-Branch: `codex/feat-controlled-experiments`.
-Review: https://github.com/MohammedAlkindi/proofx/pull/57
-This work requires review and merge; it is not a claim that production already
-serves the new page. The previous GB-001 work was merged in pull request 56.
+Merged in [pull request 57](https://github.com/MohammedAlkindi/proofx/pull/57).
+The previous GB-001 work was merged in pull request 56.
 
 ## Durable record
 
@@ -41,17 +39,15 @@ diagnostics. The bundle was regenerated after canonicalizing those fields to 14
 significant digits. Exact rational results are unchanged; a fresh local
 reproduction matched all scientific artifacts byte-for-byte.
 
-## Resume safely
+## Follow-up rules
 
-Read `CLAUDE.md`, inspect Git status, and check pull request 57 before editing.
-The pre-existing untracked `contextbill-report.html` is unrelated; leave it alone.
 Do not alter the frozen study to improve results. A new domain or policy choice
 requires a new protocol version and clear separation from these outcomes.
 
 Next research question: prospectively evaluate the reduced policy on new
 domains; removing twice-prime improved every current cell. Runtime efficiency
 needs its own cost-controlled experiment. Neither result establishes progress
-toward disproving Goldbach or guarantees a recruiting outcome.
+toward disproving Goldbach.
 
 The test environments used here lived outside the checkout. Use a fresh explicit
 pytest `--basetemp` outside the repository if shared temporary-directory cleanup
