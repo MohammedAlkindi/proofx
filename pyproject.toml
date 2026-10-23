@@ -20,7 +20,7 @@ research = [
     "mpmath==1.3.0",
     "networkx==3.6.1",
     "numba==0.67.0",
-    "pandas==3.0.5",
+    "pandas==3.0.6",
     "plotly==7.0.0",
     "psutil==7.2.2",
     "PyYAML==6.0.3",
