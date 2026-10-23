@@ -76,7 +76,7 @@ ProofX contains three kinds of material:
 | `ProofX/` | Root Lean 4 certificate layer | Checks small bounded artifacts and status semantics. |
 | `docs/` | Maintainer and research documentation | Describes assumptions, algorithms, run semantics, and limitations. |
 | `src/` | Static research site | Presents the project, demos, and result summaries without changing the engine behavior. |
-| `packages/germinal/` | Vendored sibling project | Separate Lean 4 conjecture-generation and proof-attempt system, synced by subtree. |
+| `packages/germinal/` | Vendored sibling project | Separate Lean 4 conjecture-generation and proof-attempt system. |
 
 `packages/germinal/` has its own README and operating rules. Keep ProofX-root
 changes separate from Germinal changes unless a task explicitly crosses that
