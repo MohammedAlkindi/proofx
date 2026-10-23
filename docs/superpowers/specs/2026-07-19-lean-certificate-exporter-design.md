@@ -320,9 +320,3 @@ Lean side: `lake build` is the test. The axiom audit is the regression guard.
   `ruff format --check`, and following the precedent of committed
   `src/verified-runs.json`.
 - Full ledger exported, with a budget guard, rather than a top-N subset.
-
-## Out of scope, noted for later
-
-`.claude/worktrees/frontend-rebuild/` holds a stale copy of the repository,
-including an old `codebase/` tree. It pollutes repo-wide `grep` results. Worth
-cleaning up separately; not part of this work.
