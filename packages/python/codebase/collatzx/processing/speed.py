@@ -1,6 +1,9 @@
 """
-Optimized Collatz Conjecture Computer
-Targeting 1+ Billion Integers Per Second 
+Collatz stopping-time scanner with a single-thread timing helper.
+
+Legacy module, outside the lint, type and coverage gates (see pyproject.toml).
+Any speed it prints is measured on the machine running it. No benchmark result
+from it is recorded in this repository.
 """
 
 import gzip
@@ -398,8 +401,8 @@ def compute_numba_parallel_fast(start: int, end: int) -> float:
     return speed
 
 def benchmark_system_accurate() -> Dict[str, Any]:
-    """Accurate system benchmarking"""
-    logger.info(" ACCURATE SYSTEM BENCHMARK")
+    """Time single-threaded stopping-time computation over 1..1,000,000."""
+    logger.info(" SINGLE-THREAD BENCHMARK")
 
     cpu_cores = cpu_count()
     memory = psutil.virtual_memory()
@@ -424,29 +427,23 @@ def benchmark_system_accurate() -> Dict[str, Any]:
     logger.info(f"Available Memory: {memory.available / 1024**3:.1f} GB")
     logger.info(f"Single-thread speed: {test_speed:,.0f} int/sec")
 
-    # Realistic multi-thread projection
-    projected_speed = test_speed * cpu_cores * 0.7  # 70% efficiency
-    logger.info(f"Projected multi-thread: {projected_speed:,.0f} int/sec")
-
     return {
         'cpu_cores': cpu_cores,
         'single_thread_speed': test_speed,
-        'projected_speed': projected_speed
     }
 
 if __name__ == "__main__":
-    # Realistic configuration for 2-core system
     START = 1
     END = 10_000_000
 
-    logger.info(" OPTIMIZED COLLATZ COMPUTER - REALISTIC TARGETS")
+    logger.info(" COLLATZ STOPPING-TIME SCAN")
     logger.info("=" * 50)
 
     system_info = benchmark_system_accurate()
 
     print("\nSelect computation mode:")
-    print("1. Multi-threaded (recommended)")
-    print("2. Numba parallel (fastest)")
+    print("1. Multi-threaded")
+    print("2. Numba parallel")
     print("3. Quick test (1M numbers)")
 
     try:
@@ -459,24 +456,9 @@ if __name__ == "__main__":
         else:
             speed = compute_optimized(START, END, "collatz_optimized.json.gz")
 
-        # Realistic projections
         if speed > 0:
             million_per_sec = speed / 1_000_000
-            logger.info(f"\nPERFORMANCE ANALYSIS:")
-            logger.info(f"Speed: {million_per_sec:.2f} million integers/sec")
-
-            if million_per_sec >= 100:
-                logger.info("WORLD-CLASS PERFORMANCE!")
-            elif million_per_sec >= 10:
-                logger.info("EXCELLENT PERFORMANCE")
-            elif million_per_sec >= 1:
-                logger.info("GOOD PERFORMANCE")
-            else:
-                logger.info("MODERATE PERFORMANCE")
-
-            # Projection to 1 billion
-            billion_time = 1_000_000_000 / speed
-            logger.info(f"Time for 1 billion: {billion_time/60:.1f} minutes")
+            logger.info(f"Measured speed: {million_per_sec:.2f} million integers/sec")
 
     except KeyboardInterrupt:
         logger.info("\nOperation cancelled")
