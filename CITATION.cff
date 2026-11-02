@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+title: "ProofX: A Research Toolkit for Directed Counterexample Search in Number Theory"
+version: 0.1.0
+date-released: 2026-11-01
+authors:
+  - family-names: "Alkindi"
+    given-names: "Mohammed"
+    affiliation: "University of California San Diego"
+url: "https://github.com/MohammedAlkindi/proofx"
+repository-code: "https://github.com/MohammedAlkindi/proofx"
+keywords:
+  - "number-theory"
+  - "formal-verification"
+  - "lean4"
+  - "reproducible-research"
+  - "computational-mathematics"
+license: "MIT"
