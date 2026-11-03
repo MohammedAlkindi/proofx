@@ -72,20 +72,22 @@ Each row is one evaluated candidate:
   "features": {
     "lyapunov_exponent": 0.0412,
     "hurst_exponent": 0.5831,
-    "parity_ratio": 0.5714
+    "parity_ratio": 0.25
   },
   "near_miss_score": 0.2847,
   "details": {
     "stopping_time": 88,
     "max_value": 56320,
-    "converged": 1
+    "converged": 1,
+    "score_version": "collatz.ordinary.transitions.v2"
   },
   "timestamp": 1714300000.0,
   "rng_seed": 1234567890
 }
 ```
 
-Use the ledger when reviewing a run. Summaries and top-k tables are convenience
+This is a schema illustration, not a measured trajectory. Use the ledger when
+reviewing a run. Summaries and top-k tables are convenience
 views only.
 
 ## Collatz Scoring
@@ -100,14 +102,21 @@ near_miss = 0.70 * risk_score + 0.30 * excursion_bonus
 
 | Feature | Weight | Normalization | Reason |
 | --- | ---: | --- | --- |
-| `lyapunov_exponent` | 0.35 | positive values clipped to `[0, 1]` | Local average expansion. |
-| `hurst_exponent` | 0.25 | `max(0, H - 0.5) * 2` | Persistent upward trend. |
-| `parity_excess` | 0.20 | excess over `log(2) / log(3)` | Odd-step fraction above contraction threshold. |
+| `lyapunov_exponent` | 0.35 | positive values clipped to `[0, 1]` | Mean log ratio over the first nine transitions when at least ten values exist. |
+| `hurst_exponent` | 0.25 | `max(0, H - 0.5) * 2`, clipped to `[0, 1]` | Unvalidated finite-path persistence diagnostic. |
+| `parity_excess` | 0.20 | normalized excess over `log(2) / log(6)` | Ordinary-map transition-origin fraction; zero on every completed nontrivial path. |
 | `binary_entropy` | 0.10 | clipped entropy proxy | Bit-pattern complexity. |
-| `growth_rate` | 0.10 | absolute value clipped to `[0, 1]` | Mean ascent per step. |
+| `growth_rate` | 0.10 | absolute value clipped to `[0, 1]` | Net signed displacement divided by path length minus one and path maximum, with a numerical epsilon. |
 
 The weights are asserted to sum to 1.0 in code. If a weight changes, update this
 document and the tests or assertions that defend the scoring contract.
+
+The weights are heuristic choices, not fitted probabilities. See
+[CollatzX](collatz.md#parity-threshold) for the exact drift identity and the
+distinction from the shortcut map. For a completed path, the signed growth
+feature is approximately `(1 - n) / (steps * maximum)`; taking its absolute
+value does not turn it into mean ascent. The excursion scale `2*log2(n)` is a
+chosen normalization, not a validated expectation for ordinary-map stopping time.
 
 ### Inverse-Tree Search
 
@@ -118,10 +127,16 @@ The inverse Collatz map gives at most two predecessors for `n`:
 
 The search starts from known high stopping-time anchors and expands backward.
 This concentrates evaluations around trajectories that already have unusually
-long transients.
+long transients. Every inverse predecessor of a known convergent value is also
+convergent; only the additional residue-neighborhood branch introduces inputs
+without that immediate guarantee.
 
-The queue is gated by a cheap bit-level proxy so the doubling chain does not
-consume the whole budget.
+The queue is ordered and gated by a cheap input-bit score. Its historical
+`log(2)/log(3)` bit-density reference is preserved as an unvalidated heuristic,
+separate from trajectory parity. It does not provide a bound on input size or
+prevent indefinitely growing doubling chains. Full trajectory scores only rank
+the ledger. The removed dynamic-refresh branch was inactive because every
+ledger candidate was already in the visited set.
 
 ## Goldbach Scoring
 
