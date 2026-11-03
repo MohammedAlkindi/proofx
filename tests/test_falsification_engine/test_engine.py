@@ -200,6 +200,33 @@ class TestLedgerEntry:
 
 
 class TestCollatzFalsifierMath:
+    def test_ordinary_parity_score_uses_separate_even_and_odd_multipliers(self):
+        engine = CollatzFalsifier()
+        # A prefix 3 -> 10 -> 5 has equal odd/even counts. Its leading
+        # multiplier sqrt(3/2) exceeds one for the ordinary map.
+        threshold = math.log(2) / (math.log(2) + math.log(3))
+        expected = 0.20 * (0.5 - threshold) / (1 - threshold)
+        assert engine._risk_score({"parity_ratio": 0.5}) == pytest.approx(expected)
+
+    def test_completed_paths_have_no_parity_excess(self):
+        from codebase.collatzx.analytics.analytics import (
+            CollatzSequence,
+            StatisticalFeatureExtractor,
+        )
+
+        engine = CollatzFalsifier()
+        extractor = StatisticalFeatureExtractor()
+        for seed in [2, 3, 6, 27, 703, 837799]:
+            ratio = extractor.extract(CollatzSequence(seed).sequence)["parity_ratio"]
+            assert engine._risk_score({"parity_ratio": ratio}) == 0.0
+
+    @pytest.mark.parametrize(
+        ("n", "legacy_score"),
+        [(2, 0.5), (27, 0.7836396635150378), (871, 0.6133210656867027)],
+    )
+    def test_parity_correction_preserves_legacy_input_bit_selection(self, n, legacy_score):
+        assert CollatzFalsifier._quick_score(n) == pytest.approx(legacy_score, abs=1e-14)
+
     def test_quick_score_in_unit_interval(self):
         for n in [3, 27, 871, 6171, 77031]:
             s = CollatzFalsifier._quick_score(n)

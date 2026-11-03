@@ -193,7 +193,9 @@ class StatisticalFeatureExtractor(FeatureExtractor):
             "skewness": float(self._safe_skew(arr)),  # ENHANCED
             "kurtosis": float(self._safe_kurtosis(arr)),  # ENHANCED
             "entropy": float(self._entropy(sequence)),
-            "parity_ratio": float(np.mean(parity)),
+            # Count transition origins. The final value has no outgoing step
+            # in this recorded path, including a terminal 1 in a complete orbit.
+            "parity_ratio": float(np.mean(parity[:-1])) if len(parity) > 1 else 0.0,
             "even_streak_max": float(self._max_streak(parity, 0)),
             "odd_streak_max": float(self._max_streak(parity, 1)),
             "growth_rate": float(self._growth_rate(sequence)),

@@ -66,11 +66,17 @@ from codebase.goldbachx.sieve_engine.sieve_engine import eratosthenes
 # Converges slowly; this 10-decimal approximation is sufficient for scoring.
 _C2: float = 0.6601618158
 
-# Parity threshold: convergence requires parity_ratio < log₂(3) - 1 = log(2)/log(3)
-# Derivation: each odd step multiplies by ~3 and each even step by 1/2.
-# For the long-run product to tend toward 0 we need k_odd·log3 < k_total·log2,
-# i.e., parity_ratio < log(2)/log(3) ≈ 0.6309.
-_PARITY_CONVERGENCE_THRESHOLD: float = math.log(2) / math.log(3)
+# Ordinary-map leading log drift: p*log(3) - (1-p)*log(2).
+# Its zero is log(2)/log(6), unlike the shortcut map's log(2)/log(3).
+# This is a diagnostic threshold, not a divergence or convergence test.
+# Every completed nontrivial ordinary orbit has p strictly below this value;
+# consequently its full-path parity-excess component is always zero.
+_PARITY_CONVERGENCE_THRESHOLD: float = math.log(2) / math.log(6)
+
+# Preserve the historical input-bit ranking independently of orbit parity.
+# Input 1-bit density is not an odd-transition fraction; this reference is an
+# unvalidated heuristic parameter, with no contraction interpretation.
+_BIT_DENSITY_REFERENCE: float = math.log(2) / math.log(3)
 
 # Stopping-time "normal" scale: empirically, most n converge in ≈ 2·log₂(n) steps.
 # We use this to normalise the excursion contribution to the near-miss score.
@@ -217,10 +223,6 @@ class CollatzFalsifier:
     }
     assert abs(sum(_RISK_WEIGHTS.values()) - 1.0) < 1e-9, "Weights must sum to 1"
 
-    # Only expand predecessors within this factor of the current candidate.
-    # Prevents unbounded growth via the 2n doubling chain.
-    _MAX_PREDECESSOR_RATIO: float = 4.0
-
     # Minimum quick-score to add a neighbor to the queue (avoids queue bloat).
     _QUEUE_ADMIT_THRESHOLD: float = 0.05
 
@@ -242,7 +244,7 @@ class CollatzFalsifier:
           lyapunov  : max(0, raw_value); negative ⟹ no risk contribution
           hurst     : max(0, H - 0.5) * 2  maps [0.5, 1.0] → [0, 1]
           parity    : max(0, ratio - threshold) / (1 - threshold)
-          binary    : raw_value / log2(seq_len), already ∈ [0, 1] approximately
+          binary    : average binary entropy, clipped to [0, 1]
           growth    : abs(rate) clipped to [0, 1]
         """
         lyapunov = max(0.0, features.get("lyapunov_exponent", 0.0))
@@ -299,10 +301,9 @@ class CollatzFalsifier:
           (2) (n-1)/3 — predecessor via the odd rule: if m is odd and 3m+1 = n,
               then m = (n-1)/3.  This requires n ≡ 1 (mod 3) and (n-1)/3 odd and > 1.
 
-        We do NOT return 2n unconditionally in the beam search; doubling just
-        prepends an even step, which adds no structural risk information beyond
-        what n already contains.  We keep 2n only if n itself is already high-risk
-        and the doubled predecessor is within _MAX_PREDECESSOR_RATIO of n.
+        Doubling is always returned here; queue admission is a separate step.
+        If n is known to converge, every returned predecessor also converges.
+        These edges explore finite transients, not independent counterexamples.
         """
         preds: list[int] = []
 
@@ -315,7 +316,6 @@ class CollatzFalsifier:
                 preds.append(m)
 
         # Even-rule inverse: 2n/2 = n, so 2n maps to n.
-        # Include only if manageable — prevents infinite doubling chains.
         preds.append(2 * n)
 
         return preds
@@ -350,7 +350,7 @@ class CollatzFalsifier:
         """Cheap proxy score for queue admission, O(log n) time.
 
         Uses bit-level statistics as cheap feature proxies:
-          - odd_density: fraction of 1-bits (proxy for parity_ratio)
+          - bit_density: fraction of 1-bits (not orbit parity)
           - bit_entropy: Shannon entropy of the bit string (proxy for binary_entropy)
 
         Both are computable without running the full Collatz sequence.
@@ -366,19 +366,21 @@ class CollatzFalsifier:
             ent -= p * math.log2(p)
         if q_ > 0:
             ent -= q_ * math.log2(q_)
-        # odd_density > convergence threshold contributes positive score
-        parity_contrib = max(0.0, p - _PARITY_CONVERGENCE_THRESHOLD)
-        return 0.5 * min(1.0, parity_contrib / 0.2) + 0.5 * ent
+        # Retain the legacy bit-density heuristic without a drift interpretation.
+        density_contrib = max(0.0, p - _BIT_DENSITY_REFERENCE)
+        return 0.5 * min(1.0, density_contrib / 0.2) + 0.5 * ent
 
-    # How often (in evaluations) to re-seed the queue from the current top-k.
-    _ANCHOR_REFRESH_INTERVAL: int = 50
-    # Number of top ledger entries to recycle as new anchors on each refresh.
-    _ANCHOR_REFRESH_TOP_K: int = 5
+    # Progress logging interval; full trajectory scores do not steer the queue.
+    _LOG_INTERVAL: int = 50
 
     # ── Beam search ──────────────────────────────────────────────────────────
 
     def search(self, budget: int, seed: int) -> FalsificationLedger:
-        """Run the inverse-tree beam search with dynamic anchor refresh.
+        """Run the inverse-tree and residue-neighborhood priority search.
+
+        Queue ordering depends only on input bits. Full trajectory scores rank
+        the output ledger. The former anchor-refresh branch was a no-op: all
+        ledger candidates were already in ``visited`` before it ran.
 
         Parameters
         ──────────
@@ -416,21 +418,13 @@ class CollatzFalsifier:
             ledger.append(entry)
             evaluated += 1
 
-            if evaluated % self._ANCHOR_REFRESH_INTERVAL == 0:
+            if evaluated % self._LOG_INTERVAL == 0:
                 logger.info(
                     "Collatz search: %d/%d evaluated | top near-miss: %.4f",
                     evaluated,
                     budget,
                     ledger.top_k(1)[0].near_miss_score if ledger else 0.0,
                 )
-                # Dynamic anchor refresh: re-seed queue from current top-k so
-                # the search keeps expanding around the highest-risk region found
-                # so far rather than drifting away from it via the doubling chain.
-                for refresh_entry in ledger.top_k(self._ANCHOR_REFRESH_TOP_K):
-                    anchor = refresh_entry.candidate
-                    if anchor not in visited:
-                        heapq.heappush(pq, (-self._quick_score(anchor), anchor))
-
             # Expand: predecessors + residue neighborhood
             predecessors = self._inverse_collatz_predecessors(candidate)
             neighbors = self._residue_neighborhood(candidate, rng)
@@ -484,6 +478,7 @@ class CollatzFalsifier:
                 "converged": converged,
                 "cycle_detected": cycle_detected,
                 "computation_time_s": cs.computation_time,
+                "score_version": "collatz.ordinary.transitions.v2",
                 # Expected stopping time for reference
                 "expected_stopping_time": _EXPECTED_ST_SCALE * math.log2(max(candidate, 2)),
             },

@@ -43,11 +43,11 @@ FalsificationEngine.
 
 | Feature | Meaning | Caveat |
 | --- | --- | --- |
-| `lyapunov_exponent` | Average log growth along the sampled trajectory. | Local diagnostic only. |
+| `lyapunov_exponent` | Mean log ratio over the first nine transitions; zero for paths shorter than ten values. | A short-prefix diagnostic, not an asymptotic Lyapunov exponent. |
 | `hurst_exponent` | Persistence estimate for the trajectory. | Sensitive to sequence length. |
-| `parity_ratio` | Fraction of odd steps. | A finite prefix can mislead. |
-| `growth_rate` | Mean relative ascent per step. | Saturated by large excursions. |
-| `binary_entropy` | Entropy proxy from bit representation. | Ranking heuristic, not theorem data. |
+| `parity_ratio` | Odd fraction among transition origins, excluding the last recorded value. | Zero for paths with no transitions. A finite prefix can mislead. |
+| `growth_rate` | Mean signed difference divided by the path maximum (plus a numerical epsilon). | Telescopes to net displacement divided by transition count and maximum; not mean ascent. |
+| `binary_entropy` | Mean Bernoulli bit entropy over positive path values. | Ranking heuristic, not theorem data. |
 
 ### Algebraic Features
 
@@ -59,16 +59,34 @@ FalsificationEngine.
 
 ## Parity Threshold
 
-The common heuristic threshold comes from the average log multiplier. If `p` is
-the long-run fraction of odd steps, contraction requires:
+For the ordinary map used here, the leading log multiplier for odd-transition
+fraction `p` is:
 
 ```text
-p * log(3) < log(2)
-p < log(2) / log(3)
+p * log(3) - (1 - p) * log(2)
+zero at p = log(2) / log(6) = 0.38685...
 ```
 
-This is a heuristic signal for finite trajectories. It is useful for ranking
-but cannot certify divergence.
+The threshold `log(2) / log(3)` belongs to the shortcut map whose odd step is
+`(3n + 1) / 2`. Mixing that convention with the ordinary map is incorrect.
+
+For a completed ordinary path from `n > 1` to `1`, let `o` and `e` count odd
+and even transitions. Exact multiplication gives
+
+```text
+-log(n) = o*log(3) - e*log(2) + sum_odd log(1 + 1/(3*n_i)).
+```
+
+The correction sum is nonnegative, so `o/(o+e) < log(2)/log(6)`.
+The full-path parity-excess score is therefore always zero on these completed
+paths, even with the corrected convention. It supplies no discrimination among
+them. Any future prefix-based predictor needs a separate prospective study.
+No threshold here certifies divergence or calibrates a counterexample probability.
+
+The queue's input-bit reference remains `log(2)/log(3)` solely to preserve
+historical selection behavior. It is an unvalidated ranking parameter and has
+no orbit-contraction interpretation. Updated ledgers identify the feature
+convention as `details.score_version = collatz.ordinary.transitions.v2`.
 
 ## Rare Events
 
@@ -76,6 +94,12 @@ Stopping-time anchors such as `27`, `703`, `871`, `6171`, `77031`, `837799`,
 `8400511`, and `63728127` are useful because their trajectories are unusually
 long relative to scale. The directed search expands around these anchors to
 spend budget on known anomalous neighborhoods.
+
+Inverse predecessors of a known convergent anchor are themselves convergent.
+The residue-neighborhood branch adds other inputs. Queue order uses the cheap
+input-bit score; full trajectory scores rank the output ledger, without feeding
+back into selection. The former dynamic-refresh branch could not reinsert any
+ledger entry because every such candidate was already marked visited.
 
 ## Browser Demo
 

@@ -127,6 +127,19 @@ class TestStatisticalFeatureExtractor:
         result = self.extractor.extract([2, 4, 6, 8])
         assert result["parity_ratio"] == 0.0
 
+    def test_parity_counts_transition_origins_without_terminal_one(self):
+        # Two odd rules among seven transitions; the terminal 1 is not a rule.
+        result = self.extractor.extract([3, 10, 5, 16, 8, 4, 2, 1])
+        assert result["parity_ratio"] == pytest.approx(2 / 7)
+
+    @pytest.mark.parametrize("sequence", [[], [1], [5]])
+    def test_no_transitions_has_zero_parity_ratio(self, sequence):
+        assert self.extractor.extract(sequence)["parity_ratio"] == 0.0
+
+    def test_incomplete_prefix_excludes_its_endpoint_too(self):
+        # Only 3 -> 10 -> 5 has been observed: one odd transition out of two.
+        assert self.extractor.extract([3, 10, 5])["parity_ratio"] == 0.5
+
 
 class TestAlgebraicFeatureExtractor:
     def setup_method(self):
