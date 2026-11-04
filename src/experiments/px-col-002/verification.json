@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "phase": "test",
+  "reference_inputs": 300000,
+  "runs": 2016,
+  "selected_records": 903168,
+  "reference_mismatches": 0,
+  "all_rankings_pools_labels_costs_and_aggregates_checked": true,
+  "negative_control_corruption_detected": true,
+  "independence_scope": "Separate batched-halving arithmetic, cross-product ratio comparator and recount. Shared NumPy and protocol; internal verification, not external review."
+}

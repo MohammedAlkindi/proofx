@@ -1,0 +1,26 @@
+{
+  "artifact_sha256": {
+    "reference.csv.gz": "82e05064ce74ff34b433169c40e178891447e82ecf70343aa981cee685b0ef13",
+    "runs.jsonl.gz": "48acb0aeca96ccd04d1a679dde570d122d2b8cf695f9ac1da69850d7b6f470f6",
+    "summary.json": "8fae2d625463e3d0dafbb20a50607f2802732e7099c79aab030cb09ba7a74c16"
+  },
+  "elapsed_seconds_nonbenchmark": 56.12223920004908,
+  "freeze_commit": "52ebace40ca20ca27446172c1dab6ae443f3cd51",
+  "freeze_sha256": "c4b0bacb339e46239f039cd82c3aac9bbc44fd8fb82448bc4b2bf978927dd327",
+  "fuel": 100000,
+  "logical_cpus": 16,
+  "numpy": "2.4.6",
+  "phase": "test",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "processor": "Intel64 Family 6 Model 197 Stepping 2, GenuineIntel",
+  "python": "3.13.13 (tags/v3.13.13:01104ce, Apr  7 2026, 19:25:48) [MSC v.1944 64 bit (AMD64)]",
+  "source_sha256": {
+    "analysis.py": "52339d409926ba7cd8e262d92308a528306cba665e3988ebc0387851df60d258",
+    "policy.py": "b1c2b2542915271305d8189a0c73746f2086b6edea69acbcc2791f382de67152",
+    "protocol.md": "33eb22570fd1b78ac223fbe0843e4c6bd2b6934cf8086fabc263b7cdb4aed7d1",
+    "run_study.py": "bc030c5c5dccbd0e3dcf20d319846ff830fb157c95294bc94e9cc86a36555ec7",
+    "sampler.py": "d7371970619f0cfbcc23af786ddd43981ad5864f5ef516fe12ed761b2f9e3e6f",
+    "test_policy.py": "b64cddb27adf2bd503d12a9c2afdf8522ba8f5b8740851695bff03fe34f6715f"
+  },
+  "study": "PX-COL-002"
+}
