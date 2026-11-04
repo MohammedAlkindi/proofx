@@ -99,6 +99,31 @@
       </div>
     </section>
 
+    <section id="prefix-study" class="section" aria-labelledby="prefix-study-title">
+      <div class="container">
+        <p class="kicker">PX-COL-002 / frozen finite comparison</p>
+        <h2 id="prefix-study-title">Does prefix screening pay for itself?</h2>
+        <p>A 32-step policy was selected on development data, then frozen before testing three disjoint windows of 100,000 starting inputs. Every discarded prefix and selected continuation is charged. Seven methods share proposal pools and size quotas over 32 seeds.</p>
+        <div class="table-scroll"><table class="results-table">
+          <caption>At 1,024 selected trajectories. Each window contains 5,008 upper-tail targets; uniform expectation is 51.28192 hits.</caption>
+          <thead><tr><th scope="col">Window start</th><th scope="col">Growth mean hits</th><th scope="col">Transition yield / uniform expectation</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">2,097,152</th><td>121.59</td><td>1.264</td></tr>
+            <tr><th scope="row">33,554,432</th><td>112.50</td><td>1.262</td></tr>
+            <tr><th scope="row">536,870,912</th><td>107.53</td><td>1.251</td></tr>
+          </tbody>
+        </table></div>
+        <p>Growth exceeds uniform expectation on charged-transition yield in all three windows. It does not dominate simpler methods: prefix odd count is better in every window, ascending selection is more efficient in two, and local timings establish no wall-time speedup. The complete archive retains all controls and quotas.</p>
+        <p>The independent checker recounted 300,000 fresh reference values and 903,168 selected records, including ranking, labels, quotas and work. This is an internally checked finite experiment, not external peer review or a proof of Collatz.</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="/experiments/px-col-002/bundle.zip">Download source and data</a>
+          <a class="btn" href="/experiments/px-col-002/README.txt">Protocol and reproduction</a>
+          <a class="btn" href="/experiments/px-col-002/summary.json">All results</a>
+          <a class="btn" href="/experiments/px-col-002/verification.json">Independent check</a>
+        </div>
+      </div>
+    </section>
+
     <section id="demo" class="section" aria-labelledby="collatz-demo-title">
       <div class="container collatz-lab">
         <div class="collatz-lab__head">

@@ -81,6 +81,9 @@ Windows, Python 3.13.13 and NumPy 2.4.6; method order rotates by seed/block/budg
 No general wall-time speedup is established. Exact step counts do not price
 integer bit width, fraction comparisons, sampling or Python overhead.
 
+
+The quota B counts selected trajectories. Other proposals can finish during prefix screening, so B is not a strict bound on every resolved input; their work is included in screening charges.
+
 ## Checks and interpretation
 
 The independent checker imports no generator/selector/analysis modules. It uses
