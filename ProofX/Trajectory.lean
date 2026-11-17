@@ -5,10 +5,15 @@ namespace ProofX
 /-!
 ### Collatz Trajectory and Spectral Analysis
 
-Formal trajectory iteration, parity sequence extraction, and spectral monotonicity
-for the Syracuse / Collatz dynamical system without Mathlib.
+Trajectory iteration, odd/even step counts, the affine trajectory identity and
+elementary bounds for the ordinary map `collatzStep` (`n / 2` or `3 * n + 1`),
+in core Lean without Mathlib.
 
-Mathematical reference: Lagarias (1985), ProofX Research Technical Report PX-COL-002-THEORY.
+None of this is new mathematics. The identity `trajectory_expansion` is the
+ordinary-map form of Terras (1976), Theorem 1.1, and Lagarias (1985), eqs.
+(2.4)-(2.6), which are stated for the shortcut map `(3n + 1) / 2`. A Mathlib
+formalization of the shortcut-map version exists in rwst/Collatz-Map-Basics
+(`linear_decomposition`). See `docs/research/2026-11-literature-review.md`.
 -/
 
 /-- Iterate `collatzStep` for `i` steps starting at `n`. -/
@@ -140,6 +145,49 @@ theorem two_mul_hornerConstant_le (n : Nat) (h : Nat) :
       rw [hmul]
       omega
 
+/--
+Affine trajectory identity for the ordinary map: after `h` steps with `k` odd
+and `m = h - k` even steps, `2 ^ m * C^h(n) = 3 ^ k * n + c(σ)`.
+
+This is what ties `hornerConstant` to the trajectory; the bounds below are
+statements about the trajectory only through this identity.
+-/
+theorem trajectory_expansion (n h : Nat) :
+    2 ^ evenCount n h * collatzIter n h = 3 ^ oddCount n h * n + hornerConstant n h := by
+  induction h with
+  | zero => simp [evenCount, oddCount, hornerConstant, collatzIter]
+  | succ h ih =>
+    have hp := parityAt_le_one n h
+    have hle := oddCount_le n h
+    by_cases hpar : parityAt n h = 1
+    · have hodd : collatzIter n h % 2 = 1 := hpar
+      have hstep : collatzIter n (h + 1) = 3 * collatzIter n h + 1 := by
+        simp [collatzIter, collatzStep, hodd]
+      have hk : oddCount n (h + 1) = oddCount n h + 1 := by simp [oddCount, hpar]
+      have hm : evenCount n (h + 1) = evenCount n h := by
+        unfold evenCount; rw [hk]; omega
+      rw [hstep, hm, hk, hornerConstant_succ, if_pos hpar, Nat.pow_succ]
+      generalize hx : collatzIter n h = x at ih ⊢
+      generalize hE : 2 ^ evenCount n h = E at ih ⊢
+      generalize hP : 3 ^ oddCount n h = P at ih ⊢
+      generalize hC : hornerConstant n h = C at ih ⊢
+      have e1 : E * (3 * x + 1) = 3 * (E * x) + E := by
+        rw [Nat.mul_add, Nat.mul_one, Nat.mul_left_comm]
+      have e2 : P * 3 * n = 3 * (P * n) := by
+        rw [Nat.mul_comm P 3, Nat.mul_assoc]
+      rw [e1, e2, ih]
+      omega
+    · have hpar0 : parityAt n h = 0 := by omega
+      have heven : collatzIter n h % 2 = 0 := hpar0
+      have hstep : collatzIter n (h + 1) = collatzIter n h / 2 := by
+        simp [collatzIter, collatzStep, heven]
+      have hk : oddCount n (h + 1) = oddCount n h := by simp [oddCount, hpar0]
+      have hm : evenCount n (h + 1) = evenCount n h + 1 := by
+        unfold evenCount; rw [hk]; omega
+      rw [hstep, hm, hk, hornerConstant_succ, if_neg hpar, Nat.pow_succ]
+      have hx2 : 2 * (collatzIter n h / 2) = collatzIter n h := by omega
+      rw [Nat.mul_assoc, hx2, ih]
+
 /-- Non-negativity of the Horner constant. -/
 theorem hornerConstant_nonneg (n : Nat) (h : Nat) :
     0 ≤ hornerConstant n h := by
@@ -180,7 +228,20 @@ theorem horner_upper_bound (n : Nat) (h : Nat) :
   hornerConstant_lt n h
 
 /--
-Theorem 3.1: Monotonicity of the spectral component.
+Two-sided endpoint bound from the identity and the Horner bound:
+`3 ^ k * n ≤ 2 ^ m * C^h(n) < 3 ^ k * (n + 2 ^ m)`. So within a narrow input
+range the endpoint is fixed by `k` up to the factor `1 + 2 ^ m / n`.
+-/
+theorem trajectory_endpoint_bounds (n h : Nat) :
+    3 ^ oddCount n h * n ≤ 2 ^ evenCount n h * collatzIter n h ∧
+      2 ^ evenCount n h * collatzIter n h < 3 ^ oddCount n h * (n + 2 ^ evenCount n h) := by
+  have hid := trajectory_expansion n h
+  have hlt := hornerConstant_lt n h
+  rw [hid, Nat.mul_add]
+  omega
+
+/--
+Monotonicity of the leading coefficient in the odd-step count.
 For fixed trajectory length `h` and odd counts `k1 < k2 ≤ h`,
 `3 ^ k1 * 2 ^ (h - k2) < 3 ^ k2 * 2 ^ (h - k1)`.
 -/
