@@ -1,0 +1,209 @@
+{
+ "phase": "development",
+ "windows": {
+  "100001": {
+   "256": {
+    "uniform_expected_hits": 12.82048,
+    "uniform": {
+     "mean_fair_hits": 12.167891871522771,
+     "mean_label_hits": 11.8125,
+     "mean_charged": 31044.4375,
+     "fair_yield_ratio": 0.9536396003726542,
+     "label_yield_ratio": 0.92578631519284
+    },
+    "odd32": {
+     "mean_fair_hits": 34.78381766577415,
+     "mean_label_hits": 34.1875,
+     "mean_charged": 63829.375,
+     "fair_yield_ratio": 1.32589576797008,
+     "label_yield_ratio": 1.30316522479012
+    },
+    "odd64": {
+     "mean_fair_hits": 43.636895972010485,
+     "mean_label_hits": 43.40625,
+     "mean_charged": 89935.84375,
+     "fair_yield_ratio": 1.1805211368168695,
+     "label_yield_ratio": 1.1742814069044876
+    },
+    "halving": {
+     "mean_fair_hits": 61.15346160375733,
+     "mean_label_hits": 59.875,
+     "mean_charged": 94207.5625,
+     "fair_yield_ratio": 1.5793849990118862,
+     "label_yield_ratio": 1.54636670330411
+    },
+    "halving_over_odd32": 1.1911833774308618
+   },
+   "1024": {
+    "uniform_expected_hits": 51.28192,
+    "uniform": {
+     "mean_fair_hits": 49.24330677923144,
+     "mean_label_hits": 48.90625,
+     "mean_charged": 124295.1875,
+     "fair_yield_ratio": 0.9639302857692197,
+     "label_yield_ratio": 0.9573324502708522
+    },
+    "odd32": {
+     "mean_fair_hits": 144.72237205735016,
+     "mean_label_hits": 141.9375,
+     "mean_charged": 255810.53125,
+     "fair_yield_ratio": 1.3764802456319047,
+     "label_yield_ratio": 1.3499928317023173
+    },
+    "odd64": {
+     "mean_fair_hits": 180.3210009184815,
+     "mean_label_hits": 179.4375,
+     "mean_charged": 361030.09375,
+     "fair_yield_ratio": 1.2152220349314808,
+     "label_yield_ratio": 1.2092679320895923
+    },
+    "halving": {
+     "mean_fair_hits": 257.541599001819,
+     "mean_label_hits": 252.6875,
+     "mean_charged": 378749.125,
+     "fair_yield_ratio": 1.654430318039127,
+     "label_yield_ratio": 1.6232479048425854
+    },
+    "halving_over_odd32": 1.2019281230437298
+   }
+  },
+  "400001": {
+   "256": {
+    "uniform_expected_hits": 12.82048,
+    "uniform": {
+     "mean_fair_hits": 12.345617980332909,
+     "mean_label_hits": 12.125,
+     "mean_charged": 34111.875,
+     "fair_yield_ratio": 0.9663846885167723,
+     "label_yield_ratio": 0.9491152542490947
+    },
+    "odd32": {
+     "mean_fair_hits": 34.36953696212972,
+     "mean_label_hits": 34.34375,
+     "mean_charged": 67210.0625,
+     "fair_yield_ratio": 1.3654700528023087,
+     "label_yield_ratio": 1.3644455605439556
+    },
+    "odd64": {
+     "mean_fair_hits": 41.60043774928915,
+     "mean_label_hits": 41.125,
+     "mean_charged": 94080.0,
+     "fair_yield_ratio": 1.1807104027441924,
+     "label_yield_ratio": 1.1672164510741148
+    },
+    "halving": {
+     "mean_fair_hits": 57.40185535108485,
+     "mean_label_hits": 56.5625,
+     "mean_charged": 97610.71875,
+     "fair_yield_ratio": 1.570258731654848,
+     "label_yield_ratio": 1.5472977130441963
+    },
+    "halving_over_odd32": 1.149976690028652
+   },
+   "1024": {
+    "uniform_expected_hits": 51.28192,
+    "uniform": {
+     "mean_fair_hits": 49.35364450286426,
+     "mean_label_hits": 49.34375,
+     "mean_charged": 136299.09375,
+     "fair_yield_ratio": 0.9668721659401547,
+     "label_yield_ratio": 0.9666783257585098
+    },
+    "odd32": {
+     "mean_fair_hits": 143.42060338158254,
+     "mean_label_hits": 142.625,
+     "mean_charged": 269826.65625,
+     "fair_yield_ratio": 1.4192846034556312,
+     "label_yield_ratio": 1.4114113439426095
+    },
+    "odd64": {
+     "mean_fair_hits": 173.65382272961884,
+     "mean_label_hits": 171.40625,
+     "mean_charged": 377485.78125,
+     "fair_yield_ratio": 1.228362495809728,
+     "label_yield_ratio": 1.2124640030252234
+    },
+    "halving": {
+     "mean_fair_hits": 237.5684185386327,
+     "mean_label_hits": 234.65625,
+     "mean_charged": 391459.90625,
+     "fair_yield_ratio": 1.6204820198893342,
+     "label_yield_ratio": 1.6006177770544885
+    },
+    "halving_over_odd32": 1.141759740043564
+   }
+  },
+  "800001": {
+   "256": {
+    "uniform_expected_hits": 12.82048,
+    "uniform": {
+     "mean_fair_hits": 13.216039534193117,
+     "mean_label_hits": 13.25,
+     "mean_charged": 35882.59375,
+     "fair_yield_ratio": 1.0296177117993288,
+     "label_yield_ratio": 1.032263458810395
+    },
+    "odd32": {
+     "mean_fair_hits": 34.06209260870893,
+     "mean_label_hits": 34.03125,
+     "mean_charged": 69237.78125,
+     "fair_yield_ratio": 1.3752659389051662,
+     "label_yield_ratio": 1.3740206604746354
+    },
+    "odd64": {
+     "mean_fair_hits": 43.66965754730829,
+     "mean_label_hits": 43.875,
+     "mean_charged": 96262.34375,
+     "fair_yield_ratio": 1.2681828000282298,
+     "label_yield_ratio": 1.2741460198299224
+    },
+    "halving": {
+     "mean_fair_hits": 56.22639672496767,
+     "mean_label_hits": 57.125,
+     "mean_charged": 99504.4375,
+     "fair_yield_ratio": 1.5796333984657382,
+     "label_yield_ratio": 1.6048789028532076
+    },
+    "halving_over_odd32": 1.1486021385240346
+   },
+   "1024": {
+    "uniform_expected_hits": 51.28192,
+    "uniform": {
+     "mean_fair_hits": 51.24518841650279,
+     "mean_label_hits": 51.1875,
+     "mean_charged": 143183.25,
+     "fair_yield_ratio": 1.0005052739970643,
+     "label_yield_ratio": 0.9993789718652334
+    },
+    "odd32": {
+     "mean_fair_hits": 133.33069478368202,
+     "mean_label_hits": 135.09375,
+     "mean_charged": 276780.8125,
+     "fair_yield_ratio": 1.346643583953139,
+     "label_yield_ratio": 1.3644504888002313
+    },
+    "odd64": {
+     "mean_fair_hits": 172.9308249250052,
+     "mean_label_hits": 174.5,
+     "mean_charged": 385742.75,
+     "fair_yield_ratio": 1.2532368167348715,
+     "label_yield_ratio": 1.26460869318743
+    },
+    "halving": {
+     "mean_fair_hits": 232.24474032432616,
+     "mean_label_hits": 235.0625,
+     "mean_charged": 399455.03125,
+     "fair_yield_ratio": 1.6253110783285516,
+     "label_yield_ratio": 1.6450305174449968
+    },
+    "halving_over_odd32": 1.2069348546980563
+   }
+  }
+ },
+ "selections_sha256": "2afa4927585a2661f715dc29a355c464d9119d62c527cb491a5318234014d0a6",
+ "primary": {
+  "windows": 3,
+  "halving_wins": 3,
+  "median_ratio": 1.2019281230437298
+ }
+}
