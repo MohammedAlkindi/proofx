@@ -386,4 +386,59 @@ theorem hornerConstant_sharp {n h : Nat} (hk : 1 ≤ oddCount n h) :
       rw [ho] at inv
       exact inv
 
+/-- Congruence mod `2^(b+1)` survives one ordinary step as congruence mod `2^b`. -/
+theorem collatzStep_mod_congr {x y b : Nat} (hc : x % 2 ^ (b + 1) = y % 2 ^ (b + 1)) :
+    collatzStep x % 2 ^ b = collatzStep y % 2 ^ b := by
+  have hdvd2 : 2 ∣ 2 ^ (b + 1) := Nat.dvd_of_mod_eq_zero (by simp [Nat.pow_succ, Nat.mul_mod_left])
+  have hdvdb : 2 ^ b ∣ 2 ^ (b + 1) := Nat.pow_dvd_pow 2 (Nat.le_succ b)
+  have hpar : x % 2 = y % 2 := by
+    rw [← Nat.mod_mod_of_dvd x hdvd2, ← Nat.mod_mod_of_dvd y hdvd2, hc]
+  have hb : x % 2 ^ b = y % 2 ^ b := by
+    rw [← Nat.mod_mod_of_dvd x hdvdb, ← Nat.mod_mod_of_dvd y hdvdb, hc]
+  have h2 : 2 ^ (b + 1) = 2 * 2 ^ b := by rw [Nat.pow_succ, Nat.mul_comm]
+  unfold collatzStep
+  by_cases hx : x % 2 = 0
+  · have hy : y % 2 = 0 := by omega
+    rw [if_pos hx, if_pos hy, ← Nat.mod_mul_right_div_self, ← Nat.mod_mul_right_div_self, ← h2, hc]
+  · have hy : ¬ y % 2 = 0 := by omega
+    rw [if_neg hx, if_neg hy, Nat.add_mod, Nat.mul_mod, hb, ← Nat.mul_mod, ← Nat.add_mod]
+
+/-- After `i ≤ h` steps, inputs congruent mod `2^h` are congruent mod `2^(h-i)`. -/
+theorem collatzIter_mod_congr {n1 n2 h : Nat} (hc : n1 % 2 ^ h = n2 % 2 ^ h) :
+    ∀ i, i ≤ h → collatzIter n1 i % 2 ^ (h - i) = collatzIter n2 i % 2 ^ (h - i) := by
+  intro i
+  induction i with
+  | zero => intro _; simpa using hc
+  | succ i ih =>
+    intro hi
+    have hprev := ih (by omega)
+    have he : h - i = (h - (i + 1)) + 1 := by omega
+    rw [he] at hprev
+    simpa [collatzIter_succ] using collatzStep_mod_congr hprev
+
+/--
+Ordinary-map form of Terras (1976), Thm 1.2 (one direction): inputs congruent
+mod `2^h` have the same first `h` parities.
+-/
+theorem parityAt_congr {n1 n2 h : Nat} (hc : n1 % 2 ^ h = n2 % 2 ^ h) {i : Nat} (hi : i < h) :
+    parityAt n1 i = parityAt n2 i := by
+  have hm := collatzIter_mod_congr hc i (Nat.le_of_lt hi)
+  have hdvd : 2 ∣ 2 ^ (h - i) := by
+    have : h - i = (h - i - 1) + 1 := by omega
+    rw [this, Nat.pow_succ]
+    exact Nat.dvd_mul_left 2 _
+  unfold parityAt
+  rw [← Nat.mod_mod_of_dvd (collatzIter n1 i) hdvd, ← Nat.mod_mod_of_dvd (collatzIter n2 i) hdvd, hm]
+
+/-- Hence the odd count of an `h`-step prefix depends only on `n mod 2^h`. -/
+theorem oddCount_congr {n1 n2 h : Nat} (hc : n1 % 2 ^ h = n2 % 2 ^ h) :
+    ∀ j, j ≤ h → oddCount n1 j = oddCount n2 j := by
+  intro j
+  induction j with
+  | zero => intro _; rfl
+  | succ j ih =>
+    intro hj
+    simp only [oddCount_succ]
+    rw [ih (by omega), parityAt_congr hc (by omega)]
+
 end ProofX
