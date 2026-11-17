@@ -28,8 +28,9 @@ gives
 0 <= c <= 2^(m+1-k) (3^k - 2^k),
 
 and the upper bound is attained when the odd steps come as late as the
-constraint allows. Lean currently proves the weaker c < 3^k 2^m
-(`hornerConstant_lt`). The sharp bound is checked by brute force for h <= 12
+constraint allows. Lean proves it as `hornerConstant_sharp` (in the form
+c 2^k + 2^(m+1) 2^k <= 2^(m+1) 3^k), alongside the weaker c < 3^k 2^m
+(`hornerConstant_lt`). Attainment is checked by brute force for h <= 12
 (`scripts/research/col002_reanalysis/horner.py`). It is the ordinary-map analogue
 of Rozier and Terracol (2026) Thm 2.4.
 

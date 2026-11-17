@@ -21,26 +21,35 @@ selection's yield advantage largely disappears, and the odd-count margin over
 growth halves. Cite PX-COL-004 as the prospective follow-up. The draft text is in
 `2026-11-preprint-correction.md`.
 
-### B. Price the overhead: a wall-time and bit-operation comparison
+### B. Price the overhead (exploratory answer in hand)
 
-PX-COL-004 counts ordinary transitions only. Exact record pruning has been
-abandoned in practice because the checks cost more than they saved
-(cuda-collatz, review row 30). Freeze a vectorized implementation of odd32 and
-halving, and measure wall time and word operations on fresh windows. Only
-then is any practical speed claim possible. **What would matter:** whether
-halving's 1.2x step advantage survives as time.
+PX-COL-004 counts ordinary transitions only, and exact record pruning has been
+abandoned in practice because its checks cost more than they saved
+(cuda-collatz, review row 30). An exploratory local measurement
+(`scripts/research/col004_followup/walltime.py`) used vectorized NumPy and the
+same policy semantics, 12 seeds per window, rotating method order, on one
+machine (Intel Core Ultra 9 285H). Halving's time per run is 1.17-1.36 times
+odd32's. Combined with PX-COL-004 hit counts, halving gets 1.22-1.43 times more
+tie-fair targets per second than odd32 on six windows, and 2.1-2.9 times more
+than uniform. That is not frozen and not independent; it only shows the step
+advantage is not swallowed by overhead in a reasonable implementation. A frozen
+timing study is low priority unless the method is used for real record search.
 
-### C. Prospective schedule study
+### C. Schedule tuning (not worth running)
 
-The 8x / 16-32-64 schedule was picked post hoc from three candidates. A
-development grid (pool factor 4-16, stage depths up to 128) on the PX-COL-004
-test windows, which now count as development data, should be followed by a frozen
-test on new windows. The review's R^2 figures (0.2 at 32 steps, 0.4 at 64)
-suggest deeper final stages may help.
+A development grid of 12 schedules on the PX-COL-004 windows
+(`scripts/research/col004_followup/grid.py`; pool factors 4, 8 and 16, stage
+depths up to 128) found no clear improvement on the frozen 8x / 16-32-64
+schedule. That schedule scored a median ratio of 1.204 over odd32 with every
+window above 1.08. The best grid entry (16x / 16-32-64-128) scored 1.219, but its
+worst window fell to 0.785. Every schedule ending at 128 steps had a worst window
+below 0.87. A prospective test would chase about 1%, so it is not proposed.
 
 ### D. Lean hygiene
 
-The sharp ordinary-map bound and parity determination (item 4 below).
+`hornerConstant_sharp` (the sharp ordinary-map bound) is proved. Remaining: the
+ordinary-map form of Terras Thm 1.2 (inputs congruent mod 2^(h+1) share their
+first h parities).
 
 ---
 
