@@ -1,5 +1,15 @@
 # PX-COL-003: prospective residue-stratified odd-count selection with charged screening
 
+> **Withdrawn 16 November 2026, before any fresh run.** The design cannot test
+> its question. Each stratum holds 6,250 consecutive integers, which are already
+> distinct mod 2^13, so "stratification mod 2^32" gives the same pool law as
+> uniform sampling. `sampler_col003.residue_stratified_pools` defaults to mod 2^8,
+> not 2^32. The motivating clumping argument in the earlier stage1 note is false.
+> The endpoint also keeps PX-COL-002's tie rule, which favors smaller inputs and
+> decides 39.5% of targets. See `docs/research/2026-11-literature-review.md`
+> (Section 4) and the replacement plan in `docs/research/2026-11-next-steps.md`.
+> The text below is kept unchanged as the record of what was proposed.
+
 ## 1. Scientific Objective and Evidence Boundary
 
 PX-COL-003 is a prospective range-transfer experiment testing the effect of residue-stratified proposal distributions on prefix-based Collatz trajectory selection. It builds directly on the empirical findings of PX-COL-002 and the theoretical derivations in `docs/research/stage1_odd_count_drift_derivation.md`.
