@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+
 from codebase.collatzx.sampler_col003 import (
     STRATA,
     WIDTH,
-    uniform_pools,
     residue_stratified_pools,
+    uniform_pools,
 )
 
 PROTOCOL_PATH = Path("docs/experiments/px-col-003-protocol.md")

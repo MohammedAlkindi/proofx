@@ -2,13 +2,12 @@
 
 import pytest
 from codebase.collatzx.sampler_col003 import (
+    MULTIPLIER,
     STRATA,
     WIDTH,
-    MULTIPLIER,
-    uniform_pools,
     residue_stratified_pools,
+    uniform_pools,
 )
-
 
 LOWER_R1 = 10_000_000_000
 

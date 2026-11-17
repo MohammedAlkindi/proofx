@@ -38,7 +38,7 @@ def residue_stratified_pools(
     lower: int, seed: int, budget: int, phase: str = "test", h: int = 8
 ) -> list[list[int]]:
     """Residue-stratified proposal pools enforcing modular diversity modulo 2^h.
-    
+
     Under Lagarias (1985), parity sequences over h steps are periodic modulo 2^h.
     When 2^h <= count, draws are balanced across congruence classes to suppress
     local proposal clumping.
@@ -64,7 +64,11 @@ def residue_stratified_pools(
         # Pass 1: draw distinct residues mod 2^h as far as possible
         attempts = 0
         max_attempts = count * 20
-        while len(ordered) < count and len(seen_residues) < min(modulus, WIDTH) and attempts < max_attempts:
+        while (
+            len(ordered) < count
+            and len(seen_residues) < min(modulus, WIDTH)
+            and attempts < max_attempts
+        ):
             attempts += 1
             n = stratum_base + int(rng.integers(WIDTH))
             res = n % modulus
