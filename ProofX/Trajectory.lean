@@ -261,4 +261,129 @@ theorem spectral_monotone_le {h k1 k2 : Nat} (hk : k1 ≤ k2) (hk2 : k2 ≤ h) :
   · subst heq
     exact Nat.le_refl _
 
+/-- `1` when the step just taken (step `h - 1`) was odd, else `0`. -/
+def lastOdd (n : Nat) : Nat → Nat
+  | 0 => 0
+  | h + 1 => parityAt n h
+
+/-- An odd step `3x + 1` always produces an even value. -/
+theorem parityAt_succ_of_odd {n h : Nat} (hpar : parityAt n h = 1) : parityAt n (h + 1) = 0 := by
+  have hodd : collatzIter n h % 2 = 1 := hpar
+  show collatzIter n (h + 1) % 2 = 0
+  simp only [collatzIter_succ, collatzStep, hodd]
+  simp
+  omega
+
+theorem hornerConstant_eq_zero_of_oddCount_eq_zero {n h : Nat} (h0 : oddCount n h = 0) :
+    hornerConstant n h = 0 := by
+  have hb := two_mul_hornerConstant_le n h
+  rw [h0] at hb
+  simp at hb
+  omega
+
+theorem horner_sharp_inv (n h : Nat) :
+    oddCount n h = 0 ∨
+      hornerConstant n h * 2 ^ oddCount n h + 2 ^ (evenCount n h + lastOdd n h) * 2 ^ oddCount n h ≤
+        2 ^ (evenCount n h + lastOdd n h) * 3 ^ oddCount n h := by
+  induction h with
+  | zero => left; rfl
+  | succ h ih =>
+    have hp := parityAt_le_one n h
+    have hle := oddCount_le n h
+    by_cases hpar : parityAt n h = 1
+    · -- odd step: the previous step was even
+      have he : lastOdd n h = 0 := by
+        cases h with
+        | zero => rfl
+        | succ h' =>
+          show parityAt n h' = 0
+          have := parityAt_le_one n h'
+          by_cases hq : parityAt n h' = 1
+          · have := parityAt_succ_of_odd hq; omega
+          · omega
+      have hk : oddCount n (h + 1) = oddCount n h + 1 := by simp [oddCount, hpar]
+      have hm : evenCount n (h + 1) = evenCount n h := by
+        unfold evenCount; rw [hk]; omega
+      have hl : lastOdd n (h + 1) = 1 := hpar
+      right
+      rw [hk, hm, hl, hornerConstant_succ, if_pos hpar, Nat.pow_succ, Nat.pow_succ, Nat.pow_succ]
+      rw [he, Nat.add_zero] at ih
+      generalize hA : 2 ^ evenCount n h = A at ih ⊢
+      generalize hP : 2 ^ oddCount n h = P at ih ⊢
+      generalize hQ : 3 ^ oddCount n h = Q at ih ⊢
+      rcases ih with h0 | ih
+      · have hc := hornerConstant_eq_zero_of_oddCount_eq_zero h0
+        rw [hc]
+        rw [h0, Nat.pow_zero] at hP hQ
+        subst hP; subst hQ
+        omega
+      · generalize hC : hornerConstant n h = C at ih ⊢
+        have t1 : C * (P * 2) = C * P * 2 := (Nat.mul_assoc C P 2).symm
+        have t2 : A * (P * 2) = A * P * 2 := (Nat.mul_assoc A P 2).symm
+        have t3 : A * 2 * (P * 2) = A * P * (2 * 2) := Nat.mul_mul_mul_comm A 2 P 2
+        have t4 : A * 2 * (Q * 3) = A * Q * (2 * 3) := Nat.mul_mul_mul_comm A 2 Q 3
+        rw [Nat.add_mul, Nat.mul_assoc 3 C (P * 2), t1, t2, t3, t4]
+        omega
+    · -- even step
+      have hpar0 : parityAt n h = 0 := by omega
+      have hk : oddCount n (h + 1) = oddCount n h := by simp [oddCount, hpar0]
+      have hm : evenCount n (h + 1) = evenCount n h + 1 := by
+        unfold evenCount; rw [hk]; omega
+      have hl : lastOdd n (h + 1) = 0 := hpar0
+      rcases ih with h0 | ih
+      · left; rw [hk]; exact h0
+      · right
+        rw [hk, hm, hl, hornerConstant_succ, if_neg hpar]
+        simp only [Nat.add_zero]
+        have hPQ : 2 ^ oddCount n h ≤ 3 ^ oddCount n h := Nat.pow_le_pow_left (by decide) _
+        have hle1 : lastOdd n h ≤ 1 := by
+          cases h with
+          | zero => simp [lastOdd]
+          | succ h' => exact parityAt_le_one n h'
+        generalize hP : 2 ^ oddCount n h = P at ih hPQ ⊢
+        generalize hQ : 3 ^ oddCount n h = Q at ih hPQ ⊢
+        generalize hC : hornerConstant n h = C at ih ⊢
+        rcases Nat.lt_or_ge (lastOdd n h) 1 with h0 | h1
+        · have hz : lastOdd n h = 0 := by omega
+          rw [hz, Nat.add_zero] at ih
+          rw [Nat.pow_succ]
+          generalize hA : 2 ^ evenCount n h = A at ih ⊢
+          have hAPQ : A * P ≤ A * Q := Nat.mul_le_mul_left A hPQ
+          rw [Nat.mul_right_comm A 2 P, Nat.mul_right_comm A 2 Q]
+          omega
+        · have ho : lastOdd n h = 1 := by omega
+          rw [ho] at ih
+          exact ih
+
+/--
+Sharp bound on the Horner term for the ordinary map: with `k ≥ 1` odd steps
+and `m` halvings, `c * 2^k ≤ 2^(m+1) * (3^k - 2^k)`, written without
+subtraction. It is attained (checked by brute force for `h ≤ 12`). It is the
+ordinary-map analogue of Rozier and Terracol (2026), Theorem 2.4.
+-/
+theorem hornerConstant_sharp {n h : Nat} (hk : 1 ≤ oddCount n h) :
+    hornerConstant n h * 2 ^ oddCount n h + 2 ^ (evenCount n h + 1) * 2 ^ oddCount n h ≤
+      2 ^ (evenCount n h + 1) * 3 ^ oddCount n h := by
+  rcases horner_sharp_inv n h with h0 | inv
+  · omega
+  · have hPQ : 2 ^ oddCount n h ≤ 3 ^ oddCount n h := Nat.pow_le_pow_left (by decide) _
+    have hle1 : lastOdd n h ≤ 1 := by
+      cases h with
+      | zero => simp [lastOdd]
+      | succ h' => exact parityAt_le_one n h'
+    generalize hP : 2 ^ oddCount n h = P at inv hPQ ⊢
+    generalize hQ : 3 ^ oddCount n h = Q at inv hPQ ⊢
+    generalize hC : hornerConstant n h = C at inv ⊢
+    rcases Nat.lt_or_ge (lastOdd n h) 1 with h0 | h1
+    · have hz : lastOdd n h = 0 := by omega
+      rw [hz, Nat.add_zero] at inv
+      rw [Nat.pow_succ]
+      generalize hA : 2 ^ evenCount n h = A at inv ⊢
+      have hAPQ : A * P ≤ A * Q := Nat.mul_le_mul_left A hPQ
+      rw [Nat.mul_right_comm A 2 P, Nat.mul_right_comm A 2 Q]
+      omega
+    · have ho : lastOdd n h = 1 := by omega
+      rw [ho] at inv
+      exact inv
+
 end ProofX
