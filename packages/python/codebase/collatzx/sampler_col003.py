@@ -24,7 +24,7 @@ def uniform_pools(lower: int, seed: int, budget: int, phase: str = "test") -> li
             )
         )
         seen: set[int] = set()
-        ordered = []
+        ordered: list[int] = []
         while len(ordered) < count:
             n = lower + stratum * WIDTH + int(rng.integers(WIDTH))
             if n not in seen:
@@ -59,7 +59,7 @@ def residue_stratified_pools(
         stratum_base = lower + stratum * WIDTH
         seen: set[int] = set()
         seen_residues: set[int] = set()
-        ordered = []
+        ordered: list[int] = []
 
         # Pass 1: draw distinct residues mod 2^h as far as possible
         attempts = 0
