@@ -1,6 +1,6 @@
 # ProofX Collatz work against the literature (November 2026)
 
-Written 16 November 2026. It covers PX-COL-001/002 as published in the preprint
+Written 16 November 2026; second reading round added 17 November 2026. It covers PX-COL-001/002 as published in the preprint
 ("Finite-prefix selection of long Collatz trajectories with ProofX", Drive copy
 dated 10 November 2026), `ProofX/Trajectory.lean`, the PX-COL-003 protocol and
 sampler from commit `8358686`, and the untracked note
@@ -58,6 +58,71 @@ with m halvings is a T-prefix of length m, or m+1 when the last C-step is odd.
 
 Search coverage: four arXiv queries, a targeted search for pruning in record programs, GitHub code and repository search, and web
 search. "Not found" below means not found by these searches.
+
+## 1b. Second reading round (wave 5, 16-17 November 2026)
+
+A second round re-read the brief's sources in full where an open copy existed,
+and widened into adjacent fields: 2-adic dynamics, the random-walk models,
+stopping-time distributions, early abandonment in verification codes, formal
+verification, and a deliberate search for prior art on staged screening. The
+reading notes are kept outside the repo (session notes `lit-wave5-*.md`). The
+table gives each brief source's final status. Bot walls and paywalls were not
+bypassed.
+
+| Source | After round 2 | What the full text added |
+| --- | --- | --- |
+| Terras 1976 | Full (pp. 241, 244-252; 242-243 read in round 1) | Thm 2.1: tau(n) = k occurs iff [(k-1)gamma, k gamma] contains an integer, gamma = ln2/ln3. Thm 2.2 bounds rho_k when tau = k; Thm 2.6 the maximizing class is unique; Thm 2.10 and Table C give thresholds m(k) above which tau = chi, to k = 2593. Everything concerns first descent, nothing concerns total stopping time. |
+| Everett 1977 | Not accessed (Elsevier captcha) | Secondhand only: density one of {n : some T^k(n) < n}. |
+| Lagarias 1985 | Full except pp. 6-7 (read in round 1) | No computational section on record searches and no pruning. Section 2.5 explains equal total stopping times of n and n+1 by coalescence. Thm K: T is ergodic on Z_2; Thm L: the conjugacy map. The bibliography's errata note q13 = 190537, not the printed 190737. |
+| Lagarias bibliographies | Full (every entry read) | Applegate-Lagarias is the only structured search aimed at large total stopping time. Kuttler and Rouet-Feix give the distribution of odd-step counts over residues mod 2^k. No entry on early termination by prefix statistics; no proof-assistant entries through 2009. |
+| Tao 2019 | Full for the cited parts | Prop 1.9: the first n Syracuse valuations are near iid Geom(2) only while n is below about half the bit length. Prop 1.11: orbits forget their starting scale (a distributional coalescence statement). |
+| Kontorovich-Lagarias 2010 | Full for secs 1-6 | Thm 2.1 there is the Terras-Everett parity bijection (likely the source of the stage1 note's wrong "Theorem 2.1" citation). Thm 3.2 (Borovkov-Pfeifer): Gaussian limit with sd 10.069 sqrt(ln n) in T-steps. Sec 4.4 names coalescence as a defect of independent-walk models, but only for the extremal constant. |
+| Lagarias-Weiss 1992 | Not accessed (Incapsula wall) | Secondhand via Borovkov-Pfeifer: their model-data comparison had about 25% relative error. |
+| Borovkov-Pfeifer 2000 | Full (preprint) | CLT as above. Empirical mean t/ln n near 10^6 is 6.86-6.88 against 6.95, about 1.3% low, undiagnosed. Variance compared only visually. |
+| Applegate-Lagarias 2003 | Full (intro to sec 4, tables) | Backward search of pruned inverse trees to depth 60, by odd-step ratio of parity paths; certificate of 350,688,758 trees. Closest Collatz relative of prefix ranking, but a deterministic backward construction with proof, not forward screening. |
+| Krasikov-Lagarias 2003 | Part (secs 1-2, 6; 3-5 skimmed) | Difference inequalities mod 3^k, exponent 0.84. Not about stopping-time distributions. |
+| Wirsching 1998 | Not accessed (table of contents only) | Predecessor counting and mixing, per Lagarias's review. |
+| Simons-de Weger | Part (2010 v1.44 through sec 6.2; 2005 scan not read) | No m-cycles for m <= 75 with X0 = 5 * 2^60 (2005 text: m <= 68). Linear forms in logarithms. Unrelated to selection. |
+| Eliahou 1993 | Not accessed (Elsevier, core.ac.uk walls) | Secondhand: at least 17,087,915 elements per nontrivial cycle. |
+| Barina 2021, 2025 | Full, plus the xbarin02/collatz code | Stop when the iterate drops below n0 (exact). 2^k descent/coalescence sieve and mod 3^k sieve, all exact. Record-step programs in the repo are brute force: no pruning, no ranking. |
+| Oliveira e Silva 1999 | Full (paper) | Pruned binary tree of residues mod 2^k, k <= 40: 6,402,835,000 open classes at depth 40 (density 0.0058); only open classes searched; about 58x speedup. Exact up to a property checked numerically to k = 40. |
+| Leavens-Vermeulen 1992 | Full (tech report body) | Every pruning lemma is exact: odd-only, k = 5 mod 6, coalescence (Lemmas 15-18), a-posteriori record bound (Lemmas 19-20), polynomial residue sieves (21-23). Cumulative 182x. |
+| Rozier 2019 | Mostly (secs 1-3.6) | Explicit inverse of the 2-adic parity map; T mixing on Z_2; Q not ergodic. Nothing on prefix statistics and total stopping time. |
+| Bernstein-Lagarias 1996 | Part (theorems and tables) | Conjugacy map has order 2^(n-4) on Z/2^n; the authors say it is unrelated to the conjecture itself. |
+| 2020-2026 arXiv, formalizations | See the next round's rows below | Eleven arXiv searches, 18 papers read (two withdrawn, read as v1). Angeltveit 2602.10466 searches a tree of low-bit prefixes and prunes classes known to descend (exact). Rozier-Terracol Thm 2.4 is sharp at the words 0^(j-q)1^q and 1^q0^(j-q). Inselmann 2402.03276 strengthens Terras-Everett concentration. None screens by prefix odd counts. Formalizations: see rows 38-40. |
+
+New sources from the widened search:
+
+| # | Source | Opened | Key results | Bearing on ProofX |
+| --- | --- | --- | --- | --- |
+| 31 | A.-S. Elsenhans, [arXiv:2502.16743](https://arxiv.org/abs/2502.16743), ANTS XVII (2026) | Full | For random n of 10^4 to 10^8 digits, mean T-steps / ln n = 6.952 and sd within 0.7% of the Borovkov-Pfeifer value 10.069 sqrt(ln n); skewness and kurtosis near Gaussian, KS test finds no deviation. | The random-walk model is accurate where there is no end phase and no coalescence between samples. This supports the end-phase explanation of the enrichment gap (Section 3.3). |
+| 32 | J. C. Lagarias, "The 3x+1 problem: an overview" (2010), [arXiv:2111.02635](https://arxiv.org/abs/2111.02635), Tables 2.1-2.2 | Full | 100 consecutive integers near 3.14 * 10^37 take only 4-5 distinct total stopping times. The author says this "has not yet been justified by suitable stochastic models". | The same within-window clustering ProofX measured (Section 3.4), noted but unquantified there. |
+| 33 | Y. Honda, Y. Ito and K. Nakano, GPU-accelerated Collatz verification, IJNC 7(1) (2017) | Full | Exact residue skipping (about 99.3% of inputs) for convergence; they state it "cannot be applied to the computation for the delay". Delay computation has no early termination. | Confirms that pruning in practice is exact and aimed at verification. |
+| 34 | E. Roosendaal, delay records, strengths and class records pages ([ericr.nl/wondrous](http://www.ericr.nl/wondrous/)) | Full | Strength = 5 * odd - 3 * even over the whole trajectory; high-delay class records tend to have high strength. 2428 class records and 149 delay records known. | Precedent that odd-minus-even balance tracks long delay, on full orbits rather than prefixes. |
+| 35 | M. Birattari et al., F-Race, GECCO 2002 | Abstract | Candidates evaluated in rounds; statistically worse ones dropped. | Racing lineage of staged screening. |
+| 36 | P. Glasserman et al., multilevel splitting, Oper. Res. 47(4) (1999); C.-E. Brehier et al., adaptive multilevel splitting, Ann. Appl. Probab. (2016) | Abstract | Advance many trajectories, keep or clone those reaching intermediate levels. | Closest generic analogue. PX-COL-004 keeps distinct starting integers and never clones. No Collatz application found. |
+| 37 | T. Petsios et al., SlowFuzz, CCS 2017; C. Lemieux et al., PerfFuzz, ISSTA 2018 | Abstract | Evolutionary search for inputs that make a program run long. | Same goal family, different method. |
+| 38 | mmusson/collatz, Lean 4 + Mathlib, Apache-2.0. [GitHub](https://github.com/mmusson/collatz) | Part (theorem names checked in source) | `papers-lean/terras-1976`: `modEq_of_parity` (parity correspondence mod 2^k) and `rho_le_of_prefix` (a bound on the remainder term under stopping hypotheses). `papers-lean/verified-range`: a residue-tree descent sieve with kernel-checked ranges (`descRange_24` and others). Also formalizes Bohm-Sontacchi, Crandall, Steiner, Simons-de Weger and Eliahou material. | The closest formal prior art. ProofX's parity lemma and Horner bounds are the ordinary-map, core-Lean counterparts of statements already formalized here on the shortcut map. Its sieve is exact descent pruning, not statistical screening. |
+| 39 | rwst/Collatz-Map-Basics, `E_bounds` and the Rozier-Terracol lemmas | Part (source) | Formalizes the Rozier-Terracol Thm 2.4 bounds for the shortcut map. Uses `native_decide` in places; one `sorry`, the conjecture statement. | ProofX's `hornerConstant_sharp` is the ordinary-map analogue, so it is a translation, not a new inequality family. |
+| 40 | E. Yolcu, S. Aaronson and M. Heule, J. Automated Reasoning 67 (2023) | Full | Rewriting systems whose termination is equivalent to Collatz; residue-class results mod 4 and 8. Their prover output is not kernel-checked. | Formal-methods context only. |
+| 41 | Further formalizations sampled: lechmazur/terras_density_one (density one, Mathlib, no sorry); google-deepmind/formal-conjectures (statement only); no Mathlib, compfiles or AFP Collatz entry; shallow Coq developments; xrchz/CollatzLean (claims a disproof, but the final term is built by custom elaborators that call addDecl, two commits in one day); gotrevor/tao-collatz and LeeMarshall1113/collatz-m-cycles (unaudited) | README and source spot checks | Nothing core-Lean and nothing on the ordinary map. | The AI-generated repos are not evidence for anything until replayed independently. |
+
+### Novelty of staged screening after round 2
+
+The adversarial search ran about 17 arXiv queries, about 12 web searches,
+GitHub code search, OEIS and Roosendaal's site, and read the record-search
+papers in full. Every early-abandonment rule found is exact: drop below the
+start, coalescence and residue sieves, or a certified bound against a known
+record (Leavens-Vermeulen Lemma 20, Roosendaal's cut-off). None ranks inputs by a
+prefix statistic and keeps a top fraction. The defensible wording is: to our
+knowledge, successive-halving-style staged prefix screening has not been
+applied to selecting integers with long Collatz total stopping time. The
+method is successive halving (Karnin, Koren and Somekh 2013; Jamieson and
+Talwalkar 2016) with Collatz steps as the budget, and its closest relatives are
+racing, multilevel splitting, and Applegate-Lagarias's backward search by
+odd-step ratio. Remaining gaps: forum threads (Mersenne forum, Project Euler,
+BOINC Collatz documentation) were searched only once and not read, and GitHub
+code search is weak evidence.
 
 ## 2. What is already known
 
@@ -193,8 +258,13 @@ A follow-up run explained the gap (`gap.py`, `scatter.py` and `hybrid.py` in
   spread.
 
 The gap comes from the model's end phase, the bottom of the Collatz tree, plus
-within-window clustering. I found no source that quantifies this end-phase
-effect. It is not new early-orbit structure. That closes
+within-window clustering. No source quantifies this end-phase effect, but two
+point the same way. Elsenhans (row 31) finds the model's mean and spread
+accurate to within 0.7% for random inputs of 10^4 to 10^8 digits, where there is
+no end phase and no coalescence. Lagarias's overview (row 32) shows 100
+consecutive integers taking only 4-5 distinct total stopping times and calls
+this unexplained by stochastic models. Borovkov-Pfeifer's 1.3% mean deficit near
+10^6 also fits an end-phase effect. It is not new early-orbit structure. That closes
 the question raised in the first version of this review.
 
 ### 3.4 Three 100,000-input windows carry less evidence than they look
@@ -223,6 +293,7 @@ computed, then run on 24 fresh windows from 3.5e7 to 2.5e11. Halving beat
 odd32 in 24 of 24 windows, with a median tie-fair yield ratio of 1.196 (range
 1.086 to 1.297); the frozen criterion was met. A single 64-step prefix beat
 odd32 in only 7 of 24 windows. See `docs/experiments/px-col-004-results.md`.
+Novelty after the second reading round is assessed in Section 1b.
 
 ## 4. Audit of ProofX claims
 
@@ -277,9 +348,11 @@ The file is replaced in this commit by a short corrected derivation.
   reference. This session added `trajectory_expansion` (the identity) and
   `trajectory_endpoint_bounds` (3^k n <= 2^m C^h(n) < 3^k (n + 2^m)), and
   corrected the references.
-* Novelty: none mathematically. The ordinary map, the core-only setting and the
-  explicit c(sigma) bound distinguish it from rwst/Collatz-Map-Basics. That is
-  engineering, not research.
+* Novelty: none mathematically. After round 2, mmusson/collatz (row 38) and
+  rwst/Collatz-Map-Basics (row 39) are known to formalize the parity
+  correspondence, remainder bounds and the Rozier-Terracol bounds with Mathlib
+  on the shortcut map. ProofX's versions are ordinary-map translations in core
+  Lean. That is engineering, not research.
 
 ### PX-COL-003 protocol and sampler (commit `8358686`)
 
@@ -302,11 +375,16 @@ The design cannot answer its own question and is withdrawn before any run:
 
 ## 5. Not verified
 
-* Lagarias-Weiss 1992, Everett 1977, Wirsching 1998, Oliveira e Silva 1999,
-  Leavens-Vermeulen 1992, Garner 1981, Simons-de Weger 2005 and Eliahou 1993
-  were not opened. They are cited only as named in other sources.
+* Still not opened after round 2: Everett 1977, Lagarias-Weiss 1992, Wirsching
+  1998, Eliahou 1993 and Garner 1981 (bot walls or paywalls; not bypassed), the
+  2005 Simons-de Weger scan, and the Leavens-Vermeulen journal version. They are
+  cited only as named in other sources.
+* Read only as abstracts: the racing, splitting and fuzzing analogues (rows
+  35-37), and Karnin et al. 2013.
+* Forum threads and BOINC Collatz documentation were searched once and not read.
 * The ordinary-map constant 3/ln(4/3) is derived, not quoted. It matches
   Merlini-Sala's 67.1 log n extreme constant (via #4) and the data.
 * The enrichment-gap explanation in 3.3 rests on one family of simulations; the
   hybrid model was not tuned, but CUT was scanned at four values.
-* Unaudited Lean repositories in row 26, including the claimed disproof.
+* Unaudited Lean repositories in row 41, including the claimed disproof. No Lean
+  project from another author was built here.

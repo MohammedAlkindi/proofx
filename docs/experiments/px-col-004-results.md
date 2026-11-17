@@ -84,7 +84,15 @@ including the overflow path for large iterates.
   prefix only on survivors. Successive halving itself is a standard
   elimination method for best-arm identification and hyperparameter search
   (Karnin, Koren and Somekh, ICML 2013, PMLR 28:1238-1246; Jamieson and Talwalkar,
-  arXiv:1502.07943). The new part is the application and the measurement.
+  arXiv:1502.07943). To our knowledge it has not been applied to selecting
+  integers with long Collatz total stopping time. Collatz record and
+  verification searches abandon candidates early, but only by exact rules:
+  dropping below the start, residue and coalescence sieves, or a certified bound
+  against a known record (Leavens and Vermeulen 1992, Lemma 20; Roosendaal's
+  cut-off). None ranks by a prefix statistic. The closest relatives are
+  racing, multilevel splitting, and Applegate and Lagarias's backward search by
+  odd-step ratio (review, Section 1b). The new part is the application and the
+  measurement.
 * Step counts do not price bit width, sorting or interpreter overhead. A
   record-search implementation may find that the checks cost more than they
   save; the cuda-collatz author reported this for exact record pruning. No
