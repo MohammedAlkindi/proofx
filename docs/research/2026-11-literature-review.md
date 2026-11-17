@@ -68,7 +68,9 @@ search. "Not found" below means not found by these searches.
    packaging, not new mathematics.
 2. **Parity vectors and residues.** The first k shortcut parities are a
    bijection with n mod 2^k (Terras Thm 1.2, Cor 1.3; Lagarias Thm B). For the
-   ordinary map, an h-step prefix with m halvings is fixed by n mod 2^(m+1).
+   ordinary map, an h-step prefix with m halvings is fixed by n mod 2^(m+1). The
+   weaker statement that n mod 2^h fixes the first h parities is now proved in
+   `Trajectory.lean` (`parityAt_congr`, `oddCount_congr`).
 3. **Bounds on the additive term.** Rozier-Terracol Thm 2.4 gives the sharp
    two-sided bound for T and its extremal parity vectors. ProofX's
    `hornerConstant_lt` (c < 3^k 2^m) is correct but loose (Section 3.1). The sharp

@@ -65,5 +65,5 @@ odd step in the prefix. On the PX-COL-002 fresh windows the fitted slopes are
 * No sufficiency or optimality statement. k explains about 17-22% of the
   within-stratum variance of tau at h = 32.
 * Nothing about residue classes beyond this: the h-step prefix is a function of
-  n mod 2^(m+1). Any two inputs in a stratum of 6,250 consecutive integers are
+  n mod 2^(m+1) (Lean proves the weaker mod 2^h form as `parityAt_congr`). Any two inputs in a stratum of 6,250 consecutive integers are
   already distinct mod 2^13, so stratifying them mod 2^32 changes nothing.

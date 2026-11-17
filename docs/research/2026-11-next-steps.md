@@ -47,9 +47,10 @@ below 0.87. A prospective test would chase about 1%, so it is not proposed.
 
 ### D. Lean hygiene
 
-`hornerConstant_sharp` (the sharp ordinary-map bound) is proved. Remaining: the
-ordinary-map form of Terras Thm 1.2 (inputs congruent mod 2^(h+1) share their
-first h parities).
+Done. `hornerConstant_sharp` (the sharp ordinary-map bound) and
+`parityAt_congr` / `oddCount_congr` (inputs congruent mod 2^h share their first
+h parities and odd counts; one direction of Terras Thm 1.2 for the ordinary map)
+are proved in core Lean.
 
 ---
 
