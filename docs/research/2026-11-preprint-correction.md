@@ -1,6 +1,14 @@
 # Draft correction for the PX-COL-002 preprint
 
-Draft for Mohammed to edit. It targets "Finite-prefix selection of long Collatz
+**Applied 17 November 2026** at Mohammed's request. The revised PDF is
+`ProofX - Research Preprint (revised 2026-11-17).pdf` in Drive `Research/ProofX/`,
+and its source is `ProofX - arXiv source and evidence (revised 2026-11-17).zip` in
+`Research/Archive/Collatz and ProofX - originals and source/`. The originals are
+unchanged. The revision adds Section 7.4 and its table, and edits the abstract,
+introduction, Section 2.2, limitations and conclusion. It builds with TeX Live 2025
+with no undefined references. Nothing was uploaded to arXiv.
+
+The text below is the draft the revision was based on. It targets "Finite-prefix selection of long Collatz
 trajectories with ProofX" (Drive copy of 10 November 2026), Sections 7.3, 9 and
 10. Numbers come from `scripts/research/col002_reanalysis/` run on the
 published bundle, and from PX-COL-004.
