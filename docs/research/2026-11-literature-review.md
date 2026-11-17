@@ -51,9 +51,12 @@ with m halvings is a T-prefix of length m, or m+1 when the last C-step is odd.
 | 24 | rwst/Collatz-Map-Basics, Lean 4 + Mathlib. [GitHub](https://github.com/rwst/Collatz-Map-Basics) | Full (`Decomposition.lean` read; file lists of `Terras.lean` and `Parity.lean`) | `linear_decomposition`: 2^k * T_iter k n = 3^(num_odd_steps k n) * n + decomposition_correction k n, over N, shortcut map. `T_congr` and the blueprint state Terras Thm 1.2. Also formalizes Rozier-Terracol lemmas. Zero `sorry` in these files. | Prior formalization of the identity ProofX proves, on the other map and with Mathlib. |
 | 25 | google-deepmind/formal-conjectures, `CollatzConjecture.lean` | Full (file) | Statement only, proof `sorry`. | None. |
 | 26 | Other Lean repositories: lechmazur/terras_density_one, mmusson/collatz, xrchz/CollatzLean, gotrevor/tao-collatz, LeeMarshall1113/collatz-m-cycles | README or file lists only | Various sorry-free claims. xrchz/CollatzLean claims `¬ Collatz.Conjecture` (witness-free). | Unaudited. The xrchz claim contradicts nothing proven but is extraordinary; it was not built or checked here and should not be repeated as fact. |
+| 28 | G. T. Leavens and M. Vermeulen, "3x+1 search programs", tech report ISU TR92-01 (journal version: Computers Math. Applic. 1992). [TR PDF](https://www.cs.ucf.edu/~leavens/tech-reports/ISU/TR92-01/TR.pdf) | Part (tech report; journal version not accessed) | Lemma 20: "steps(k) <= p+steps(j)". Once an iterate falls to or below an input j whose delay is known, k can be dismissed when that bound cannot beat the record. About 15 steps per number on average, against about 276 for full orbits, when the earlier records are known. Lemma 21 drops inputs a priori by their low m-bit residue. | Exact, bound-based early abandonment for record search. This is the closest prior art to ProofX screening, but it needs a known record threshold and proves an input cannot win. ProofX ranks by a statistic with no threshold. |
+| 29 | E. Roosendaal, technical page [ericr.nl/wondrous/techpage.html](http://www.ericr.nl/wondrous/techpage.html) | Full | "A cut-off technique is also applied at several points ... to terminate further processing of this number": once below a bound, delay is at most known delay plus steps so far, so the input is abandoned under a threshold. About a 10x gain; merge sieves skip roughly 89-93% of inputs. | Same family as #28. Exact pruning against records. |
+| 30 | rogerdahl/cuda-collatz (GitHub README) | Full (README) | Early termination against the delay-record table was implemented, then disabled because checking cost more than it saved on GPU. | Pruning overhead can dominate. ProofX's step counts do not price comparison overhead, which is stated as a limitation. |
 | 27 | K. Jamieson and A. Talwalkar, [arXiv:1502.07943](https://arxiv.org/abs/1502.07943); Z. Karnin, T. Koren and O. Somekh, ICML 2013 | Abstract (Jamieson-Talwalkar); Karnin et al. not reopened | Successive halving: allocate more budget to promising candidates in rounds. | Source of the screening method proposed in the next-steps note. |
 
-Search coverage: four arXiv queries, GitHub code and repository search, and web
+Search coverage: four arXiv queries, a targeted search for pruning in record programs, GitHub code and repository search, and web
 search. "Not found" below means not found by these searches.
 
 ## 2. What is already known
@@ -168,9 +171,28 @@ Consequences:
   observed 60.7, 71.0, 68.9).
 
 So the direction and the slope of the PX-COL-002 effect follow from the classical
-model. The size is about 20% larger than the model predicts. Whether that gap
-persists across many windows is untested, and it is the one quantitative
-observation here that could be new.
+model, but its size is about 20% larger than the model predicts.
+
+A follow-up run explained the gap (`gap.py`, `scatter.py` and `hybrid.py` in
+`scripts/research/col002_reanalysis/`):
+
+* **Persistence.** Across 30 further windows at 2^23, 2^27 and 2^31, observed
+  enrichment divided by model enrichment is 1.199 (SD 0.094). It is above 1 in
+  29 of 30 windows, with no trend by octave.
+* **Clustering.** With 6,250 inputs drawn at random from [2^e, 1.05 * 2^e)
+  instead of contiguous strata, the ratio is 1.148 (SD 0.045). Shared
+  trajectory suffixes inside a window explain about a quarter of the gap.
+* **End phase.** A hybrid model runs the random walk until x < 2^CUT, then uses
+  the exact tau of int(x). Its enrichment rises with CUT: about 1.95 at 4, 2.14
+  at 8, 2.18 at 12 and 2.23 at 16. At CUT 12-16 it reaches the scattered data.
+  Real stopping times of numbers below a few thousand are less spread than a
+  random walk predicts, and that difference propagates into the conditional
+  spread.
+
+The gap comes from the model's end phase, the bottom of the Collatz tree, plus
+within-window clustering. I found no source that quantifies this end-phase
+effect. It is not new early-orbit structure. That closes
+the question raised in the first version of this review.
 
 ### 3.4 Three 100,000-input windows carry less evidence than they look
 
@@ -191,8 +213,13 @@ extend to 32, keep 2q, extend to 64, keep q. It reached tie-fair yields of
 1.578, 1.595 and 1.511 on the fresh windows, against 1.317, 1.345 and 1.315 for
 the frozen odd-count design under the same simulated pools. On the development
 windows it reached 1.653, 1.643 and 1.636, against 1.373, 1.430 and 1.376. Two
-other halving schedules also beat the baseline. This is a hypothesis for a
-prospective test, not a result.
+other halving schedules also beat the baseline. This was a post-hoc hypothesis.
+
+**Prospective test (PX-COL-004).** Frozen at `13716c5` before any label was
+computed, then run on 24 fresh windows from 3.5e7 to 2.5e11. Halving beat
+odd32 in 24 of 24 windows, with a median tie-fair yield ratio of 1.196 (range
+1.086 to 1.297); the frozen criterion was met. A single 64-step prefix beat
+odd32 in only 7 of 24 windows. See `docs/experiments/px-col-004-results.md`.
 
 ## 4. Audit of ProofX claims
 
@@ -277,6 +304,6 @@ The design cannot answer its own question and is withdrawn before any run:
   were not opened. They are cited only as named in other sources.
 * The ordinary-map constant 3/ln(4/3) is derived, not quoted. It matches
   Merlini-Sala's 67.1 log n extreme constant (via #4) and the data.
-* The variance and enrichment gap in 3.3 is from one simulation design and three
-  windows.
+* The enrichment-gap explanation in 3.3 rests on one family of simulations; the
+  hybrid model was not tuned, but CUT was scanned at four values.
 * Unaudited Lean repositories in row 26, including the claimed disproof.

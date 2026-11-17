@@ -14,6 +14,9 @@ script from outside that directory with `python -I`:
 | `gradient.py` | number of windows | Quartile target shares in fresh random windows (spatial heterogeneity) |
 | `policies.py` | bundle dir, `test` or `development` | Exploratory policy scan, including successive-halving screening |
 | `horner.py` | none | Brute-force check of the sharp ordinary-map Horner bound |
+| `gap.py` | windows, seed (30, 4242 used) | Observed vs random-parity-model enrichment in fresh windows at 2^23/27/31 |
+| `scatter.py` | windows, directory holding `gap.py` | The same with scattered (non-contiguous) inputs |
+| `hybrid.py` | CUT (4, 8, 12, 16 used) | Model walk to 2^CUT, exact tau below |
 
 Tie-fair credit: inside each stratum, inputs strictly above the 313th largest
 total stopping time count 1; inputs equal to it share the remaining target

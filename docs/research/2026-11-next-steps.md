@@ -4,7 +4,47 @@ Ranked by expected value per unit of work. The evidence for each claim is in
 `2026-11-literature-review.md`. "Not already done" means not found in the
 sources listed there.
 
-## 1. Run PX-COL-004: successive-halving prefix screening, prospectively (recommended)
+## Status, 16 November 2026 (overnight run)
+
+* **PX-COL-004 ran and met its frozen criterion.** Halving beat odd32 in 24 of
+  24 fresh windows, with a median yield ratio of 1.196
+  (`docs/experiments/px-col-004-results.md`, frozen at `13716c5`, independently
+  verified).
+* **Item 3 below (the model gap) is answered.** It is the model's end phase plus
+  within-window clustering (review, Section 3.3).
+* The new ranking is A to D. The original plan follows, kept for the record.
+
+### A. Correct the PX-COL-002 preprint (first; small)
+
+Add the tie-fair reanalysis: 39.5% of targets are tie-broken, ascending
+selection's yield advantage largely disappears, and the odd-count margin over
+growth halves. Cite PX-COL-004 as the prospective follow-up. The draft text is in
+`2026-11-preprint-correction.md`.
+
+### B. Price the overhead: a wall-time and bit-operation comparison
+
+PX-COL-004 counts ordinary transitions only. Exact record pruning has been
+abandoned in practice because the checks cost more than they saved
+(cuda-collatz, review row 30). Freeze a vectorized implementation of odd32 and
+halving, and measure wall time and word operations on fresh windows. Only
+then is any practical speed claim possible. **What would matter:** whether
+halving's 1.2x step advantage survives as time.
+
+### C. Prospective schedule study
+
+The 8x / 16-32-64 schedule was picked post hoc from three candidates. A
+development grid (pool factor 4-16, stage depths up to 128) on the PX-COL-004
+test windows, which now count as development data, should be followed by a frozen
+test on new windows. The review's R^2 figures (0.2 at 32 steps, 0.4 at 64)
+suggest deeper final stages may help.
+
+### D. Lean hygiene
+
+The sharp ordinary-map bound and parity determination (item 4 below).
+
+---
+
+## 1. Run PX-COL-004: successive-halving prefix screening, prospectively (done, see Status)
 
 **Question.** Does multi-stage screening beat the single-stage odd-count policy
 in charged-transition yield on windows nobody has looked at?
@@ -57,7 +97,7 @@ ascending selection". That pointer is mostly an artifact. Correcting it before
 anyone builds on it protects the paper's credibility, which rests on careful
 claims.
 
-## 3. Test the model-vs-data enrichment gap (small research question)
+## 3. Test the model-vs-data enrichment gap (done: explained, see review 3.3)
 
 The random-parity model predicts odd-count enrichment of 1.90-2.01 over uniform.
 Observed is 2.28-2.47. The model also overstates the spread of tau. Measure the
